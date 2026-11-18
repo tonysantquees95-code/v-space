@@ -16,6 +16,6 @@
 - Tela ou janela nova: acrescente um cenário em `config.mjs`.
 
 ## Android nativo
-- O APK só compila no GitHub Actions (`.github/workflows/app.yml`): `npx cap add android`, copia `android/src/*.java` (plugin `VetorialHome` + `MainActivity`) e ajusta o manifesto (HOME/DEFAULT, QUERY_ALL_PACKAGES).
-- Mudou a interface do plugin (`android/src/VSpacePlugin.java`)? Ajuste `app/src/motor.ts` e o motor de demonstração `app/src/demo.ts`.
+- O APK só compila no GitHub Actions (`.github/workflows/app.yml`): `npx cap add android`, copia `nativo/src/*.java` (plugin `VetorialHome` + `MainActivity`) e ajusta o manifesto (HOME/DEFAULT, QUERY_ALL_PACKAGES).
+- Mudou a interface do plugin (`nativo/src/VSpacePlugin.java`)? Ajuste `app/src/motor.ts` e o motor de demonstração `app/src/demo.ts`.
 - A assinatura do APK vem do servidor da Vênus; o repositório precisa estar em `REPOS_PERMITIDOS` (`vetorial-servidor/servidor/src/ci/assinatura.js`).

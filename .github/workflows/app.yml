@@ -72,7 +72,7 @@ jobs:
           grep -n "versionName\|versionCode" android/app/build.gradle
           D=android/app/src/main/java/tech/vetorial/vspace
           mkdir -p $D
-          cp ../android/src/*.java $D/
+          cp ../nativo/src/*.java $D/
           python3 - <<'PY'
           import re
           m = "android/app/src/main/AndroidManifest.xml"
