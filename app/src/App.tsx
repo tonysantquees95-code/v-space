@@ -74,6 +74,12 @@ export default function App() {
     const h = AppNativo.addListener("backButton", () => topo.current());
     return () => { void h.then((x) => x.remove()); };
   }, []);
+  // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
+  useEffect(() => {
+    const f = () => { setMenu(null); setAgrupar(null); setRever(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    window.addEventListener("vspaceinicio", f);
+    return () => window.removeEventListener("vspaceinicio", f);
+  }, []);
   useEffect(() => { const t = (e: KeyboardEvent) => { if (e.key === "Escape" && temCamada) fecharTopo(); }; window.addEventListener("keydown", t); return () => window.removeEventListener("keydown", t); }, [temCamada, fecharTopo]);
 
   if (apresentar) return <Apresentacao aoConcluir={() => setApresentar(false)} />;
