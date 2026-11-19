@@ -31,6 +31,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 24, data: "2026-11-19", tipo: "novo", titulo: "Ícones e gaveta do seu jeito", texto: "Em Estúdio › Aplicativos › Ícones você troca o ícone de qualquer app por uma imagem da galeria. Em Disposição, escolha a ordem da gaveta (A–Z, Z–A, mais novos, mais antigos, mais usados). Em Geral, ligue ou desligue os selos de notificação e o ponto nos apps novos." },
   { id: 25, data: "2026-11-19", tipo: "novo", titulo: "Temas e superfície do seu jeito", texto: "Em Estúdio › Temas você guarda o tema de agora com um nome, e compartilha ou importa por código. Em Início › Superfície escolha vidro, acrílico ou cor com intensidade. Em Pastas, escolha abrir como folha ou janela. Dá também para trocar a animação do cadeado." },
   { id: 26, data: "2026-11-19", tipo: "novo", titulo: "Gestos e menu da tela inicial", texto: "Em Estúdio › Configurações › Gestos escolha o que fazem deslizar para baixo, toque duplo e dois dedos para cima ou para baixo. O menu de segurar ganhou Adicionar atalhos e Temas, e em Menu você escolhe o que mostrar. Novas abas Geral (vibração) e Privacidade." },
+  { id: 27, data: "2026-11-19", tipo: "correcao", titulo: "Tela preta depois de atualizar", texto: "Depois de atualizar por dentro e abrir o app de novo, a tela podia ficar toda preta. Agora o app percebe isso e recarrega a tela sozinho em poucos segundos, sem precisar fechar tudo." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

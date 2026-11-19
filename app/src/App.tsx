@@ -179,6 +179,7 @@ export default function App() {
     else if (a === "estudio") setEstudio("temas");
     else if (a === "bloquear") { mudar((b) => ({ ...b, bloqueado: !b.bloqueado })); falar(bancoRef.current.bloqueado ? "Layout desbloqueado." : "Layout bloqueado."); }
   };
+  useEffect(() => { (window as unknown as { __vspacePronto?: boolean }).__vspacePronto = true; }, []);
   useEffect(() => { ligarVibracao(banco.vibrar); }, [banco.vibrar]);
   abrirSeguroRef.current = abrirSeguro;
   const temCamada = !!(seguro || busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);

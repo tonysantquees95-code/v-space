@@ -4,7 +4,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Window;
+import android.webkit.WebView;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -46,6 +49,39 @@ public class MainActivity extends BridgeActivity {
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(conteudo);
+    }
+
+    private final Handler relogio = new Handler(Looper.getMainLooper());
+    private int tentativas = 0;
+
+    /** Depois de atualizar por dentro, abrir pelo instalador às vezes deixa a tela preta. Se a tela web não avisar que está
+     *  pronta em poucos segundos, recarrega a tela sozinha (até 3 vezes) e, no fim, recria a janela. */
+    @Override
+    public void onResume() {
+        super.onResume();
+        tentativas = 0;
+        agendarConferencia(2500);
+    }
+
+    @Override
+    public void onPause() {
+        relogio.removeCallbacksAndMessages(null);
+        super.onPause();
+    }
+
+    private void agendarConferencia(long ms) {
+        relogio.removeCallbacksAndMessages(null);
+        relogio.postDelayed(() -> {
+            try {
+                final WebView wv = getBridge().getWebView();
+                wv.evaluateJavascript("(function(){return window.__vspacePronto===true;})()", valor -> {
+                    if ("true".equals(valor)) return;
+                    tentativas++;
+                    if (tentativas == 1 || tentativas == 2) { try { wv.reload(); } catch (Exception ignora) { } agendarConferencia(3500); }
+                    else if (tentativas == 3) { recreate(); }
+                });
+            } catch (Exception ignora) { }
+        }, ms);
     }
 
     /** Apertar o botão início com o V-Space já aberto: avisa a tela para fechar janelas e voltar à primeira página. */
