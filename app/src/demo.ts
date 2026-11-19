@@ -49,6 +49,7 @@ export const motorDemo: Motor = {
   mostrarVolume: async () => avisar("(demonstração) mostraria o volume"),
   abrirAjuste: async (t) => avisar(`(demonstração) abriria os ajustes de ${t}`),
   autenticar: async () => true,
+  definirPapelSistema: async () => true,
   selos: async () => ({ "demo.musica": 3, "demo.gov": 1 }),
   contatosPermitidos: async () => demoContatos,
   pedirContatos: async () => { demoContatos = true; return true; },

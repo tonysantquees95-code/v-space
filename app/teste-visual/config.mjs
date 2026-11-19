@@ -114,9 +114,13 @@ export default {
     ["estudio-papel", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); }],
     ["estudio-papel-pronto", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Papel de parede");
-      await p.getByRole("button", { name: "Papel Oceano" }).click(); await aba(p, "Ajustes"); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
+      await p.getByRole("button", { name: "Papel Oceano" }).click(); await aba(p, "Editor"); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
       await p.getByRole("slider", { name: "Desfoque" }).fill("8"); await p.waitForTimeout(250);
     }],
+    ["estudio-papel-luz", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); await aba(p, "Luz do dia"); await p.getByRole("group", { name: "Luz do dia" }).waitFor(); }],
+    ["estudio-papel-favoritos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); await p.getByRole("button", { name: "Papel Oceano" }).click(); await aba(p, "Favoritos"); await p.getByRole("button", { name: "Guardar o papel atual" }).click(); await p.getByRole("button", { name: "Usar favorito 1" }).waitFor(); }],
+    ["estudio-papel-fontes", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); await aba(p, "Fontes"); await p.getByText("Aplicar no Android").waitFor(); }],
+    ["estudio-papel-geral", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); await aba(p, "Geral"); await p.getByRole("switch", { name: "Papel de parede diário" }).waitFor(); }],
     ["inicio-widgets", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); if (!(await f.isVisible().catch(() => false))) { await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); } await p.waitForTimeout(400); }],
     ["widgets-agenda", "widgets", async (p) => { await p.waitForTimeout(300); if (!(await p.getByText("Reunião de equipe").isVisible().catch(() => false))) throw new Error("PULAR"); }],
     ["widgets-novos", "widgetsNovos", async (p) => { await p.getByRole("region", { name: "Widgets" }).waitFor(); await p.getByRole("article", { name: "Calendário do mês" }).waitFor(); await p.getByRole("article", { name: "Horas pelo mundo" }).waitFor(); await p.waitForTimeout(300); }],

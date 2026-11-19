@@ -183,6 +183,30 @@ public class VSpacePlugin extends Plugin {
     @ActivityCallback
     private void fimPedirPadrao(PluginCall call, ActivityResult r) { if (call != null) call.resolve(); }
 
+    /** Aplica o papel de parede no Android: "inicio", "bloqueio" ou "ambas". */
+    @PluginMethod
+    public void definirPapelSistema(final PluginCall call) {
+        final String dados = call.getString("imagem", "");
+        final String destino = call.getString("destino", "ambas");
+        if (!dados.startsWith("data:image/") || dados.length() > 12_000_000) { call.reject("Imagem inválida."); return; }
+        fundo.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    byte[] b = android.util.Base64.decode(dados.substring(dados.indexOf(',') + 1), android.util.Base64.DEFAULT);
+                    android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(getContext());
+                    int flags = "inicio".equals(destino) ? android.app.WallpaperManager.FLAG_SYSTEM
+                        : "bloqueio".equals(destino) ? android.app.WallpaperManager.FLAG_LOCK
+                        : (android.app.WallpaperManager.FLAG_SYSTEM | android.app.WallpaperManager.FLAG_LOCK);
+                    wm.setStream(new java.io.ByteArrayInputStream(b), null, true, flags);
+                    call.resolve();
+                } catch (Throwable e) {
+                    call.reject("O Android não deixou trocar o papel de parede.");
+                }
+            }
+        });
+    }
+
     /** Pede o desbloqueio do aparelho (digital, PIN, padrão ou senha) antes de abrir o Espaço seguro. Sem bloqueio de tela no aparelho, deixa passar. */
     @PluginMethod
     public void autenticar(PluginCall call) {

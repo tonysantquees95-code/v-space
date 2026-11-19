@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -9,7 +9,7 @@ import { CENAS, aplicarCena } from "../cenas";
 import { fundoCss } from "../tema";
 import { motor, type ExternoInfo } from "../motor";
 import { Icone, type NomeIcone } from "../icones";
-import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
+import { apagarPapel, desenharPronto, escolherFoto, guardarFavoritos, guardarPapel, juntarFavorito, lerFavoritos, MAX_FAVORITOS as MAX_PAPEIS_FAV, PRONTOS } from "../papel";
 import { buscarLugares, type Lugar } from "../widgets";
 import { PreviaWidget } from "./Widgets";
 import { useRef as useRefP, useState as useStateP, type ReactNode as NodeP } from "react";
@@ -49,7 +49,7 @@ const SECOES: DefSecao[] = [
   { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
   { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
-  { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
+  { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "luz", nome: "Luz do dia", icone: "tema" }, { id: "favoritos", nome: "Favoritos", icone: "ok" }, { id: "fontes", nome: "Fontes", icone: "papel" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "ajustes", nome: "Editor", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
   { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
@@ -153,6 +153,19 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
     setErro(""); aoPapel(url); return true;
   };
   const daGaleria = async () => { const u = await escolherFoto(); if (u && usarPapel(u)) aoMudar((b) => ajustarTema(b, { fundo: "foto" })); };
+  const [favoritos, setFavoritos] = useState<string[]>(() => lerFavoritos());
+  const guardarAtual = () => {
+    if (!papel) { aviso("Escolha uma foto primeiro."); return; }
+    const nova = juntarFavorito(favoritos, papel);
+    if (!guardarFavoritos(nova)) { aviso("Não há espaço para guardar mais um favorito."); return; }
+    setFavoritos(nova); aviso("Papel guardado nos favoritos.");
+  };
+  const tirarFavorito = (i: number) => { const nova = favoritos.filter((_, k) => k !== i); guardarFavoritos(nova); setFavoritos(nova); };
+  const usarFavorito = (u: string) => { if (usarPapel(u)) aoMudar((b) => ajustarTema(b, { fundo: "foto" })); };
+  const aplicarAndroid = async (destino: "inicio" | "bloqueio" | "ambas") => {
+    if (!papel) { aviso("Escolha uma foto primeiro."); return; }
+    aviso((await motor.definirPapelSistema(papel, destino)) ? "Papel aplicado no Android." : "O Android não deixou trocar o papel de parede.");
+  };
   const semPapel = () => { apagarPapel(); aoPapel(null); aoMudar((b) => ajustarTema(b, { fundo: "aurora" })); aviso("Papel de parede removido."); };
   const comCena = (id: string) => {
     const c = CENAS.find((x) => x.id === id); if (!c) return;
@@ -302,12 +315,51 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <div className="space-y-4">
           <div className="flex flex-wrap gap-3">
             <Botao variante="primario" onClick={() => void daGaleria()}><Icone nome="papel" tam={18} />Escolher da galeria</Botao>
+            {t.fundo === "foto" && <Botao onClick={guardarAtual}><Icone nome="ok" tam={18} />Guardar nos favoritos</Botao>}
             {t.fundo === "foto" && <Botao onClick={semPapel}>Remover papel</Botao>}
           </div>
           <Cartao titulo="Papéis da Vetorial">
             <div className="grid grid-cols-3 gap-2">
               {PRONTOS.map((p) => <button key={p.id} type="button" aria-label={`Papel ${p.nome}`} className="papel-pronto" style={{ background: `linear-gradient(160deg, ${p.cores[1]}99, ${p.cores[0]} 55%, ${p.cores[2]}88)` }} onClick={() => { if (usarPapel(desenharPronto(p))) aoMudar((b) => ajustarTema(b, { fundo: "foto" })); }}><span>{p.nome}</span></button>)}
             </div>
+          </Cartao>
+        </div>
+      );
+      case "papel/luz": return (
+        <div className="space-y-4">
+          <Cartao titulo="Luz do dia">
+            <p className="mb-3 text-sm text-suave">O papel recebe a cor da luz do sol de agora: quente ao amanhecer, clara ao meio-dia, dourada ao entardecer e azulada à noite.</p>
+            <Seletor<Luz> rotulo="Luz do dia" valor={t.luz} opcoes={LUZES.map((v) => ({ id: v, nome: ({ nenhuma: "Desligada", sol: "Seguir sol", dia: "Dia", noite: "Noite" } as Record<Luz, string>)[v] }))} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { luz: v }))} />
+          </Cartao>
+        </div>
+      );
+      case "papel/favoritos": return (
+        <div className="space-y-4">
+          <Cartao titulo={`Favoritos (${favoritos.length} de ${MAX_PAPEIS_FAV})`}>
+            {favoritos.length === 0 ? <p className="text-sm text-suave">Ainda não há favoritos. Guarde o papel que você está usando para voltar a ele com um toque.</p>
+              : <div className="grid grid-cols-3 gap-2">{favoritos.map((u, i) => (
+                <div key={i} className="relative">
+                  <button type="button" aria-label={`Usar favorito ${i + 1}`} className="papel-pronto" style={{ backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" }} onClick={() => usarFavorito(u)} />
+                  <button type="button" aria-label={`Remover favorito ${i + 1}`} className="fav-tirar" onClick={() => tirarFavorito(i)}><Icone nome="fechar" tam={14} /></button>
+                </div>))}</div>}
+            <div className="mt-3"><Botao variante="primario" onClick={guardarAtual}><Icone nome="ok" tam={18} />Guardar o papel atual</Botao></div>
+          </Cartao>
+        </div>
+      );
+      case "papel/fontes": return (
+        <div className="space-y-4">
+          <Cartao titulo="Carregar fotos"><p className="mb-3 text-sm text-suave">Escolha uma imagem da galeria do aparelho.</p><Botao onClick={() => void daGaleria()}><Icone nome="papel" tam={18} />Escolher da galeria</Botao></Cartao>
+          <Cartao titulo="Papéis da Vetorial"><p className="mb-3 text-sm text-suave">Degradês prontos, na aba Escolha.</p><Botao onClick={() => setParte("escolha")}>Ver papéis prontos</Botao></Cartao>
+          <Cartao titulo="Aplicar no Android"><p className="mb-3 text-sm text-suave">Usa o papel atual também fora do V-Space.</p>
+            <div className="flex flex-wrap gap-2"><Botao onClick={() => void aplicarAndroid("inicio")}>Tela inicial</Botao><Botao onClick={() => void aplicarAndroid("bloqueio")}>Tela de bloqueio</Botao><Botao onClick={() => void aplicarAndroid("ambas")}>Ambas</Botao></div>
+          </Cartao>
+        </div>
+      );
+      case "papel/geral": return (
+        <div className="space-y-4">
+          <Cartao><Linha titulo="Papel de parede diário" texto="Troca o papel por um dos favoritos uma vez por dia."><Interruptor rotulo="Papel de parede diário" ligado={t.papelDiario} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { papelDiario: v }))} /></Linha></Cartao>
+          <Cartao titulo="Aplicar papel de parede a">
+            <Seletor<AplicarEm> rotulo="Aplicar papel de parede a" valor={t.aplicarEm} opcoes={APLICAR_EM.map((v) => ({ id: v, nome: ({ pergunta: "Sempre pergunta", inicio: "Tela inicial", bloqueio: "Tela de bloqueio", ambas: "Ambas" } as Record<AplicarEm, string>)[v] }))} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { aplicarEm: v }))} />
           </Cartao>
         </div>
       );

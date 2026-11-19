@@ -47,6 +47,7 @@ export interface Motor {
   aoEventoExterno(ev: EventosExternos): () => void;
   selos(): Promise<Record<string, number>>;
   autenticar(): Promise<boolean>;
+  definirPapelSistema(imagem: string, destino: "inicio" | "bloqueio" | "ambas"): Promise<boolean>;
   contatosPermitidos(): Promise<boolean>;
   pedirContatos(): Promise<boolean>;
   buscarContatos(texto: string): Promise<Contato[]>;
@@ -87,6 +88,7 @@ interface PluginNativo {
   abrirAjuste(o: { tela: string }): Promise<void>;
   selos(): Promise<{ contagem: Record<string, number> }>;
   autenticar(): Promise<{ ok: boolean }>;
+  definirPapelSistema(o: { imagem: string; destino: string }): Promise<void>;
   contatosPermitidos(): Promise<{ permitida: boolean }>;
   pedirContatos(): Promise<{ permitida: boolean }>;
   buscarContatos(o: { texto: string }): Promise<{ contatos: { nome: string; numero: string }[] }>;
@@ -133,6 +135,7 @@ function criarAndroid(): Motor {
     sistema: async () => { try { const s = await n.sistema(); return { wifi: !!s.wifi, movel: !!s.movel, volume: Number.isFinite(s.volume) ? Math.max(0, Math.min(100, Math.round(s.volume))) : 0 }; } catch { return { wifi: false, movel: false, volume: 0 }; } },
     mostrarVolume: () => n.mostrarVolume(),
     abrirAjuste: (tela) => n.abrirAjuste({ tela }),
+    definirPapelSistema: async (imagem, destino) => { try { await n.definirPapelSistema({ imagem, destino }); return true; } catch { return false; } },
     autenticar: async () => { try { return (await n.autenticar()).ok === true; } catch { return false; } },
     selos: async () => {
       try {

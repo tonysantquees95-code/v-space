@@ -1,3 +1,4 @@
+import { luzDoPapel } from "../papel";
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIAS_PADRAO, type AppInfo, type Banco } from "../dados.ts";
 import { appsDaCategoria, contagens } from "../categorias.ts";
@@ -79,11 +80,13 @@ function CorpoCategorias(props: Props) {
 }
 
 /** Temperatura (quente/fria) e vinheta do papel de parede: uma camada de cor e outra de bordas escuras. */
-export function tomDoPapel(t: { temperatura: number; vinheta: number }): React.CSSProperties {
+export function tomDoPapel(t: { temperatura: number; vinheta: number; luz?: "nenhuma" | "sol" | "dia" | "noite" }, agora = new Date()): React.CSSProperties {
+  const luz = luzDoPapel(t.luz ?? "nenhuma", agora.getHours() + agora.getMinutes() / 60);
+  const camadaLuz = `linear-gradient(rgba(${luz.cor}, ${luz.alfa}), rgba(${luz.cor}, ${luz.alfa}))`;
   const k = Math.abs(t.temperatura) / 100; // até 0,5
   const cor = t.temperatura >= 0 ? `rgba(255, 150, 40, ${k})` : `rgba(70, 140, 255, ${k})`;
   const v = t.vinheta / 100;
-  return { background: `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${v}) 100%), linear-gradient(${cor}, ${cor})` };
+  return { background: `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${v}) 100%), linear-gradient(${cor}, ${cor}), ${camadaLuz}` };
 }
 export function Inicio(props: Props) {
   const { banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoEstudio, aoMenuVazio, papel } = props;

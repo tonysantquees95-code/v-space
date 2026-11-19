@@ -23,7 +23,7 @@ import { precisaApresentar } from "./apresentacao";
 import { Inicio } from "./telas/Inicio";
 import { Gaveta } from "./telas/Gaveta";
 import { Estudio, type AbaEstudio } from "./telas/Estudio";
-import { desenharPronto, guardarPapel, lerPapel, PRONTOS } from "./papel";
+import { desenharPronto, guardarPapel, lerFavoritos, lerPapel, PRONTOS } from "./papel";
 import { Atualizacao } from "./telas/Atualizacao";
 import { BUILD, ehNativo, haNovaVersao, marcarConferida, precisaConferir, procurarVersao, ultimaConferencia, type InfoVersao } from "./atualizacao";
 import { CriarPasta, EscolherApps, EscolherCategoria, EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, NovaCategoria, type Origem } from "./telas/Menus";
@@ -123,6 +123,20 @@ export default function App() {
   }, [falar, porPacote]);
 
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
+  // Papel de parede diário: uma vez por dia, passa para o próximo favorito
+  useEffect(() => {
+    if (!banco.tema.papelDiario) return;
+    try {
+      const hoje = new Date().toLocaleDateString("sv-SE");
+      const [dia, idx] = (localStorage.getItem("vhome.papel-dia") ?? "").split(":");
+      if (dia === hoje) return;
+      const fav = lerFavoritos();
+      if (fav.length < 2) return;
+      const prox = ((Number(idx) || 0) + 1) % fav.length;
+      if (guardarPapel(fav[prox]!)) { setPapel(fav[prox]!); localStorage.setItem("vhome.papel-dia", `${hoje}:${prox}`); }
+    } catch { /* sem armazenamento: fica como está */ }
+  }, [banco.tema.papelDiario]);
+
   // Espaço seguro (banco/governo): pede o desbloqueio do aparelho; sai sozinho ao deixar o V-Space
   const [seguro, setSeguro] = useState(false);
   const [notifLigado, setNotifLigado] = useState<boolean | null>(null);

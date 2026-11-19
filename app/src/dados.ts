@@ -11,6 +11,10 @@ export type PacoteIcones = "original" | "mono" | "tingido" | "vivo";
 export type EstiloPasta = "vidro" | "solida" | "contorno";
 export type Gesto = "gaveta" | "pesquisa" | "nada";
 
+export type Luz = "nenhuma" | "sol" | "dia" | "noite";
+export type AplicarEm = "pergunta" | "inicio" | "bloqueio" | "ambas";
+export const LUZES: Luz[] = ["nenhuma", "sol", "dia", "noite"];
+export const APLICAR_EM: AplicarEm[] = ["pergunta", "inicio", "bloqueio", "ambas"];
 export interface Tema {
   id: string; cor: string; cor2: string; fundo: Fundo; fundoCor: string;
   forma: Forma; tamanho: number; rotulos: boolean; gaveta: EstiloGaveta; botoes: EstiloBotao;
@@ -18,6 +22,12 @@ export interface Tema {
   desfoque: number; escuro: number;
   /** ajustes de cor do papel: saturação em % (100 = original), temperatura de -50 (fria) a 50 (quente) e vinheta (bordas escuras) em % */
   saturacao: number; temperatura: number; vinheta: number;
+  /** Luz do dia: o papel recebe a cor da luz do sol agora ("sol"), ou fica fixo em dia/noite */
+  luz: Luz;
+  /** troca o papel por um dos favoritos uma vez por dia */
+  papelDiario: boolean;
+  /** onde "Aplicar ao Android" coloca o papel: pergunta, tela inicial do Android, bloqueio ou ambas */
+  aplicarEm: AplicarEm;
   /** raio dos cartões e janelas (px), estilo do dock, pacote de ícones e estilo das pastas */
   cantos: number; dock: EstiloDock; pacote: PacoteIcones; pasta: EstiloPasta;
 }
@@ -133,11 +143,11 @@ export const CANTOS = { min: 0, max: 32 };
 export const GESTOS: readonly Gesto[] = ["gaveta", "pesquisa", "nada"];
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
@@ -250,6 +260,7 @@ export function limparTema(x: unknown): Tema {
     rotulos: typeof t.rotulos === "boolean" ? t.rotulos : p.rotulos, gaveta: escolha(t.gaveta, GAVETAS, p.gaveta), botoes: escolha(t.botoes, BOTOES, p.botoes),
     desfoque: limitar(t.desfoque, DESFOQUE.min, DESFOQUE.max, p.desfoque), escuro: limitar(t.escuro, ESCURO.min, ESCURO.max, p.escuro),
     saturacao: limitar(t.saturacao, SATURACAO.min, SATURACAO.max, 100), temperatura: limitar(t.temperatura, TEMPERATURA.min, TEMPERATURA.max, 0), vinheta: limitar(t.vinheta, VINHETA.min, VINHETA.max, 0),
+    luz: LUZES.includes(t.luz as Luz) ? (t.luz as Luz) : "nenhuma", papelDiario: t.papelDiario === true, aplicarEm: APLICAR_EM.includes(t.aplicarEm as AplicarEm) ? (t.aplicarEm as AplicarEm) : "pergunta",
     cantos: limitar(t.cantos, CANTOS.min, CANTOS.max, p.cantos), dock: escolha(t.dock, DOCKS, p.dock), pacote: escolha(t.pacote, PACOTES, p.pacote), pasta: escolha(t.pasta, PASTAS, p.pasta),
   };
 }

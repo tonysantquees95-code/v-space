@@ -64,3 +64,33 @@ export function desenharPronto(p: Pronto, largura = 720): string {
   x.beginPath(); x.moveTo(w * 0.22, h * 0.34); x.lineTo(w * 0.5, h * 0.62); x.lineTo(w * 0.78, h * 0.34); x.stroke(); x.restore();
   return c.toDataURL("image/jpeg", 0.85);
 }
+
+// ---- Favoritos: papéis guardados para usar de novo com um toque (ficam só neste aparelho)
+const CHAVE_FAV = "vhome.papeis-fav";
+export const MAX_FAVORITOS = 8;
+export function lerFavoritos(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHAVE_FAV) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.startsWith("data:image/")).slice(0, MAX_FAVORITOS) : [];
+  } catch { return []; }
+}
+/** Junta o papel à lista (sem repetir; o mais novo vem primeiro). Devolve a lista nova, ou null se não coube no aparelho. */
+export function juntarFavorito(lista: string[], url: string): string[] {
+  return [url, ...lista.filter((x) => x !== url)].slice(0, MAX_FAVORITOS);
+}
+export function guardarFavoritos(lista: string[]): boolean {
+  try { localStorage.setItem(CHAVE_FAV, JSON.stringify(lista)); return true; } catch { return false; }
+}
+
+/** Cor da luz sobre o papel: "sol" segue a hora (aurora quente, dia neutro, entardecer dourado, noite azul). `hora` de 0 a 24. */
+export function luzDoPapel(luz: "nenhuma" | "sol" | "dia" | "noite", hora: number): { cor: string; alfa: number } {
+  if (luz === "nenhuma") return { cor: "0,0,0", alfa: 0 };
+  if (luz === "dia") return { cor: "255,244,214", alfa: 0.06 };
+  if (luz === "noite") return { cor: "20,40,110", alfa: 0.32 };
+  const h = ((hora % 24) + 24) % 24;
+  if (h < 5 || h >= 20) return { cor: "20,40,110", alfa: 0.32 };
+  if (h < 7.5) return { cor: "255,170,110", alfa: 0.2 };
+  if (h < 16.5) return { cor: "255,244,214", alfa: 0.05 };
+  if (h < 18.5) return { cor: "255,190,90", alfa: 0.2 };
+  return { cor: "190,90,140", alfa: 0.22 };
+}
