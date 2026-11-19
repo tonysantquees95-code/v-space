@@ -67,3 +67,13 @@ test2("temas salvos e código", () => {
   assert2.equal(temaDoCodigo("lixo"), null);
   assert2.equal(temaDoCodigo("VSPACE1:@@@"), null);
 });
+
+import { limparGestos, limparBanco, bancoPadrao } from "../src/dados.ts";
+test2("gestos e menu", () => {
+  assert2.deepEqual(limparGestos(null), { baixo: "nada", duplo: "nada", doisCima: "nada", doisBaixo: "seguro" });
+  assert2.equal(limparGestos({ baixo: "pesquisa", duplo: "xx" }).duplo, "nada");
+  assert2.equal(limparGestos({ baixo: "pesquisa" }).baixo, "pesquisa");
+  const b = limparBanco({ ...bancoPadrao(), menuOculto: ["papel", "papel", "lixo"], vibrar: false, gestos: { doisCima: "gaveta" } });
+  assert2.deepEqual(b.menuOculto, ["papel"]); assert2.equal(b.vibrar, false); assert2.equal(b.gestos.doisCima, "gaveta");
+  assert2.equal(limparBanco({}).vibrar, true);
+});

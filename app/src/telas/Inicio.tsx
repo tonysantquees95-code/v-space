@@ -1,6 +1,6 @@
 import { luzDoPapel } from "../papel";
 import { useEffect, useRef, useState } from "react";
-import { CATEGORIAS_PADRAO, type AppInfo, type Banco } from "../dados.ts";
+import { CATEGORIAS_PADRAO, type AcaoGesto, type AppInfo, type Banco } from "../dados.ts";
 import { appsDaCategoria, contagens } from "../categorias.ts";
 import { usosDosApps } from "../busca.ts";
 import { ehDinamica } from "../dados.ts";
@@ -21,7 +21,7 @@ const data = (d: Date) => d.toLocaleDateString("pt-BR", { weekday: "long", day: 
 interface Props {
   banco: Banco; porPacote: Map<string, AppInfo>;
   aoAbrirApp: (pacote: string) => void; aoMenuApp: (pacote: string, origem: "tela" | "dock") => void; aoAbrirPasta: (id: string) => void;
-  aoGaveta: (busca: boolean) => void; aoEstudio: () => void; aoMenuVazio: () => void; papel: string | null;
+  aoGaveta: (busca: boolean) => void; aoGesto?: (a: AcaoGesto) => void; aoEstudio: () => void; aoMenuVazio: () => void; papel: string | null;
   aoMudarWidgets?: (ws: Banco["widgets"]) => void; aoMenuFavorito?: (pacote: string) => void; aoMenuCategoria?: (pacote: string) => void; aoAdicionarFavorito?: () => void; aoAdicionarNaCategoria?: (id: string) => void; aoOrganizar?: () => void; aoNovaCategoria?: () => void; abaInicial?: string;
 }
 
@@ -89,7 +89,8 @@ export function tomDoPapel(t: { temperatura: number; vinheta: number; luz?: "nen
   return { background: `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${v}) 100%), linear-gradient(${cor}, ${cor}), ${camadaLuz}` };
 }
 export function Inicio(props: Props) {
-  const { banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoEstudio, aoMenuVazio, papel } = props;
+  const { banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoGesto, aoEstudio, aoMenuVazio, papel } = props;
+  const toqueDuplo = useRef<{ t: number; x: number; y: number } | null>(null);
   const agora = useRelogio();
   const pager = useRef<HTMLDivElement>(null);
   const [pg, setPg] = useState(0);
@@ -103,7 +104,12 @@ export function Inicio(props: Props) {
 
   return (
     <div className="inicio" onTouchStart={(e) => { const c = e.touches[0]!; const r = (e.target as Element).closest?.(".cat-corpo"); toque.current = r && r.scrollHeight > r.clientHeight + 4 ? null : { x: c.clientX, y: c.clientY }; }}
-      onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60 && banco.gesto !== "nada") aoGaveta(banco.gesto === "pesquisa"); }}>
+      onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60 && banco.gesto !== "nada") aoGaveta(banco.gesto === "pesquisa");
+        else if (dy > 90 && Math.abs(dx) < 60) aoGesto?.(banco.gestos.baixo);
+        else if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && !(e.target as Element).closest?.("button,a,input,textarea,.widget,[role=button],.cat-corpo")) {
+          const agora = Date.now(); const u = toqueDuplo.current;
+          if (u && agora - u.t < 320 && Math.abs(u.x - c.clientX) < 40 && Math.abs(u.y - c.clientY) < 40) { toqueDuplo.current = null; aoGesto?.(banco.gestos.duplo); } else toqueDuplo.current = { t: agora, x: c.clientX, y: c.clientY };
+        } }}>
       {t.fundo === "foto" && papel && <><div className="papel" aria-hidden style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px) saturate(${t.saturacao}%)` }} /><div className="papel-escuro" aria-hidden style={{ opacity: t.escuro / 100 }} /><div className="papel-tom" aria-hidden style={tomDoPapel(t)} /></>}
       <header className="inicio-topo">
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}

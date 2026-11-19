@@ -77,11 +77,12 @@ export function EscolherParceiro({ app, candidatos, aoFechar, aoEscolher }: { ap
 }
 
 /** Aperto longo na tela inicial vazia: papéis de parede à mão e atalhos para personalizar. */
-export function MenuVazio({ papel, bloqueado, aoFechar, aoUsarPronto, aoPapel, aoWidgets, aoApps, aoPasta, aoGrade, aoIcones, aoEstudio, aoBloquear }: {
-  papel: string | null; bloqueado: boolean; aoFechar: () => void; aoUsarPronto: (id: string) => void; aoPapel: () => void; aoWidgets: () => void; aoApps: () => void;
-  aoPasta: () => void; aoGrade: () => void; aoIcones: () => void; aoEstudio: () => void; aoBloquear: () => void;
+export function MenuVazio({ papel, bloqueado, oculto, aoFechar, aoUsarPronto, aoPapel, aoWidgets, aoApps, aoAtalhos, aoPasta, aoGrade, aoIcones, aoTemas, aoEstudio, aoBloquear, aoPersonalizar }: {
+  papel: string | null; bloqueado: boolean; oculto: string[]; aoFechar: () => void; aoUsarPronto: (id: string) => void; aoPapel: () => void; aoWidgets: () => void; aoApps: () => void; aoAtalhos: () => void;
+  aoPasta: () => void; aoGrade: () => void; aoIcones: () => void; aoTemas: () => void; aoEstudio: () => void; aoBloquear: () => void; aoPersonalizar: () => void;
 }) {
   const acao = (f: () => void) => () => { aoFechar(); f(); };
+  const mostra = (id: string) => !oculto.includes(id);
   return (
     <Folha titulo="Tela inicial" aoFechar={aoFechar}>
       <div className="menu-papeis" role="group" aria-label="Papéis de parede">
@@ -89,14 +90,17 @@ export function MenuVazio({ papel, bloqueado, aoFechar, aoUsarPronto, aoPapel, a
         {PRONTOS.map((p) => <button key={p.id} type="button" aria-label={`Papel ${p.nome}`} className="menu-papel" style={{ background: `linear-gradient(160deg, ${p.cores[1]}99, ${p.cores[0]} 55%, ${p.cores[2]}88)` }} onClick={acao(() => aoUsarPronto(p.id))} />)}
       </div>
       <div className="flex flex-col">
-        <Opcao icone="papel" texto="Editar papel de parede" aoClicar={acao(aoPapel)} />
-        <Opcao icone="widgets" texto="Adicionar widget" aoClicar={acao(aoWidgets)} />
-        <Opcao icone="gaveta" texto="Adicionar aplicativos" aoClicar={acao(aoApps)} />
-        {!bloqueado && <Opcao icone="pasta" texto="Criar pasta" aoClicar={acao(aoPasta)} />}
-        <Opcao icone="grade" texto="Editar tela inicial" aoClicar={acao(aoGrade)} />
-        <Opcao icone="forma" texto="Personalizar ícones" aoClicar={acao(aoIcones)} />
-        <Opcao icone="estudio" texto="Configurações do V-Space" aoClicar={acao(aoEstudio)} />
-        <Opcao icone="cadeado" texto={bloqueado ? "Desbloquear layout" : "Bloquear layout"} aoClicar={acao(aoBloquear)} />
+        {mostra("papel") && <Opcao icone="papel" texto="Editar papel de parede" aoClicar={acao(aoPapel)} />}
+        {mostra("widgets") && <Opcao icone="widgets" texto="Adicionar widget" aoClicar={acao(aoWidgets)} />}
+        {mostra("apps") && <Opcao icone="gaveta" texto="Adicionar aplicativos" aoClicar={acao(aoApps)} />}
+        {mostra("atalhos") && <Opcao icone="nota" texto="Adicionar atalhos" aoClicar={acao(aoAtalhos)} />}
+        {mostra("pasta") && !bloqueado && <Opcao icone="pasta" texto="Criar pasta" aoClicar={acao(aoPasta)} />}
+        {mostra("grade") && <Opcao icone="grade" texto="Editar tela inicial" aoClicar={acao(aoGrade)} />}
+        {mostra("icones") && <Opcao icone="forma" texto="Personalizar ícones" aoClicar={acao(aoIcones)} />}
+        {mostra("temas") && <Opcao icone="tema" texto="Temas" aoClicar={acao(aoTemas)} />}
+        {mostra("estudio") && <Opcao icone="estudio" texto="Configurações do V-Space" aoClicar={acao(aoEstudio)} />}
+        {mostra("bloquear") && <Opcao icone="cadeado" texto={bloqueado ? "Desbloquear layout" : "Bloquear layout"} aoClicar={acao(aoBloquear)} />}
+        <Opcao icone="engrenagem" texto="Personalizar este menu" aoClicar={acao(aoPersonalizar)} />
       </div>
     </Folha>
   );

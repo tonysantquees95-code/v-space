@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -47,6 +47,7 @@ type Secao = "temas" | "inicio" | "categorias" | "apps" | "papel" | "widgets" | 
 interface Parte { id: string; nome: string; icone: NomeIcone }
 interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] }
 
+const NOMES_MENU: Record<(typeof ITENS_MENU)[number], string> = { papel: "Editar papel de parede", widgets: "Adicionar widget", apps: "Adicionar aplicativos", atalhos: "Adicionar atalhos", pasta: "Criar pasta", grade: "Editar tela inicial", icones: "Personalizar ícones", temas: "Temas", estudio: "Configurações do V-Space", bloquear: "Bloquear layout" };
 const SECOES: DefSecao[] = [
   { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }, { id: "salvos", nome: "Salvos", icone: "estrela" }, { id: "compartilhar", nome: "Compartilhar", icone: "compartilhar" }] },
   { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
@@ -54,7 +55,7 @@ const SECOES: DefSecao[] = [
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "luz", nome: "Luz do dia", icone: "tema" }, { id: "favoritos", nome: "Favoritos", icone: "ok" }, { id: "fontes", nome: "Fontes", icone: "papel" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "ajustes", nome: "Editor", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
-  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "menu", nome: "Menu", icone: "grade" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "privacidade", nome: "Privacidade", icone: "escudo" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
 const ENTRADA: Record<string, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
@@ -508,8 +509,37 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       );
       case "config/gestos": return (
         <div className="space-y-4">
-          <Cartao titulo="Deslizar para cima na tela inicial"><Seletor<Gesto> rotulo="Deslizar para cima" valor={banco.gesto} opcoes={GESTOS} aoMudar={(v) => aoMudar((b) => ({ ...b, gesto: v }))} /></Cartao>
+          <Cartao titulo="Deslizar para cima"><Seletor<Gesto> rotulo="Deslizar para cima" valor={banco.gesto} opcoes={GESTOS} aoMudar={(v) => aoMudar((b) => ({ ...b, gesto: v }))} /></Cartao>
+          <Cartao titulo="Deslizar para baixo"><Seletor<AcaoGesto> rotulo="Deslizar para baixo" valor={banco.gestos.baixo} opcoes={[{ id: "nada", nome: "Nada" }, { id: "gaveta", nome: "Todos os apps" }, { id: "pesquisa", nome: "Pesquisar" }, { id: "estudio", nome: "Abrir o Estúdio" }, { id: "seguro", nome: "Espaço seguro" }, { id: "bloquear", nome: "Bloquear/liberar layout" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, gestos: { ...b.gestos, baixo: v } }))} /></Cartao>
+          <Cartao titulo="Toque duplo na tela vazia"><Seletor<AcaoGesto> rotulo="Toque duplo" valor={banco.gestos.duplo} opcoes={[{ id: "nada", nome: "Nada" }, { id: "gaveta", nome: "Todos os apps" }, { id: "pesquisa", nome: "Pesquisar" }, { id: "estudio", nome: "Abrir o Estúdio" }, { id: "seguro", nome: "Espaço seguro" }, { id: "bloquear", nome: "Bloquear/liberar layout" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, gestos: { ...b.gestos, duplo: v } }))} /></Cartao>
+          <Cartao titulo="Dois dedos para cima"><Seletor<AcaoGesto> rotulo="Dois dedos para cima" valor={banco.gestos.doisCima} opcoes={[{ id: "nada", nome: "Nada" }, { id: "gaveta", nome: "Todos os apps" }, { id: "pesquisa", nome: "Pesquisar" }, { id: "estudio", nome: "Abrir o Estúdio" }, { id: "seguro", nome: "Espaço seguro" }, { id: "bloquear", nome: "Bloquear/liberar layout" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, gestos: { ...b.gestos, doisCima: v } }))} /></Cartao>
+          <Cartao titulo="Dois dedos para baixo"><Seletor<AcaoGesto> rotulo="Dois dedos para baixo" valor={banco.gestos.doisBaixo} opcoes={[{ id: "nada", nome: "Nada" }, { id: "gaveta", nome: "Todos os apps" }, { id: "pesquisa", nome: "Pesquisar" }, { id: "estudio", nome: "Abrir o Estúdio" }, { id: "seguro", nome: "Espaço seguro" }, { id: "bloquear", nome: "Bloquear/liberar layout" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, gestos: { ...b.gestos, doisBaixo: v } }))} /></Cartao>
           <Cartao><Linha titulo="Bloquear layout" texto="Impede tirar, mover ou agrupar apps da tela inicial sem querer."><Interruptor rotulo="Bloquear layout" ligado={banco.bloqueado} aoMudar={(v) => aoMudar((b) => ({ ...b, bloqueado: v }))} /></Linha></Cartao>
+          <p className="text-sm text-suave">Gestos pelas bordas da tela, apertar o aparelho e abrir a barra de notificações precisam de permissões especiais do Android e não estão disponíveis.</p>
+        </div>
+      );
+      case "config/geral": return (
+        <div className="space-y-4">
+          <Cartao><Linha titulo="Vibrar ao segurar" texto="Uma vibração curta quando o aperto longo abre um menu."><Interruptor rotulo="Vibrar ao segurar" ligado={banco.vibrar} aoMudar={(v) => aoMudar((b) => ({ ...b, vibrar: v }))} /></Linha></Cartao>
+          <Cartao><Linha titulo="Relógio" texto="Hora e data no alto da tela inicial."><Interruptor rotulo="Relógio da tela inicial" ligado={banco.relogio} aoMudar={(v) => aoMudar((b) => ({ ...b, relogio: v }))} /></Linha></Cartao>
+          <Cartao><Linha titulo="Selos de notificação" texto="Número de notificações nos ícones."><Interruptor rotulo="Selos nos ícones" ligado={t.selos} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { selos: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "config/menu": return (
+        <Cartao titulo="Menu de segurar na tela inicial">
+          <p className="mb-3 text-sm text-suave">Escolha o que aparece quando você segura um espaço vazio da tela inicial.</p>
+          {ITENS_MENU.map((id) => <Linha key={id} titulo={NOMES_MENU[id]}><Interruptor rotulo={NOMES_MENU[id]} ligado={!banco.menuOculto.includes(id)} aoMudar={(v) => aoMudar((b) => ({ ...b, menuOculto: v ? b.menuOculto.filter((x) => x !== id) : [...b.menuOculto, id] }))} /></Linha>)}
+        </Cartao>
+      );
+      case "config/privacidade": return (
+        <div className="space-y-4">
+          <Cartao titulo="O que fica no aparelho">
+            <p className="text-sm text-suave">Seu layout, tema, papel de parede, ícones e temas guardados ficam só neste aparelho. Nada disso é enviado a ninguém, a não ser que você use a conta para guardar o backup.</p>
+          </Cartao>
+          <Cartao titulo="Permissões que o V-Space pede">
+            <p className="text-sm text-suave">Cada uma é pedida só quando você usa a função: lista de apps, acesso às notificações (selos e música), contatos (busca), calendário (widget), papel de parede do Android e confirmação do aparelho (Espaço seguro). Você pode tirar qualquer uma nas configurações do Android.</p>
+          </Cartao>
+          <Botao onClick={aoTermos}>Ler os termos de uso</Botao>
         </div>
       );
       case "config/seguro": return (

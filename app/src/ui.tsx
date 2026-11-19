@@ -86,13 +86,16 @@ export function Folha({ titulo, aoFechar, children, alta = false, classe = "" }:
   );
 }
 
+let vibracaoLigada = true;
+export const ligarVibracao = (v: boolean): void => { vibracaoLigada = v; };
+
 /** Aperto longo (ou botão direito do mouse): chama `aoLonga`; o toque curto continua sendo um clique normal. */
 export function usePressaoLonga(aoLonga: () => void, ms = 480) {
   const t = useRef<number>(0);
   const pos = useRef<{ x: number; y: number } | null>(null);
   const longo = useRef(false);
   const limpar = () => { window.clearTimeout(t.current); pos.current = null; };
-  const disparar = () => { if (longo.current) return; longo.current = true; limpar(); try { navigator.vibrate?.(14); } catch { /* sem vibração */ } aoLonga(); };
+  const disparar = () => { if (longo.current) return; longo.current = true; limpar(); try { if (vibracaoLigada) navigator.vibrate?.(14); } catch { /* sem vibração */ } aoLonga(); };
   return {
     onPointerDown: (e: React.PointerEvent) => { longo.current = false; pos.current = { x: e.clientX, y: e.clientY }; t.current = window.setTimeout(disparar, ms); },
     onPointerMove: (e: React.PointerEvent) => { if (pos.current && Math.hypot(e.clientX - pos.current.x, e.clientY - pos.current.y) > 10) limpar(); },
