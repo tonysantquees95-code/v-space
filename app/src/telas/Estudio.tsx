@@ -12,6 +12,26 @@ import { Icone, type NomeIcone } from "../icones";
 import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
 import { buscarLugares, type Lugar } from "../widgets";
 import { PreviaWidget } from "./Widgets";
+import { useRef as useRefP, useState as useStateP, type ReactNode as NodeP } from "react";
+
+/** Mostra a prévia no tamanho natural e encolhe para caber na metade da tela, mantendo a proporção entre os widgets. */
+function PreviaEscalada({ w, h, children }: { w: number; h: number; children: NodeP }) {
+  const caixa = useRefP<HTMLDivElement>(null);
+  const [escala, setEscala] = useStateP(0.5);
+  const largura = w * 83 - 8, altura = h * 72 - 8;
+  useLayoutEffect(() => {
+    const el = caixa.current; if (!el) return;
+    const medir = () => setEscala(Math.min(1, el.clientWidth / 332));
+    medir();
+    const ro = new ResizeObserver(medir); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={caixa} className="previa-escala" style={{ height: altura * escala }}>
+      <div style={{ width: largura, height: altura, transform: `scale(${escala})`, transformOrigin: "top left", display: "flex" }}>{children}</div>
+    </div>
+  );
+}
 import { Aviso, Botao, Cartao, Interruptor, Linha, Passo, Seletor } from "../ui";
 import { Inicio } from "./Inicio";
 import { apagarCategoria, contagens, criarCategoria, editarCategoria, reordenarCategoria } from "../categorias.ts";
@@ -289,13 +309,13 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         </Cartao>
       ) : <p className="text-sm text-suave">Escolha um papel de parede primeiro (parte “Escolha”) para ajustar o desfoque e o escurecimento.</p>;
       case "widgets/adicionar": return (
-        <div className="space-y-3">
-          <p className="text-sm text-suave">Veja como cada widget fica e o tamanho dele antes de colocar. Depois, segure o widget na tela inicial para mover, redimensionar ou mudar o estilo ({banco.widgets.length} de {MAX_WIDGETS}).</p>
+        <div className="galeria-grade">
+          <p className="galeria-aviso text-sm text-suave">Veja como cada widget fica e o tamanho dele antes de colocar. Depois, segure o widget na tela inicial para mover, redimensionar ou mudar o estilo ({banco.widgets.length} de {MAX_WIDGETS}).</p>
           {TIPOS_WIDGET.map((x) => {
             const tam = TAMANHO_WIDGET[x];
             return (
-              <Cartao key={x} titulo={`${NOMES_WIDGET[x]} · ${tam.w}×${tam.h}`}>
-                <div className="galeria-caixa" aria-label={`Prévia de ${NOMES_WIDGET[x]}, tamanho ${tam.w} por ${tam.h}`} role="img"><div className="galeria-previa" style={{ width: `${(tam.w / 4) * 100}%`, aspectRatio: `${tam.w * 83 - 8} / ${tam.h * 72 - 8}` }}><PreviaWidget tipo={x} /></div></div>
+              <Cartao key={x} titulo={`${NOMES_WIDGET[x]} · ${tam.w}×${tam.h}`} className={x === "clima" ? "galeria-larga" : "galeria-item"}>
+                <div className="galeria-caixa" aria-label={`Prévia de ${NOMES_WIDGET[x]}, tamanho ${tam.w} por ${tam.h}`} role="img"><PreviaEscalada w={tam.w} h={tam.h}><PreviaWidget tipo={x} /></PreviaEscalada></div>
                 {x === "agenda" && <p className="mt-2 text-xs text-suave">Pede permissão para ler seus compromissos (só leitura) na primeira vez.</p>}
                 {x === "clima" ? (
                   <>
@@ -307,7 +327,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
                     </div>
                     {lugares && lugares.length > 0 && <ul className="mt-3 space-y-1">{lugares.map((l) => <li key={`${l.lat},${l.lon}`}><button type="button" disabled={cheio} onClick={() => { incluir("clima", { cidade: l.nome, lat: l.lat, lon: l.lon }); setLugares(null); setCidade(""); }} className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-white/5 disabled:opacity-40"><Icone nome="mais" tam={18} /><span className="min-w-0 truncate">{l.nome}</span></button></li>)}</ul>}
                   </>
-                ) : <div className="mt-3"><Botao variante="primario" disabled={cheio} onClick={() => incluir(x)}><Icone nome="mais" tam={18} />Adicionar {NOMES_WIDGET[x].toLowerCase()}</Botao></div>}
+                ) : <div className="mt-2"><Botao variante="primario" disabled={cheio} aria-label={`Adicionar ${NOMES_WIDGET[x].toLowerCase()}`} onClick={() => incluir(x)}><Icone nome="mais" tam={16} />Adicionar</Botao></div>}
               </Cartao>
             );
           })}

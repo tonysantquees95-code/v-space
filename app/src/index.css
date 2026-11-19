@@ -461,3 +461,13 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .rel-agenda-hora { font-size: min(12cqw, 2.4rem); }
 .orbita-anel { width: min(100%, 8.5rem); font-size: 1.2rem; }
 .mus-disco { width: min(30cqw, 80px); }
+
+/* galeria de widgets: 2 por linha */
+.galeria-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.galeria-aviso, .galeria-larga { grid-column: 1 / -1; }
+.galeria-item { padding: 10px; }
+.galeria-item h3 { margin-bottom: 6px; font-size: .62rem; letter-spacing: .08em; line-height: 1.3; }
+.galeria-caixa { padding: 6px; }
+.previa-escala { width: 100%; overflow: hidden; }
+.galeria-item .botao, .galeria-item button { width: 100%; }
+.galeria-item button { font-size: .82rem; min-height: 40px; padding-inline: 8px; }

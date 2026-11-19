@@ -103,9 +103,10 @@ function Musicas({ tipo, d }: { tipo: TipoWidget; d: Dados }) {
   if (!m.tem) return <div className="widget-corpo"><div className="widget-leve">Nada tocando agora. Toque algo no seu app de música{d.musica.tem === false ? "; a música precisa do acesso às notificações (Estúdio › Configurações › Atalhos)." : "."}</div></div>;
   const icone = m.capa ? <img src={m.capa} alt="" draggable={false} /> : <Icone nome="nota" tam={28} />;
   const capa = d.previa ? <span className="mus-capa" aria-hidden>{icone}</span> : <button type="button" className="mus-capa" aria-label={`Abrir ${m.app ?? "o app de música"}`} onClick={() => m.pacote && d.abrirApp(m.pacote)}>{icone}</button>;
-  const tocar = <button type="button" className="mus-play" aria-label={m.tocando ? "Pausar" : "Tocar"} onClick={() => d.cmd(m.tocando ? "pausar" : "tocar")}><Icone nome={m.tocando ? "pausar" : "tocar"} tam={20} /></button>;
-  const ant = <button type="button" className="mus-ctl" aria-label="Faixa anterior" onClick={() => d.cmd("anterior")}><Icone nome="anterior" tam={20} /></button>;
-  const prox = <button type="button" className="mus-ctl" aria-label="Próxima faixa" onClick={() => d.cmd("proxima")}><Icone nome="proxima" tam={20} /></button>;
+  const B = (d.previa ? "span" : "button") as "button";
+  const tocar = <B type="button" className="mus-play" aria-label={m.tocando ? "Pausar" : "Tocar"} onClick={() => d.cmd(m.tocando ? "pausar" : "tocar")}><Icone nome={m.tocando ? "pausar" : "tocar"} tam={20} /></B>;
+  const ant = <B type="button" className="mus-ctl" aria-label="Faixa anterior" onClick={() => d.cmd("anterior")}><Icone nome="anterior" tam={20} /></B>;
+  const prox = <B type="button" className="mus-ctl" aria-label="Próxima faixa" onClick={() => d.cmd("proxima")}><Icone nome="proxima" tam={20} /></B>;
   const nome = <div className="mus-texto"><b className="truncate">{m.titulo || "Sem título"}</b><span className="truncate widget-leve">{[m.artista, m.app].filter(Boolean).join(" · ")}</span></div>;
   if (tipo === "musica-capa") return <div className="widget-corpo mus-capa-card">{capa}<div className="mus-base">{nome}{tocar}</div></div>;
   if (tipo === "musica-compacto") return <div className="widget-corpo mus-linha">{capa}{nome}{tocar}{prox}</div>;
@@ -143,7 +144,7 @@ export function CorpoExtra({ tipo, d }: { tipo: TipoWidget; d: Dados }) {
         <div className="rel-prog-dir"><span className="widget-titulo">{dia}</span><b className="rel-prog-data">{dataLonga(agora)}</b><span className="widget-leve">{p}% do dia passou</span>{ev && <span className="widget-leve truncate">{ev.titulo}</span>}</div></div>); }
     case "saudacao": return <div className="widget-corpo saud"><b className="saud-oi">{saudacao(agora)}</b><span className="widget-leve">{dia}, {dataLonga(agora)}</span><span className="widget-leve num">{hh(agora)}:{mm(agora)}{c && t ? ` • ${c.temp}° ${t.texto}` : ""}</span></div>;
     case "relance": return <div className="widget-corpo relance"><b>{cap(dia)}, {dataLonga(agora)}</b>{ev ? <span className="widget-leve truncate">{ev.titulo} · {horaDoEvento(ev, agora)}</span> : <span className="widget-leve">{d.agendaOk === false ? "Permita a agenda no widget Agenda" : "Nada marcado"}</span>}</div>;
-    case "pesquisa": return <button type="button" className="pesq" onClick={d.buscar}><Icone nome="pesquisa" tam={20} /><span>Pesquisar apps, contatos e mais</span><Icone nome="brilho" tam={16} /></button>;
+    case "pesquisa": { const B = (d.previa ? "span" : "button") as "button"; return <B type="button" className="pesq" onClick={d.buscar}><Icone nome="pesquisa" tam={20} /><span>Pesquisar apps, contatos e mais</span><Icone nome="brilho" tam={16} /></B>; }
     case "mes-dia": { const g = gradeDoMes(agora.getFullYear(), agora.getMonth()); return (
       <div className="widget-corpo mesdia"><div className="mesdia-esq"><span className="widget-titulo">{DIAS_CURTOS[agora.getDay()]!.toUpperCase()}</span><span className="num mesdia-dia">{agora.getDate()}</span><span className="widget-leve">{MESES[agora.getMonth()]}</span></div>
         <div className="cal-grade mesdia-grade" aria-hidden>{["D", "S", "T", "Q", "Q", "S", "S"].map((s, i) => <span key={i} className="cal-sem">{s}</span>)}{g.flat().map((n, i) => <span key={i} className="cal-dia num" data-hoje={n === agora.getDate()}>{n ?? ""}</span>)}</div></div>); }
