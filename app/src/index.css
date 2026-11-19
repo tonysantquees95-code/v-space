@@ -92,3 +92,24 @@ html[data-forma="original"] .glifo { overflow: visible; }
 .papel-pronto { aspect-ratio: 9 / 16; border-radius: 0.9rem; border: 2px solid transparent; background-size: cover; background-position: center; position: relative; overflow: hidden; }
 .papel-pronto[aria-pressed="true"] { border-color: var(--color-neon); }
 .papel-pronto span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 6px; font-size: .72rem; font-weight: 600; text-align: center; background: linear-gradient(transparent, #000a); }
+
+/* widgets da tela inicial */
+.widgets { flex: none; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 18px 8px; scrollbar-width: none; }
+.widgets::-webkit-scrollbar { display: none; }
+.widget { flex: 0 0 min(80%, 300px); min-height: 104px; scroll-snap-align: start; border-radius: 1.3rem; border: 1px solid #ffffff1f; background: #ffffff14; backdrop-filter: blur(14px); color: var(--color-texto); display: flex; }
+.widget-corpo { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.widget-centro { align-items: center; }
+.widget-grande { font-size: 2.1rem; font-weight: 800; line-height: 1.05; }
+.widget-titulo { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--color-neon); }
+.widget-leve { font-size: .8rem; opacity: .75; }
+.widget-linha { display: flex; align-items: center; gap: 10px; }
+.widget-simbolo { font-size: 1.9rem; }
+.widget-barra { height: 8px; border-radius: 99px; background: #ffffff26; overflow: hidden; margin: 4px 0; }
+.widget-barra i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--color-neon), var(--color-magenta)); }
+.widget-barra i[data-baixa="true"] { background: #fb7185; }
+.widget-link { align-self: flex-start; min-height: 44px; padding: 0 14px; margin-top: 4px; border-radius: var(--raio-botao, .75rem); border: 1px solid var(--color-neon); color: var(--color-neon); background: transparent; font-weight: 700; font-size: .85rem; }
+.widget-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.widget-lista li { display: flex; gap: 8px; align-items: baseline; font-size: .85rem; }
+.widget-hora { flex: none; font-weight: 700; color: var(--color-neon); min-width: 5.4rem; }
+.widget-evento { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-height: 420px) { .widgets { display: none; } }

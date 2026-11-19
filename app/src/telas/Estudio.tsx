@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import {
+  adicionarWidget, removerWidget, MAX_WIDGETS, NOMES_WIDGET, TIPOS_WIDGET, type TipoWidget,
   ajustarTema, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, mostrar, mudarGrade, NOMES_DOS_TEMAS, ordenar, reconciliar, TAMANHO_ICONE, TEMAS,
   type AppInfo, type Banco, type EstiloBotao, type EstiloGaveta, type Forma, type Fundo,
 } from "../dados.ts";
 import { fundoCss } from "../tema";
 import { motor } from "../motor";
+import { buscarLugares, type Lugar } from "../widgets";
 import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
 import { Icone } from "../icones";
 import { Aviso, Botao, Cartao, Folha, Interruptor, Linha, Passo, Seletor } from "../ui";
 
-export type AbaEstudio = "temas" | "papel" | "icones" | "inicio" | "gaveta" | "backup" | "sobre";
+export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "gaveta" | "backup" | "sobre";
 type Aba = AbaEstudio;
-const ABAS: { id: Aba; nome: string }[] = [{ id: "temas", nome: "Temas" }, { id: "papel", nome: "Papel de parede" }, { id: "icones", nome: "Ícones" }, { id: "inicio", nome: "Início" }, { id: "gaveta", nome: "Gaveta" }, { id: "backup", nome: "Backup" }, { id: "sobre", nome: "Sobre" }];
+const ABAS: { id: Aba; nome: string }[] = [{ id: "temas", nome: "Temas" }, { id: "widgets", nome: "Widgets" }, { id: "papel", nome: "Papel de parede" }, { id: "icones", nome: "Ícones" }, { id: "inicio", nome: "Início" }, { id: "gaveta", nome: "Gaveta" }, { id: "backup", nome: "Backup" }, { id: "sobre", nome: "Sobre" }];
 const CORES = ["#22d3ee", "#38bdf8", "#8ab4ff", "#a78bfa", "#e879f9", "#f472b6", "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#ffffff"];
 const FUNDOS_ESCUROS = ["#000000", "#05070d", "#0b1020", "#12081a", "#14080a", "#04100b", "#101010", "#1a1033"];
 const FORMAS: { id: Forma; nome: string }[] = [{ id: "original", nome: "Original" }, { id: "circulo", nome: "Círculo" }, { id: "squircle", nome: "Arredondado" }, { id: "quadrado", nome: "Quadrado" }];
@@ -43,6 +45,21 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
   const t = banco.tema;
   const ocultos = ordenar(apps.filter((a) => banco.ocultos.includes(a.pacote)));
 
+  const [cidade, setCidade] = useState("");
+  const [lugares, setLugares] = useState<Lugar[] | null>(null);
+  const [procurando, setProcurando] = useState(false);
+  const cheio = banco.widgets.length >= MAX_WIDGETS;
+  const incluir = (tipo: TipoWidget, extra: { cidade?: string; lat?: number; lon?: number } = {}) => {
+    const r = adicionarWidget(banco, { tipo, ...extra });
+    if (!r.ok) { setErro(`Cabem até ${MAX_WIDGETS} widgets. Remova um para colocar outro.`); return; }
+    setErro(""); aoMudar((b) => adicionarWidget(b, { tipo, ...extra }).banco); aviso(`${NOMES_WIDGET[tipo]} adicionado.`);
+  };
+  const procurarCidade = async () => {
+    setErro(""); setProcurando(true);
+    try { const l = await buscarLugares(cidade); setLugares(l); if (!l.length) setErro("Não achei essa cidade. Tente outro nome."); }
+    catch { setErro("Não consegui procurar a cidade agora."); setLugares(null); }
+    finally { setProcurando(false); }
+  };
   const usar = (url: string | null) => {
     if (!url) { setErro("Não consegui abrir essa imagem."); return; }
     if (!guardarPapel(url)) { setErro("Não há espaço para guardar esse papel de parede."); return; }
@@ -87,6 +104,31 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           <Cartao titulo="Cor principal"><Paleta rotulo="Cor principal" valor={t.cor} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor: c }))} /></Cartao>
           <Cartao titulo="Cor de apoio"><Paleta rotulo="Cor de apoio" valor={t.cor2} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor2: c }))} /></Cartao>
           <Cartao titulo="Botões"><Seletor<EstiloBotao> rotulo="Estilo dos botões" valor={t.botoes} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { botoes: v }))} opcoes={[{ id: "degrade", nome: "Degradê" }, { id: "contorno", nome: "Contorno" }, { id: "solido", nome: "Sólido" }]} /></Cartao>
+        </div>
+      )}
+
+      {aba === "widgets" && (
+        <div className="space-y-4">
+          {erro && <Aviso tom="erro">{erro}</Aviso>}
+          <Cartao titulo={`No seu início (${banco.widgets.length} de ${MAX_WIDGETS})`}>
+            {banco.widgets.length === 0 ? <p className="text-sm text-suave">Nenhum widget ainda. Escolha um abaixo.</p>
+              : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
+          </Cartao>
+          <Cartao titulo="Adicionar">
+            <div className="flex flex-wrap gap-2">
+              {TIPOS_WIDGET.filter((x) => x !== "clima").map((x) => <Botao key={x} disabled={cheio} onClick={() => incluir(x)}><Icone nome="mais" tam={18} />{NOMES_WIDGET[x]}</Botao>)}
+            </div>
+            <p className="mt-2 text-xs text-suave">A agenda pede permissão para ler seus compromissos (só leitura) na primeira vez que aparecer.</p>
+          </Cartao>
+          <Cartao titulo="Clima">
+            <p className="mb-2 text-sm text-suave">Digite a cidade. O nome dela é enviado ao serviço Open-Meteo só para achar o tempo; nada mais sai do aparelho.</p>
+            <div className="flex gap-2">
+              <input value={cidade} maxLength={40} aria-label="Cidade" placeholder="Ex.: Porto Alegre" onChange={(ev) => setCidade(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") void procurarCidade(); }}
+                className="min-h-11 min-w-0 flex-1 rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+              <Botao variante="primario" disabled={procurando || cidade.trim().length < 2} onClick={() => void procurarCidade()}>{procurando ? "Procurando…" : "Procurar"}</Botao>
+            </div>
+            {lugares && lugares.length > 0 && <ul className="mt-3 space-y-1">{lugares.map((l) => <li key={`${l.lat},${l.lon}`}><button type="button" disabled={cheio} onClick={() => { incluir("clima", { cidade: l.nome, lat: l.lat, lon: l.lon }); setLugares(null); setCidade(""); }} className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-white/5 disabled:opacity-40"><Icone nome="mais" tam={18} /><span className="min-w-0 truncate">{l.nome}</span></button></li>)}</ul>}
+          </Cartao>
         </div>
       )}
 

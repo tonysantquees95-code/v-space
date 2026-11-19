@@ -18,6 +18,7 @@ const banco = (extra = {}) => JSON.stringify({
   },
   ...extra,
 });
+const comWidgets = JSON.stringify({ ...JSON.parse(banco()), widgets: [{ id: "w1", tipo: "relogio-analogico" }, { id: "w2", tipo: "clima", cidade: "Porto Alegre, Rio Grande do Sul", lat: -30.033, lon: -51.23 }, { id: "w3", tipo: "bateria" }, { id: "w4", tipo: "agenda" }] });
 const grande = JSON.stringify({ ...JSON.parse(banco()), tema: { ...JSON.parse(banco()).tema, tamanho: 72, rotulos: true }, layout: { ...JSON.parse(banco()).layout, colunas: 6, linhas: 7, paginas: [JSON.parse(banco()).layout.paginas.flat()] } });
 const redondo = JSON.stringify({ ...JSON.parse(banco()), tema: { ...JSON.parse(banco()).tema, forma: "circulo", rotulos: false, gaveta: "grade", fundo: "neon", cor: "#fb923c", cor2: "#f43f5e", fundoCor: "#14080a" } });
 
@@ -37,13 +38,14 @@ export default {
     normal: base,
     completo: { ...base, "vhome.banco": banco() },
     grande: { ...base, "vhome.banco": grande },
+    widgets: { ...base, "vhome.banco": comWidgets },
     redondo: { ...base, "vhome.banco": redondo },
   }[modo] ?? base),
   respostas: {},
   cenarios: [
     ["primeira-abertura", "primeira", async (p) => { await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
-    ["apresentacao-permissoes", "primeira", async (p) => { for (let i = 0; i < 5; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByText("Lista de apps instalados").waitFor(); }],
-    ["apresentacao-termos", "primeira", async (p) => { for (let i = 0; i < 5; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByRole("button", { name: "Continuar" }).click(); await p.getByRole("heading", { name: "Termos de uso" }).waitFor(); }],
+    ["apresentacao-permissoes", "primeira", async (p) => { for (let i = 0; i < 6; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByText("Lista de apps instalados").waitFor(); }],
+    ["apresentacao-termos", "primeira", async (p) => { for (let i = 0; i < 6; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByRole("button", { name: "Continuar" }).click(); await p.getByRole("heading", { name: "Termos de uso" }).waitFor(); }],
     ["o-que-ha-de-novo", "atualizou", async (p) => { await p.getByText("O que há de novo").first().waitFor(); }],
     ["inicio-primeira-vez", "normal", livre],
     ["inicio", "completo", livre],
@@ -87,6 +89,14 @@ export default {
       await abrirEstudio(p); await aba(p, "Papel de parede");
       await p.getByRole("button", { name: "Papel Oceano" }).click(); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
       await p.getByRole("slider", { name: "Desfoque" }).fill("8"); await p.waitForTimeout(250);
+    }],
+    ["inicio-widgets", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); if (!(await f.isVisible().catch(() => false))) { await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); } await p.waitForTimeout(400); }],
+    ["widgets-agenda", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); await f.evaluate((e) => { e.scrollLeft = e.scrollWidth; }); await p.getByText("Reunião de equipe").waitFor(); }],
+    ["estudio-widgets", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Widgets"); }],
+    ["estudio-widgets-adicionar", "completo", async (p) => {
+      await abrirEstudio(p); await aba(p, "Widgets");
+      await p.getByRole("button", { name: "Bateria" }).click(); await p.getByRole("button", { name: "Relógio analógico" }).click(); await p.waitForTimeout(200);
+      if ((await p.getByRole("button", { name: /^Remover/ }).count()) !== 2) throw new Error("os widgets não foram adicionados");
     }],
     ["estudio-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Ícones"); }],
     ["estudio-inicio", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); }],

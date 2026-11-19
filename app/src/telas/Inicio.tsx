@@ -3,6 +3,7 @@ import type { AppInfo, Banco } from "../dados.ts";
 import { Icone } from "../icones";
 import { usePressaoLonga } from "../ui";
 import { IconeApp, PastaCel } from "./IconeApp";
+import { FaixaWidgets } from "./Widgets";
 
 function useRelogio(): Date {
   const [agora, setAgora] = useState(() => new Date());
@@ -38,6 +39,8 @@ export function Inicio({ banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, 
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>
       </header>
+
+      <FaixaWidgets widgets={banco.widgets} />
 
       <div className="pager" ref={pager} onScroll={(e) => { const el = e.currentTarget; setPg(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); }}>
         {paginas.map((itens, i) => (

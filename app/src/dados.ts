@@ -16,7 +16,13 @@ export interface Tema {
 export interface Pasta { id: string; nome: string; apps: string[] }
 export type Item = { tipo: "app"; pacote: string } | { tipo: "pasta"; id: string };
 export interface Layout { colunas: number; linhas: number; paginas: Item[][]; dock: string[]; pastas: Pasta[] }
-export interface Banco { v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean }
+export type TipoWidget = "relogio-digital" | "relogio-analogico" | "clima" | "bateria" | "agenda";
+export const TIPOS_WIDGET: readonly TipoWidget[] = ["relogio-digital", "relogio-analogico", "clima", "bateria", "agenda"];
+export const NOMES_WIDGET: Record<TipoWidget, string> = { "relogio-digital": "Relógio digital", "relogio-analogico": "Relógio analógico", clima: "Clima", bateria: "Bateria", agenda: "Agenda" };
+export const MAX_WIDGETS = 4;
+/** Um widget na faixa da tela inicial. O clima guarda a cidade e o ponto no mapa (achados uma vez, na hora de adicionar). */
+export interface Widget { id: string; tipo: TipoWidget; cidade?: string; lat?: number; lon?: number }
+export interface Banco { v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[] }
 
 export const MAX_DOCK = 5;
 export const MAX_PAGINAS = 8;
@@ -48,12 +54,41 @@ const limitar = (n: unknown, min: number, max: number, padrao: number): number =
 };
 const cor = (v: unknown, padrao: string): string => (typeof v === "string" && REGEX_COR.test(v) ? v.toLowerCase() : padrao);
 const escolha = <T extends string>(v: unknown, lista: readonly T[], padrao: T): T => (lista.includes(v as T) ? (v as T) : padrao);
+const decimal = (v: unknown, min: number, max: number): number | null => (typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v * 1000) / 1000 : null);
+export function limparWidgets(x: unknown): Widget[] {
+  const saida: Widget[] = [];
+  const ids = new Set<string>();
+  for (const w of Array.isArray(x) ? x : []) {
+    if (saida.length >= MAX_WIDGETS) break;
+    if (!w || typeof w !== "object") continue;
+    const o = w as Record<string, unknown>;
+    if (!TIPOS_WIDGET.includes(o.tipo as TipoWidget)) continue;
+    const id = typeof o.id === "string" && /^[a-z0-9_-]{1,20}$/.test(o.id) && !ids.has(o.id) ? o.id : `w${saida.length + 1}-${saida.length * 7 + 3}`;
+    if (ids.has(id)) continue;
+    const item: Widget = { id, tipo: o.tipo as TipoWidget };
+    if (item.tipo === "clima") {
+      const lat = decimal(o.lat, -90, 90), lon = decimal(o.lon, -180, 180);
+      const cidade = typeof o.cidade === "string" ? o.cidade.replace(/[<>]/g, "").trim().slice(0, 40) : "";
+      if (lat === null || lon === null || !cidade) continue; // clima sem lugar não funciona: sai em vez de ficar quebrado
+      item.cidade = cidade; item.lat = lat; item.lon = lon;
+    }
+    ids.add(id); saida.push(item);
+  }
+  return saida;
+}
+export function adicionarWidget(b: Banco, w: Omit<Widget, "id">): { banco: Banco; ok: boolean } {
+  if (b.widgets.length >= MAX_WIDGETS) return { banco: b, ok: false };
+  const usados = new Set(b.widgets.map((x) => x.id));
+  let n = 1; while (usados.has(`w${n}`)) n++;
+  return { banco: { ...b, widgets: limparWidgets([...b.widgets, { ...w, id: `w${n}` }]) }, ok: true };
+}
+export const removerWidget = (b: Banco, id: string): Banco => ({ ...b, widgets: b.widgets.filter((w) => w.id !== id) });
 export const ehPacote = (v: unknown): v is string => typeof v === "string" && REGEX_PACOTE.test(v);
 export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 24) || padrao;
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [] });
 
 export function limparTema(x: unknown): Tema {
   const t = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
@@ -114,7 +149,7 @@ export function limparBanco(x: unknown): Banco {
   const ocultos: string[] = [];
   for (const a of Array.isArray(b.ocultos) ? b.ocultos : []) if (ehPacote(a) && !ocultos.includes(a)) ocultos.push(a);
 
-  return { v: 1, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true };
+  return { v: 1, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets) };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */

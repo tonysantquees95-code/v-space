@@ -115,7 +115,7 @@ export default function App() {
       <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
         aoGaveta={(busca) => setGaveta({ busca })} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel} />
 
-      {menuVazio && <MenuVazio aoFechar={() => setMenuVazio(false)} aoPapel={() => setEstudio("papel")} aoApps={() => setGaveta({ busca: false })} aoIcones={() => setEstudio("icones")} aoGrade={() => setEstudio("inicio")} aoEstudio={() => setEstudio("temas")} />}
+      {menuVazio && <MenuVazio aoFechar={() => setMenuVazio(false)} aoPapel={() => setEstudio("papel")} aoWidgets={() => setEstudio("widgets")} aoApps={() => setGaveta({ busca: false })} aoIcones={() => setEstudio("icones")} aoGrade={() => setEstudio("inicio")} aoEstudio={() => setEstudio("temas")} />}
 
       {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} buscaInicial={gaveta.busca} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
 
@@ -125,7 +125,7 @@ export default function App() {
       {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
 
       {estudio && <Estudio aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
-        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (
         <MenuApp app={appDoMenu} origem={menu.origem} noDock={banco.layout.dock.includes(menu.pacote)} naTela={naTela(banco).has(menu.pacote)} podeAgrupar={naTela(banco).size >= 2}

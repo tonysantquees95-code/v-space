@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   bancoPadrao, limparBanco, limparTema, layoutInicial, reconciliar, adicionarNaTela, removerDaTela, paraODock, tirarDoDock, criarPasta,
   adicionarNaPasta, tirarDaPasta, renomearPasta, mudarGrade, ocultar, mostrar, escolherTema, ajustarTema, exportar, importar, buscar,
-  agruparPorLetra, ordenar, naTela, noLayout, repaginar, ehDaSuite, MAX_DOCK, MAX_PAGINAS, TEMAS,
+  agruparPorLetra, limparWidgets, adicionarWidget, removerWidget, MAX_WIDGETS, ordenar, naTela, noLayout, repaginar, ehDaSuite, MAX_DOCK, MAX_PAGINAS, TEMAS,
 } from "../src/dados.ts";
 
 const app = (pacote, nome) => ({ pacote, nome: nome ?? pacote });
@@ -228,4 +228,28 @@ test("limparTema: papel de parede (desfoque e escurecimento) respeita limites", 
   assert.equal(a.fundo, "foto"); assert.equal(a.desfoque, 24); assert.equal(a.escuro, 0);
   const b = limparTema({ fundo: "foto", desfoque: "x" });
   assert.equal(b.desfoque, 0); assert.equal(b.escuro, 30);
+});
+
+test("widgets: lixo sai, clima sem lugar sai, limite de 4", () => {
+  const w = limparWidgets([
+    { id: "a", tipo: "bateria" }, { id: "a", tipo: "agenda" }, { tipo: "inexistente" }, null, 5,
+    { id: "c", tipo: "clima", cidade: "  <b>Pelotas</b> ", lat: -31.77, lon: -52.34 },
+    { id: "d", tipo: "clima", cidade: "Sem lugar" },
+    { id: "e", tipo: "clima", cidade: "Longe", lat: 999, lon: 0 },
+    { id: "f", tipo: "relogio-digital" }, { id: "g", tipo: "relogio-analogico" },
+  ]);
+  assert.equal(w.length, MAX_WIDGETS);
+  assert.deepEqual(w.map((x) => x.tipo), ["bateria", "agenda", "clima", "relogio-digital"]);
+  assert.equal(new Set(w.map((x) => x.id)).size, w.length);
+  assert.equal(w[2].cidade, "bPelotas/b");
+  assert.deepEqual(limparWidgets("x"), []);
+});
+test("widgets: adicionar respeita o limite e remover tira só um", () => {
+  let b = bancoPadrao();
+  for (let i = 0; i < MAX_WIDGETS; i++) { const r = adicionarWidget(b, { tipo: "bateria" }); assert.equal(r.ok, true); b = r.banco; }
+  assert.equal(b.widgets.length, MAX_WIDGETS);
+  assert.equal(adicionarWidget(b, { tipo: "agenda" }).ok, false);
+  const id = b.widgets[1].id;
+  assert.deepEqual(removerWidget(b, id).widgets.map((x) => x.id), b.widgets.filter((x) => x.id !== id).map((x) => x.id));
+  assert.equal(limparBanco(JSON.parse(JSON.stringify(b))).widgets.length, MAX_WIDGETS);
 });

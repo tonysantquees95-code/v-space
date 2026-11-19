@@ -1,8 +1,10 @@
 package tech.vetorial.vspace;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.role.RoleManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -11,8 +13,11 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.BatteryManager;
+import android.provider.CalendarContract;
 import android.provider.Settings;
 import android.util.Base64;
 
@@ -25,6 +30,9 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
+import com.getcapacitor.PermissionState;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -35,7 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /** A ponte do V-Space com o Android: apps instalados, abrir, desinstalar, launcher padrão e backup em arquivo. */
-@CapacitorPlugin(name = "VetorialHome")
+@CapacitorPlugin(name = "VetorialHome", permissions = { @Permission(strings = { Manifest.permission.READ_CALENDAR }, alias = "agenda") })
 public class VSpacePlugin extends Plugin {
     private final ExecutorService fundo = Executors.newSingleThreadExecutor();
     private BroadcastReceiver observador;
@@ -202,5 +210,68 @@ public class VSpacePlugin extends Plugin {
         }
         o.put("texto", texto == null ? JSObject.NULL : texto);
         call.resolve(o);
+    }
+
+    // ---- widgets: bateria e agenda
+    @PluginMethod
+    public void bateria(PluginCall call) {
+        Intent i = getContext().registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        JSObject o = new JSObject();
+        int nivel = i == null ? -1 : i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int escala = i == null ? 100 : i.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
+        int estado = i == null ? -1 : i.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+        o.put("nivel", nivel < 0 || escala <= 0 ? 0 : (nivel * 100) / escala);
+        o.put("carregando", estado == BatteryManager.BATTERY_STATUS_CHARGING || estado == BatteryManager.BATTERY_STATUS_FULL);
+        call.resolve(o);
+    }
+
+    @PluginMethod
+    public void agendaPermitida(PluginCall call) {
+        JSObject o = new JSObject();
+        o.put("permitida", getPermissionState("agenda") == PermissionState.GRANTED);
+        call.resolve(o);
+    }
+
+    @PluginMethod
+    public void pedirAgenda(PluginCall call) {
+        if (getPermissionState("agenda") == PermissionState.GRANTED) { agendaPermitida(call); return; }
+        requestPermissionForAlias("agenda", call, "fimAgenda");
+    }
+
+    @PermissionCallback
+    private void fimAgenda(PluginCall call) { agendaPermitida(call); }
+
+    /** Próximos eventos (agora até o fim de amanhã), no máximo 4. Só lê, nunca grava na agenda. */
+    @PluginMethod
+    public void eventosHoje(final PluginCall call) {
+        if (getPermissionState("agenda") != PermissionState.GRANTED) { call.reject("Sem permissão da agenda."); return; }
+        fundo.execute(new Runnable() {
+            @Override
+            public void run() {
+                JSArray lista = new JSArray();
+                java.util.Calendar fim = java.util.Calendar.getInstance();
+                fim.add(java.util.Calendar.DAY_OF_YEAR, 1);
+                fim.set(java.util.Calendar.HOUR_OF_DAY, 23); fim.set(java.util.Calendar.MINUTE, 59);
+                long agora = System.currentTimeMillis();
+                Uri.Builder b = CalendarContract.Instances.CONTENT_URI.buildUpon();
+                ContentUris.appendId(b, agora);
+                ContentUris.appendId(b, fim.getTimeInMillis());
+                String[] cols = { CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN, CalendarContract.Instances.END, CalendarContract.Instances.ALL_DAY };
+                try (Cursor c = getContext().getContentResolver().query(b.build(), cols, null, null, CalendarContract.Instances.BEGIN + " ASC")) {
+                    while (c != null && c.moveToNext() && lista.length() < 4) {
+                        JSObject e = new JSObject();
+                        String t = c.getString(0);
+                        e.put("titulo", t == null || t.trim().isEmpty() ? "Sem título" : t);
+                        e.put("inicio", c.getLong(1));
+                        e.put("fim", c.getLong(2));
+                        e.put("diaTodo", c.getInt(3) == 1);
+                        lista.put(e);
+                    }
+                } catch (Exception ignora) { }
+                JSObject o = new JSObject();
+                o.put("eventos", lista);
+                call.resolve(o);
+            }
+        });
     }
 }

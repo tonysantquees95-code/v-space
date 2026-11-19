@@ -36,4 +36,11 @@ export const motorDemo: Motor = {
   abrirAjustesInicio: async () => avisar("(demonstração) abriria as configurações do app de início"),
   salvarArquivo: async (nome) => { avisar(`(demonstração) salvaria ${nome}`); return true; },
   lerArquivo: async () => null,
+  bateria: async () => ({ nivel: 76, carregando: false }),
+  agendaPermitida: async () => true,
+  pedirAgenda: async () => true,
+  eventos: async () => {
+    const h = (hh: number, mm = 0) => { const x = new Date(); x.setHours(hh, mm, 0, 0); return x.getTime(); };
+    return [{ titulo: "Reunião de equipe", inicio: h(23, 59), fim: h(23, 59) + 3_600_000, diaTodo: false }, { titulo: "Dentista", inicio: h(9) + 86_400_000, fim: h(10) + 86_400_000, diaTodo: false }];
+  },
 };
