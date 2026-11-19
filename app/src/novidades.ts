@@ -25,6 +25,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 18, data: "2026-11-19", tipo: "novo", titulo: "Contatos na pesquisa", texto: "Ao pesquisar um nome, aparece um botão para procurar também nos contatos. O Android pergunta se você deixa; depois é só tocar no contato para abrir o discador.", },
   { id: 19, data: "2026-11-19", tipo: "melhoria", titulo: "Cadeado animado", texto: "Ao bloquear ou liberar o layout, um cadeado aparece na tela e fecha ou abre, para você saber que deu certo.", },
   { id: 20, data: "2026-11-19", tipo: "correcao", titulo: "Atualizar por dentro funciona no Estúdio", texto: "Ao tocar em Procurar atualização (Estúdio › Configurações › Sobre), a janela de atualização agora aparece na frente. Antes ela abria escondida e parecia que o botão não fazia nada.", },
+  { id: 21, data: "2026-11-19", tipo: "melhoria", titulo: "Widgets dos apps explicam o problema", texto: "Se um widget de outro app não aparecer, o espaço dele agora diz o motivo em vez de ficar só em Carregando o widget.", },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

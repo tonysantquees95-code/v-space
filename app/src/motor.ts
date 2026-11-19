@@ -43,7 +43,7 @@ export interface Motor {
   widgetsExternos(): Promise<ExternoInfo[]>;
   criarWidgetExterno(provider: string): Promise<{ id: number; w: number; h: number }>;
   removerWidgetExterno(id: number): Promise<void>;
-  mostrarExternos(itens: ItemExterno[]): Promise<void>;
+  mostrarExternos(itens: ItemExterno[]): Promise<Record<string, string>>;
   aoEventoExterno(ev: EventosExternos): () => void;
   selos(): Promise<Record<string, number>>;
   contatosPermitidos(): Promise<boolean>;
@@ -56,7 +56,7 @@ interface PluginWidgets {
   listar(): Promise<{ widgets: ExternoInfo[] }>;
   criar(o: { provider: string }): Promise<{ id: number; w: number; h: number }>;
   remover(o: { id: number }): Promise<void>;
-  mostrar(o: { itens: ItemExterno[] }): Promise<void>;
+  mostrar(o: { itens: ItemExterno[] }): Promise<{ estados?: Record<string, string> }>;
   addListener(evento: "widgetLongo", cb: (o: { id: number }) => void): Promise<{ remove: () => Promise<void> }>;
   addListener(evento: "widgetRolar", cb: (o: { dy: number }) => void): Promise<{ remove: () => Promise<void> }>;
 }
@@ -153,7 +153,7 @@ function criarAndroid(): Motor {
     },
     criarWidgetExterno: async (provider) => { const r = await w.criar({ provider }); return { id: Math.round(r.id), w: Math.max(1, Math.min(4, Math.round(r.w) || 2)), h: Math.max(1, Math.min(8, Math.round(r.h) || 2)) }; },
     removerWidgetExterno: async (id) => { try { await w.remover({ id }); } catch { /* já saiu */ } },
-    mostrarExternos: async (itens) => { try { await w.mostrar({ itens }); } catch { /* sem widgets reais agora */ } },
+    mostrarExternos: async (itens) => { try { return (await w.mostrar({ itens })).estados ?? {}; } catch (e) { return { "*": e instanceof Error ? e.message : "Falhou" }; } },
     aoEventoExterno: (ev) => {
       const fins: (() => Promise<void>)[] = []; let parou = false;
       void w.addListener("widgetLongo", (o) => ev.longo(o.id)).then((h) => { if (parou) void h.remove(); else fins.push(h.remove); });

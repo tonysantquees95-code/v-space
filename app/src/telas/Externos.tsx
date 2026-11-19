@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motor, type ItemExterno } from "../motor";
 import type { Widget } from "../dados.ts";
 
@@ -50,7 +50,7 @@ function quadro() {
   const chave = JSON.stringify(itens);
   if (chave === ultimo) return;
   ultimo = chave;
-  void motor.mostrarExternos(itens);
+  void motor.mostrarExternos(itens).then((e) => window.dispatchEvent(new CustomEvent("vspace-externo-estado", { detail: e })));
 }
 
 function ligar() {
@@ -73,6 +73,12 @@ function desligar() {
 export function ExternoCorpo({ w }: { w: Widget }) {
   const ref = useRef<HTMLDivElement>(null);
   const id = w.appId ?? -1;
+  const [problema, setProblema] = useState("");
+  useEffect(() => {
+    const f = (e: Event) => { const m = (e as CustomEvent<Record<string, string>>).detail ?? {}; const t = m[String(id)] ?? m["*"] ?? ""; setProblema(t && t !== "ok" ? t : ""); };
+    window.addEventListener("vspace-externo-estado", f);
+    return () => window.removeEventListener("vspace-externo-estado", f);
+  }, [id]);
   useEffect(() => {
     const el = ref.current;
     if (!el || id < 0) return;
@@ -82,7 +88,7 @@ export function ExternoCorpo({ w }: { w: Widget }) {
   return (
     <div ref={ref} className="externo" data-externo={id}>
       <b className="truncate">{w.titulo ?? "Widget de app"}</b>
-      <span className="widget-leve">{motor.nome === "android" ? "Carregando o widget…" : "Aparece no aparelho (demonstração)"}</span>
+      <span className="widget-leve">{problema || (motor.nome === "android" ? "Carregando o widget…" : "Aparece no aparelho (demonstração)")}</span>
     </div>
   );
 }

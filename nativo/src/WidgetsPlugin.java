@@ -255,6 +255,7 @@ public class WidgetsPlugin extends Plugin {
             try {
                 garantirCamada();
                 java.util.HashSet<Integer> presentes = new java.util.HashSet<>();
+                JSObject estados = new JSObject();
                 for (int k = 0; k < itens.length(); k++) {
                     JSONObject o = itens.getJSONObject(k);
                     int id = o.getInt("id");
@@ -264,7 +265,7 @@ public class WidgetsPlugin extends Plugin {
                     Envoltorio v = vistas.get(id);
                     if (v == null) {
                         v = criarVista(id);
-                        if (v == null) continue;
+                        if (v == null) { estados.put(String.valueOf(id), erroVista); continue; }
                         vistas.put(id, v);
                         camada.addView(v);
                     }
@@ -281,11 +282,14 @@ public class WidgetsPlugin extends Plugin {
                     Rect corte = new Rect(Math.round((float) ((cx - x) * d)), Math.round((float) ((cy - y) * d)), Math.round((float) ((cx - x + cw) * d)), Math.round((float) ((cy - y + ch) * d)));
                     v.setClipBounds(corte);
                     v.setVisibility(View.VISIBLE);
+                    estados.put(String.valueOf(id), "ok");
                 }
                 for (Map.Entry<Integer, Envoltorio> e : vistas.entrySet()) if (!presentes.contains(e.getKey())) e.getValue().setVisibility(View.GONE);
-                call.resolve();
+                JSObject r = new JSObject();
+                r.put("estados", estados);
+                call.resolve(r);
             } catch (Throwable e) {
-                call.reject("Não consegui mostrar os widgets.");
+                call.reject("Não consegui mostrar os widgets: " + e.getClass().getSimpleName());
             }
         });
     }
@@ -300,14 +304,17 @@ public class WidgetsPlugin extends Plugin {
         // a camada fica sem fundo: só os widgets recebem toque; o resto atravessa para a WebView
     }
 
+    private String erroVista = "";
+
     private Envoltorio criarVista(int id) {
         try {
             AppWidgetProviderInfo info = gerente.getAppWidgetInfo(id);
-            if (info == null) return null;
+            if (info == null) { erroVista = "O Android não reconhece mais este widget (o app dele foi removido ou atualizado). Remova e adicione de novo."; return null; }
             AppWidgetHostView hv = host.createView(getContext(), id, info);
             hv.setAppWidget(id, info);
             return new Envoltorio(getContext(), id, hv);
         } catch (Throwable e) {
+            erroVista = "Não consegui abrir este widget (" + e.getClass().getSimpleName() + "). Remova e adicione de novo.";
             return null;
         }
     }

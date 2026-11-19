@@ -60,7 +60,7 @@ export const motorDemo: Motor = {
   ],
   criarWidgetExterno: async (provider) => ({ id: 100 + (provider.length % 50), w: provider.endsWith("Mes") ? 4 : 2, h: provider.endsWith("Mes") ? 4 : 2 }),
   removerWidgetExterno: async () => undefined,
-  mostrarExternos: async () => undefined,
+  mostrarExternos: async () => ({}),
   aoEventoExterno: () => () => undefined,
   agendaPermitida: async () => true,
   pedirAgenda: async () => true,
