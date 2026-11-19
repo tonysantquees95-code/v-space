@@ -1,14 +1,21 @@
 import type { AppInfo, Pasta } from "../dados.ts";
 import { usePressaoLonga } from "../ui";
-import { textoDoSelo, useSelo } from "../selos";
+import { ehNovo, textoDoSelo, usePontoNovoLigado, useSelo } from "../selos";
+import { useIconeApp } from "../iconesApp";
+import { usosDosApps } from "../busca.ts";
 
 /** O desenho do ícone, na forma e no tamanho escolhidos no Estúdio. */
 export function Glifo({ app, selo = false }: { app: AppInfo; selo?: boolean }) {
   const n = useSelo(selo ? app.pacote : "");
+  const proprio = useIconeApp(app.pacote);
+  const pontoLigado = usePontoNovoLigado();
+  const novo = selo && pontoLigado && n === 0 && ehNovo(app.instalado, usosDosApps()[app.pacote] ?? 0);
+  const imagem = proprio ?? app.icone;
   return (
     <span className="glifo" aria-hidden>
-      {app.icone ? <img src={app.icone} alt="" draggable={false} /> : <span className="glifo-letra">{app.nome.charAt(0).toUpperCase()}</span>}
+      {imagem ? <img src={imagem} alt="" draggable={false} /> : <span className="glifo-letra">{app.nome.charAt(0).toUpperCase()}</span>}
       {selo && n > 0 && <span className="selo">{textoDoSelo(n)}</span>}
+      {novo && <span className="selo-novo" />}
     </span>
   );
 }

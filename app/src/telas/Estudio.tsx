@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
 } from "../dados.ts";
 import { CENAS, aplicarCena } from "../cenas";
+import { definirIconeApp, escolherIcone, useIconeApp } from "../iconesApp";
+import { Glifo } from "./IconeApp";
 import { fundoCss } from "../tema";
 import { motor, type ExternoInfo } from "../motor";
 import { Icone, type NomeIcone } from "../icones";
@@ -48,7 +50,7 @@ const SECOES: DefSecao[] = [
   { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }] },
   { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
   { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
-  { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
+  { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "luz", nome: "Luz do dia", icone: "tema" }, { id: "favoritos", nome: "Favoritos", icone: "ok" }, { id: "fontes", nome: "Fontes", icone: "papel" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "ajustes", nome: "Editor", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
   { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
@@ -304,7 +306,29 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           <p className="text-sm text-suave">Para criar uma pasta, segure um espaço vazio da tela inicial e toque em Criar pasta.</p>
         </div>
       );
-      case "apps/gaveta": return <Cartao titulo="Estilo da gaveta"><Seletor<EstiloGaveta> rotulo="Estilo da gaveta" valor={t.gaveta} opcoes={[{ id: "lista", nome: "Lista com letras" }, { id: "grade", nome: "Grade" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { gaveta: v }))} /></Cartao>;
+      case "apps/gaveta": return (
+        <div className="space-y-4">
+          <Cartao titulo="Estilo da gaveta"><Seletor<EstiloGaveta> rotulo="Estilo da gaveta" valor={t.gaveta} opcoes={[{ id: "lista", nome: "Lista com letras" }, { id: "grade", nome: "Grade" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { gaveta: v }))} /></Cartao>
+          <Cartao titulo="Ordem dos apps">
+            <Seletor<OrdemGaveta> rotulo="Ordem dos apps" valor={t.ordem} opcoes={[{ id: "az", nome: "A–Z" }, { id: "za", nome: "Z–A" }, { id: "novos", nome: "Instalados mais recentes" }, { id: "antigos", nome: "Instalados mais antigos" }, { id: "usados", nome: "Usados recentemente" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { ordem: v }))} />
+            <p className="mt-3 text-sm text-suave">A–Z mostra as letras na lateral. As outras ordens mostram uma lista só. “Usados recentemente” conta os apps que você abre pelo V-Space.</p>
+          </Cartao>
+        </div>
+      );
+      case "apps/geral": return (
+        <div className="space-y-4">
+          <Cartao><Linha titulo="Selos de notificação" texto="Bolinha com o número de notificações nos ícones. Precisa do acesso às notificações."><Interruptor rotulo="Selos de notificação" ligado={t.selos} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { selos: v }))} /></Linha></Cartao>
+          <Cartao><Linha titulo="Apps novos" texto="Mostra um ponto nos apps instalados há menos de 3 dias, até você abrir."><Interruptor rotulo="Apps novos" ligado={t.pontoNovo} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pontoNovo: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "apps/icones": return (
+        <Cartao titulo="Ícone de cada app">
+          <p className="mb-3 text-sm text-suave">Escolha uma imagem da galeria para ser o ícone de um app, só no V-Space. Dá para voltar ao original.</p>
+          <ul className="space-y-1">
+            {[...apps].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((a) => <LinhaIcone key={a.pacote} app={a} aviso={aviso} />)}
+          </ul>
+        </Cartao>
+      );
       case "apps/ocultos": return (
         <Cartao titulo={`Apps ocultos (${ocultos.length})`}>
           {ocultos.length === 0 ? <p className="text-sm text-suave">Nenhum app oculto. Segure um app e escolha “Ocultar da gaveta”.</p>
@@ -536,5 +560,23 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       {editCat && <NovaCategoria inicial={editCat === "nova" ? undefined : editCat} aoFechar={() => setEditCat(null)}
         aoSalvar={({ nome, icone, cor, conteudo }) => aoMudar((b) => (editCat === "nova" ? criarCategoria(b, nome, icone, { cor, conteudo }).banco : editarCategoria(b, editCat.id, { nome, icone, cor: cor ?? null, conteudo })))} />}
     </div>
+  );
+}
+
+function LinhaIcone({ app, aviso }: { app: AppInfo; aviso: (m: string) => void }) {
+  const proprio = useIconeApp(app.pacote);
+  const trocar = async () => {
+    const u = await escolherIcone();
+    if (!u) return;
+    aviso(definirIconeApp(app.pacote, u) ? `Ícone de ${app.nome} trocado.` : "Não há espaço para guardar esse ícone.");
+  };
+  return (
+    <li className="flex min-h-12 items-center justify-between gap-3">
+      <span className="flex min-w-0 items-center gap-3"><Glifo app={app} /><span className="min-w-0 truncate">{app.nome}</span></span>
+      <span className="flex shrink-0 gap-2">
+        <Botao onClick={() => void trocar()} aria-label={`Trocar ícone de ${app.nome}`}>Trocar</Botao>
+        {proprio && <Botao onClick={() => { definirIconeApp(app.pacote, null); aviso(`Ícone de ${app.nome} restaurado.`); }} aria-label={`Restaurar ícone de ${app.nome}`}>Original</Botao>}
+      </span>
+    </li>
   );
 }

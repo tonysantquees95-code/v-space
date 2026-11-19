@@ -1,10 +1,11 @@
 import { useMemo, useRef } from "react";
-import { agruparPorLetra, ordenar, type AppInfo, type EstiloGaveta } from "../dados.ts";
+import { agruparPorLetra, ordenarPor, type AppInfo, type EstiloGaveta, type OrdemGaveta } from "../dados.ts";
+import { usosDosApps } from "../busca.ts";
 import { Icone } from "../icones";
 import { IconeApp } from "./IconeApp";
 
 /** Gaveta: todos os apps (menos os ocultos), em ordem alfabética, com busca e as letras na lateral. */
-export function Gaveta({ apps, estilo, aoBuscar, aoOrganizar, aoFechar, aoAbrir, aoMenu }: { apps: AppInfo[]; estilo: EstiloGaveta; aoBuscar: () => void; aoOrganizar: () => void; aoFechar: () => void; aoAbrir: (p: string) => void; aoMenu: (p: string) => void }) {
+export function Gaveta({ apps, estilo, ordem = "az", aoBuscar, aoOrganizar, aoFechar, aoAbrir, aoMenu }: { apps: AppInfo[]; estilo: EstiloGaveta; ordem?: OrdemGaveta; aoBuscar: () => void; aoOrganizar: () => void; aoFechar: () => void; aoAbrir: (p: string) => void; aoMenu: (p: string) => void }) {
   const rolagem = useRef<HTMLDivElement>(null);
   const toque = useRef<{ x: number; y: number; topo: boolean } | null>(null);
   const grupos = useMemo(() => agruparPorLetra(apps), [apps]);
@@ -26,11 +27,11 @@ export function Gaveta({ apps, estilo, aoBuscar, aoOrganizar, aoFechar, aoAbrir,
       </header>
       <div className="px-4 pb-1"><button type="button" onClick={aoOrganizar} className="busca-chip"><Icone nome="brilho" tam={16} />Organizar em categorias</button></div>
       <div className="gaveta-corpo" ref={rolagem}>
-        {estilo === "lista"
+        {estilo === "lista" && ordem === "az"
           ? grupos.map((g) => <section key={g.letra} data-letra={g.letra}><h3 className="gaveta-letra">{g.letra}</h3>{bloco(g.apps)}</section>)
-          : bloco(ordenar(apps))}
+          : bloco(ordenarPor(apps, ordem, usosDosApps()))}
       </div>
-      {estilo === "lista" && grupos.length > 1 && (
+      {estilo === "lista" && ordem === "az" && grupos.length > 1 && (
         <nav className="gaveta-letras" aria-label="Letras">{grupos.map((g) => <button key={g.letra} type="button" onClick={() => irParaLetra(g.letra)} aria-label={`Ir para a letra ${g.letra}`}>{g.letra}</button>)}</nav>
       )}
     </div>

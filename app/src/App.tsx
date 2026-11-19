@@ -1,4 +1,4 @@
-import { definirSelos } from "./selos";
+import { definirSelos, ligarPontoNovo, ligarSelos } from "./selos";
 import { EspacoSeguro } from "./telas/EspacoSeguro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as AppNativo } from "@capacitor/app";
@@ -137,6 +137,8 @@ export default function App() {
     } catch { /* sem armazenamento: fica como está */ }
   }, [banco.tema.papelDiario]);
 
+  useEffect(() => { ligarSelos(banco.tema.selos); ligarPontoNovo(banco.tema.pontoNovo); }, [banco.tema.selos, banco.tema.pontoNovo]);
+
   // Espaço seguro (banco/governo): pede o desbloqueio do aparelho; sai sozinho ao deixar o V-Space
   const [seguro, setSeguro] = useState(false);
   const [notifLigado, setNotifLigado] = useState<boolean | null>(null);
@@ -253,7 +255,7 @@ export default function App() {
 
       {criarPastaAberto && <CriarPasta candidatos={candidatos0} aoFechar={() => setCriarPastaAberto(false)} aoCriar={criarVarias} />}
 
-      {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} aoBuscar={() => setBusca(true)} aoOrganizar={() => setOrganizar(true)} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
+      {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} ordem={banco.tema.ordem} aoBuscar={() => setBusca(true)} aoOrganizar={() => setOrganizar(true)} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
 
       {pasta && !menu && <FolhaPasta pasta={pasta} rotulo={banco.tema.rotulos} apps={pasta.apps.map((a) => porPacote.get(a)).filter((a): a is AppInfo => !!a)}
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}

@@ -31,6 +31,8 @@ export const AJUSTES: Ajuste[] = [
   { titulo: "Player de música na tela inicial", onde: "Configurações · Atalhos", destino: "config/atalhos", chaves: "musica player tocando deezer spotify youtube notificacoes" },
   { titulo: "Bloquear layout", onde: "Configurações · Gestos", destino: "config/gestos", chaves: "bloquear layout travar trava" },
   { titulo: "Backup e restauração", onde: "Configurações · Backup", destino: "config/backup", chaves: "backup restaurar exportar importar salvar" },
+  { titulo: "Ícone de cada app", onde: "Aplicativos · Ícones", destino: "apps/icones", chaves: "icone icones trocar imagem personalizar app" },
+  { titulo: "Ordem da gaveta", onde: "Aplicativos · Disposição", destino: "apps/gaveta", chaves: "ordem ordenar az recentes usados gaveta" },
   { titulo: "Espaço seguro (banco e governo)", onde: "Configurações · Espaço seguro", destino: "config/seguro", chaves: "seguro espaco banco governo privado protegido segundo", },
   { titulo: "Launcher padrão", onde: "Configurações · Launcher", destino: "config/padrao", chaves: "padrao launcher inicio voltar anterior" },
   { titulo: "Procurar atualização", onde: "Configurações · Sobre", destino: "config/sobre", chaves: "atualizar atualizacao versao nova" },

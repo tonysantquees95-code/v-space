@@ -28,6 +28,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 21, data: "2026-11-19", tipo: "melhoria", titulo: "Widgets dos apps explicam o problema", texto: "Se um widget de outro app não aparecer, o espaço dele agora diz o motivo em vez de ficar só em Carregando o widget.", },
   { id: 22, data: "2026-11-19", tipo: "novo", titulo: "Espaço seguro para banco e governo", texto: "Uma tela separada só com os apps que você escolher (Estúdio › Configurações › Espaço seguro). Nela não aparecem widgets, números de notificação nem música. Abre com o desbloqueio do aparelho e também com dois dedos deslizando para baixo na tela inicial. Fecha sozinha quando você sai do V-Space.", },
   { id: 23, data: "2026-11-19", tipo: "novo", titulo: "Papel de parede completo", texto: "Em Estúdio › Papel de parede, agora há Luz do dia (o papel ganha a cor da luz do sol), Favoritos (guarde o papel em uso e volte a ele com um toque), Fontes (galeria e aplicar no Android: tela inicial, bloqueio ou ambas), Geral (papel diário) e Editor (desfoque, escurecimento, saturação, temperatura e vinheta).", },
+  { id: 24, data: "2026-11-19", tipo: "novo", titulo: "Ícones e gaveta do seu jeito", texto: "Em Estúdio › Aplicativos › Ícones você troca o ícone de qualquer app por uma imagem da galeria. Em Disposição, escolha a ordem da gaveta (A–Z, Z–A, mais novos, mais antigos, mais usados). Em Geral, ligue ou desligue os selos de notificação e o ponto nos apps novos." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

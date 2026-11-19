@@ -11,6 +11,8 @@ export type PacoteIcones = "original" | "mono" | "tingido" | "vivo";
 export type EstiloPasta = "vidro" | "solida" | "contorno";
 export type Gesto = "gaveta" | "pesquisa" | "nada";
 
+export type OrdemGaveta = "az" | "za" | "novos" | "antigos" | "usados";
+export const ORDENS: OrdemGaveta[] = ["az", "za", "novos", "antigos", "usados"];
 export type Luz = "nenhuma" | "sol" | "dia" | "noite";
 export type AplicarEm = "pergunta" | "inicio" | "bloqueio" | "ambas";
 export const LUZES: Luz[] = ["nenhuma", "sol", "dia", "noite"];
@@ -28,6 +30,8 @@ export interface Tema {
   papelDiario: boolean;
   /** onde "Aplicar ao Android" coloca o papel: pergunta, tela inicial do Android, bloqueio ou ambas */
   aplicarEm: AplicarEm;
+  /** gaveta de apps: ordem, selo de notificação e ponto em app novo */
+  ordem: OrdemGaveta; selos: boolean; pontoNovo: boolean;
   /** raio dos cartões e janelas (px), estilo do dock, pacote de ícones e estilo das pastas */
   cantos: number; dock: EstiloDock; pacote: PacoteIcones; pasta: EstiloPasta;
 }
@@ -143,11 +147,11 @@ export const CANTOS = { min: 0, max: 32 };
 export const GESTOS: readonly Gesto[] = ["gaveta", "pesquisa", "nada"];
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
@@ -261,6 +265,7 @@ export function limparTema(x: unknown): Tema {
     desfoque: limitar(t.desfoque, DESFOQUE.min, DESFOQUE.max, p.desfoque), escuro: limitar(t.escuro, ESCURO.min, ESCURO.max, p.escuro),
     saturacao: limitar(t.saturacao, SATURACAO.min, SATURACAO.max, 100), temperatura: limitar(t.temperatura, TEMPERATURA.min, TEMPERATURA.max, 0), vinheta: limitar(t.vinheta, VINHETA.min, VINHETA.max, 0),
     luz: LUZES.includes(t.luz as Luz) ? (t.luz as Luz) : "nenhuma", papelDiario: t.papelDiario === true, aplicarEm: APLICAR_EM.includes(t.aplicarEm as AplicarEm) ? (t.aplicarEm as AplicarEm) : "pergunta",
+    ordem: ORDENS.includes(t.ordem as OrdemGaveta) ? (t.ordem as OrdemGaveta) : "az", selos: t.selos !== false, pontoNovo: t.pontoNovo === true,
     cantos: limitar(t.cantos, CANTOS.min, CANTOS.max, p.cantos), dock: escolha(t.dock, DOCKS, p.dock), pacote: escolha(t.pacote, PACOTES, p.pacote), pasta: escolha(t.pasta, PASTAS, p.pasta),
   };
 }
@@ -332,6 +337,15 @@ export function repaginar(itens: Item[], capacidade: number): Item[][] {
 }
 
 export const normalizar = (s: string): string => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+/** Ordem da gaveta: A–Z, Z–A, instalados mais recentemente, mais antigos ou mais usados. */
+export function ordenarPor(apps: AppInfo[], ordem: OrdemGaveta, usos: Record<string, number> = {}): AppInfo[] {
+  const az = ordenar(apps);
+  if (ordem === "az") return az;
+  if (ordem === "za") return az.reverse();
+  if (ordem === "novos") return [...az].sort((a, b) => (b.instalado ?? 0) - (a.instalado ?? 0));
+  if (ordem === "antigos") return [...az].sort((a, b) => (a.instalado ?? Infinity) - (b.instalado ?? Infinity));
+  return [...az].sort((a, b) => (usos[b.pacote] ?? 0) - (usos[a.pacote] ?? 0));
+}
 export const ordenar = (apps: AppInfo[]): AppInfo[] => [...apps].sort((a, b) => normalizar(a.nome).localeCompare(normalizar(b.nome), "pt-BR") || a.pacote.localeCompare(b.pacote));
 
 /** Busca por nome (começo do nome, começo de palavra, trecho) e, por último, pelo identificador do app. */

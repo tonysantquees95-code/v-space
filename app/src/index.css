@@ -493,3 +493,4 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .seguro-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 8px; align-content: start; flex: 1; }
 .seguro-rodape { display: flex; justify-content: center; }
 .fav-tirar { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 14px; display: grid; place-items: center; background: rgba(0,0,0,.6); color: #fff; }
+.selo-novo { position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; border-radius: 5px; background: var(--color-neon, #7df); box-shadow: 0 0 0 2px rgba(0,0,0,.4); pointer-events: none; }
