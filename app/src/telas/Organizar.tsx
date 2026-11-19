@@ -2,20 +2,20 @@ import { useState } from "react";
 import { aplicarOrganizacao, organizarNoAparelho, previaOrganizacao } from "../categorias.ts";
 import type { AppInfo, Banco } from "../dados.ts";
 import { Icone } from "../icones";
-import { organizarComIA } from "../organizar";
+import { organizarComIA, SemSessao } from "../organizar";
 import { Aviso, Botao, Folha } from "../ui";
 import { Glifo } from "./IconeApp";
 
-type Fase = { f: "inicio" } | { f: "pensando" } | { f: "erro"; msg: string } | { f: "previa"; mapa: Record<string, string> } | { f: "feito"; antes: Banco; mudaram: number };
+type Fase = { f: "inicio" } | { f: "pensando" } | { f: "erro"; msg: string; login?: boolean } | { f: "previa"; mapa: Record<string, string> } | { f: "feito"; antes: Banco; mudaram: number };
 
 /** "Organizar com IA": pede, mostra o que vai mudar, aplica e dá para desfazer. Nada muda sem a pessoa tocar em Aplicar. */
-export function Organizar({ banco, apps, aoMudar, aoFechar }: { banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void }) {
+export function Organizar({ banco, apps, token, aoPedirConta, aoMudar, aoFechar }: { banco: Banco; apps: AppInfo[]; token: string; aoPedirConta: () => void; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void }) {
   const [fase, setFase] = useState<Fase>({ f: "inicio" });
   const nomeDe = (id: string) => banco.categorias.find((c) => c.id === id)?.nome ?? id;
   const pedir = async () => {
     setFase({ f: "pensando" });
-    try { setFase({ f: "previa", mapa: await organizarComIA(banco, apps) }); }
-    catch (e) { setFase({ f: "erro", msg: e instanceof Error ? e.message : "Não consegui organizar agora." }); }
+    try { setFase({ f: "previa", mapa: await organizarComIA(banco, apps, token) }); }
+    catch (e) { setFase({ f: "erro", msg: e instanceof Error ? e.message : "Não consegui organizar agora.", login: e instanceof SemSessao }); }
   };
   const previa = fase.f === "previa" ? previaOrganizacao(banco, apps, fase.mapa) : [];
   return (
@@ -31,7 +31,7 @@ export function Organizar({ banco, apps, aoMudar, aoFechar }: { banco: Banco; ap
       {fase.f === "erro" && (
         <div className="space-y-3">
           <Aviso tom="erro">{fase.msg}</Aviso>
-          <Botao variante="primario" className="w-full" onClick={() => void pedir()}>Tentar de novo</Botao>
+          {fase.login ? <Botao variante="primario" className="w-full" onClick={aoPedirConta}>Entrar com o Vetorial ID</Botao> : <Botao variante="primario" className="w-full" onClick={() => void pedir()}>Tentar de novo</Botao>}
           <Botao className="w-full" onClick={aoFechar}>Fechar</Botao>
         </div>
       )}

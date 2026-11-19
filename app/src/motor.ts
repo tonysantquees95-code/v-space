@@ -9,6 +9,7 @@ export interface Motor {
   apps(): Promise<AppInfo[]>;
   abrir(pacote: string): Promise<void>;
   detalhes(pacote: string): Promise<void>;
+  abrirUrl(url: string): Promise<void>;
   desinstalar(pacote: string): Promise<void>;
   aoMudarApps(cb: () => void): () => void;
   ehPadrao(): Promise<boolean>;
@@ -26,6 +27,7 @@ interface PluginNativo {
   listarApps(): Promise<{ apps: { pacote: string; nome: string; icone?: string }[] }>;
   abrir(o: { pacote: string }): Promise<void>;
   detalhes(o: { pacote: string }): Promise<void>;
+  abrirUrl(o: { url: string }): Promise<void>;
   desinstalar(o: { pacote: string }): Promise<void>;
   ehPadrao(): Promise<{ padrao: boolean }>;
   pedirPadrao(): Promise<void>;
@@ -46,6 +48,7 @@ function criarAndroid(): Motor {
     apps: async () => (await n.listarApps()).apps.map((a) => ({ pacote: a.pacote, nome: a.nome, icone: a.icone ? `data:image/png;base64,${a.icone}` : undefined })),
     abrir: (pacote) => n.abrir({ pacote }),
     detalhes: (pacote) => n.detalhes({ pacote }),
+    abrirUrl: (url) => n.abrirUrl({ url }),
     desinstalar: (pacote) => n.desinstalar({ pacote }),
     aoMudarApps: (cb) => {
       let fim: (() => Promise<void>) | null = null; let parou = false;

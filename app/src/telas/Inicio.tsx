@@ -37,8 +37,14 @@ function CorpoCategorias({ banco, porPacote, aoAbrirApp, aoMenuFavorito, aoMenuC
   const lista = ativa ? appsDaCategoria(banco, todos, ativa.id) : banco.favoritos.map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a && !banco.ocultos.includes(a.pacote));
   const eventosVazio = { onPointerDown: (e: React.PointerEvent) => { if (soNoVazio(e)) vazio.onPointerDown(e); }, onPointerMove: vazio.onPointerMove, onPointerUp: vazio.onPointerUp, onPointerLeave: vazio.onPointerLeave, onPointerCancel: vazio.onPointerCancel, onContextMenu: (e: React.MouseEvent) => { if (soNoVazio(e)) vazio.onContextMenu(e); else e.preventDefault(); } };
   const pode = !banco.bloqueado;
+  // deslizar para o lado troca de categoria (favoritos ← → categorias, na ordem do trilho)
+  const ordem = ["inicio", ...visiveis.map((c) => c.id)];
+  const arrasto = useRef<{ x: number; y: number } | null>(null);
+  const trocar = (delta: 1 | -1) => { const k = ordem.indexOf(aba); const n = ordem[k + delta]; if (n) setAba(n); };
   return (
-    <div className="cat-area">
+    <div className="cat-area"
+      onTouchStart={(e) => { const c = e.touches[0]!; arrasto.current = (e.target as Element).closest?.(".widgets") ? null : { x: c.clientX, y: c.clientY }; }}
+      onTouchEnd={(e) => { const s = arrasto.current; arrasto.current = null; if (!s) return; const c = e.changedTouches[0]!; const dx = c.clientX - s.x, dy = c.clientY - s.y; if (Math.abs(dx) > 70 && Math.abs(dy) < 55) trocar(dx < 0 ? 1 : -1); }}>
       <div className="cat-corpo" {...eventosVazio}>
         {ativa ? (
           <header className="cat-cabeca"><h2 className="cat-titulo">{ativa.nome}</h2><p className="cat-sub">{lista.length} {lista.length === 1 ? "app" : "apps"}</p></header>

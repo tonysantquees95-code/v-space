@@ -115,6 +115,15 @@ public class VSpacePlugin extends Plugin {
         try { getContext().startActivity(i); call.resolve(); } catch (Exception e) { call.reject("Não consegui abrir: " + e.getMessage()); }
     }
 
+    /** Abre um link da web no navegador do aparelho (só http e https). */
+    @PluginMethod
+    public void abrirUrl(PluginCall call) {
+        String url = call.getString("url", "");
+        if (!(url.startsWith("https://") || url.startsWith("http://")) || url.length() > 2000) { call.reject("Link inválido."); return; }
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { getContext().startActivity(i); call.resolve(); } catch (Exception e) { call.reject("Não consegui abrir o link: " + e.getMessage()); }
+    }
+
     @PluginMethod
     public void detalhes(PluginCall call) {
         Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + call.getString("pacote", ""))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

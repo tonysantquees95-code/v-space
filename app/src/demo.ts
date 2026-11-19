@@ -29,6 +29,7 @@ export const motorDemo: Motor = {
   apps: async () => instalados.map((a) => ({ ...a })),
   abrir: async (p) => avisar(`(demonstração) abriria ${instalados.find((a) => a.pacote === p)?.nome ?? p}`),
   detalhes: async (p) => avisar(`(demonstração) informações de ${instalados.find((a) => a.pacote === p)?.nome ?? p}`),
+  abrirUrl: async (url) => avisar(`(demonstração) abriria ${url}`),
   desinstalar: async (p) => { instalados = instalados.filter((a) => a.pacote !== p); ouvintes.forEach((cb) => cb()); },
   aoMudarApps: (cb) => { ouvintes.add(cb); return () => { ouvintes.delete(cb); }; },
   ehPadrao: async () => true,

@@ -7,6 +7,10 @@ import {
 } from "./dados.ts";
 import { categoriaDe, criarCategoria, desfavoritar, favoritar, moverParaCategoria } from "./categorias.ts";
 import { Organizar } from "./telas/Organizar";
+import { Conta } from "./telas/Conta";
+import { Busca } from "./telas/Busca";
+import { guardarAppRecente } from "./busca.ts";
+import { aparelhoLocal, entrarDepois, guardarSessao, marcarEntrarDepois, sair as sairDaConta, sessaoGuardada, type Sessao } from "./conta";
 import { guardarBanco, lerBanco } from "./armazem";
 import { aplicarTema } from "./tema";
 import { motor } from "./motor";
@@ -40,6 +44,10 @@ export default function App() {
   const [mover, setMover] = useState<string | null>(null);
   const [novaCat, setNovaCat] = useState(false);
   const [organizar, setOrganizar] = useState(false);
+  const [sessao, setSessao] = useState<Sessao | null>(() => sessaoGuardada());
+  const [adiado, setAdiado] = useState(() => entrarDepois());
+  const [pedirConta, setPedirConta] = useState(false);
+  const [busca, setBusca] = useState(false);
   const [papel, setPapel] = useState<string | null>(() => lerPapel());
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuAberto | null>(null);
@@ -92,14 +100,15 @@ export default function App() {
   const mudar = useCallback((f: (b: Banco) => Banco) => setBanco(f), []);
 
   const abrir = useCallback((pacote: string) => {
-    setGaveta(null); setPastaAberta(null);
+    setGaveta(null); setPastaAberta(null); setBusca(false);
+    guardarAppRecente(pacote);
     void motor.abrir(pacote).catch(() => falar(`Não consegui abrir ${porPacote.get(pacote)?.nome ?? "o app"}.`));
   }, [falar, porPacote]);
 
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
-  const temCamada = !!(menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
+  const temCamada = !!(busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
   const fecharTopo = useCallback(() => {
-    if (organizar) setOrganizar(false); else if (novaCat) setNovaCat(false); else if (mover) setMover(null); else if (addCat) setAddCat(null); else if (favoritosAberto) setFavoritosAberto(false); else if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
+    if (busca) setBusca(false); else if (pedirConta) setPedirConta(false); else if (organizar) setOrganizar(false); else if (novaCat) setNovaCat(false); else if (mover) setMover(null); else if (addCat) setAddCat(null); else if (favoritosAberto) setFavoritosAberto(false); else if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
   }, [menu, agrupar, rever, pastaAberta, estudio, gaveta, organizar, novaCat, mover, addCat, favoritosAberto, criarPastaAberto, nova, menuVazio]);
   const topo = useRef(fecharTopo); topo.current = fecharTopo;
   useEffect(() => {
@@ -109,13 +118,15 @@ export default function App() {
   }, []);
   // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
   useEffect(() => {
-    const f = () => { setOrganizar(false); setNovaCat(false); setMover(null); setAddCat(null); setFavoritosAberto(false); setMenuVazio(false); setCriarPastaAberto(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    const f = () => { setBusca(false); setPedirConta(false); setOrganizar(false); setNovaCat(false); setMover(null); setAddCat(null); setFavoritosAberto(false); setMenuVazio(false); setCriarPastaAberto(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
     window.addEventListener("vspaceinicio", f);
     return () => window.removeEventListener("vspaceinicio", f);
   }, []);
   useEffect(() => { const t = (e: KeyboardEvent) => { if (e.key === "Escape" && temCamada) fecharTopo(); }; window.addEventListener("keydown", t); return () => window.removeEventListener("keydown", t); }, [temCamada, fecharTopo]);
 
   if (apresentar) return <Apresentacao aoConcluir={() => setApresentar(false)} />;
+  // Vetorial ID é o padrão da suíte: pede a conta uma vez. Sem internet dá para adiar, para o celular nunca ficar sem tela inicial.
+  if (!sessao && !adiado) return <Conta aparelho={aparelhoLocal()} aoEntrar={(s) => { guardarSessao(s); setSessao(s); }} aoAdiar={() => { marcarEntrarDepois(); setAdiado(true); }} />;
   if (novidades.length) return <Novidades itens={novidades} aoFechar={() => setNovidades([])} />;
 
   const appDoMenu = menu ? porPacote.get(menu.pacote) : undefined;
@@ -143,7 +154,7 @@ export default function App() {
   return (
     <>
       <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
-        aoGaveta={(busca) => setGaveta({ busca })} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel}
+        aoGaveta={(abrirBusca) => (abrirBusca ? setBusca(true) : setGaveta({ busca: false }))} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel}
         aoMenuFavorito={(pacote) => setMenu({ pacote, origem: "favorito" })} aoMenuCategoria={(pacote) => setMenu({ pacote, origem: "categoria" })}
         aoAdicionarFavorito={() => setFavoritosAberto(true)} aoAdicionarNaCategoria={setAddCat} aoOrganizar={() => setOrganizar(true)} aoNovaCategoria={() => setNovaCat(true)} />
 
@@ -153,21 +164,25 @@ export default function App() {
         aoFechar={() => setAddCat(null)} aoConfirmar={(p) => mudar((b) => p.reduce((acc, x) => moverParaCategoria(acc, x, c.id), b))} /> : null; })()}
       {mover && porPacote.get(mover) && <EscolherCategoria app={porPacote.get(mover)!} categorias={banco.categorias} atual={categoriaDe(banco, porPacote.get(mover)!)} aoFechar={() => setMover(null)} aoEscolher={(id) => mudar((b) => moverParaCategoria(b, mover, id))} />}
       {novaCat && <NovaCategoria aoFechar={() => setNovaCat(false)} aoSalvar={(nome, icone) => { const r = criarCategoria(banco, nome, icone); if (!r.ok) falar("Limite de categorias atingido."); else setBanco(r.banco); }} />}
-      {organizar && <Organizar banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setOrganizar(false)} />}
+      {organizar && <Organizar banco={banco} apps={apps} token={sessao?.token ?? ""} aoPedirConta={() => { setOrganizar(false); setPedirConta(true); }} aoMudar={mudar} aoFechar={() => setOrganizar(false)} />}
+      {busca && <Busca apps={visiveis} aoFechar={() => setBusca(false)} aoAbrirApp={abrir}
+        aoAjuste={(destino) => { setBusca(false); if (destino === "@organizar") setOrganizar(true); else { setGaveta(null); setEstudio(destino as AbaEstudio); } }}
+        aoWeb={(url) => { setBusca(false); void motor.abrirUrl(url).catch(() => falar("Não consegui abrir o navegador.")); }} />}
+      {pedirConta && <Conta aparelho={aparelhoLocal()} motivo="Entre com o Vetorial ID para usar a inteligência artificial." aoEntrar={(s) => { guardarSessao(s); setSessao(s); setPedirConta(false); setOrganizar(true); }} aoFechar={() => setPedirConta(false)} />}
 
       {menuVazio && <MenuVazio papel={papel} bloqueado={banco.bloqueado} aoFechar={() => setMenuVazio(false)} aoUsarPronto={usarPronto} aoPapel={() => setEstudio("papel")} aoWidgets={() => setEstudio("widgets")} aoApps={() => setGaveta({ busca: false })}
         aoPasta={() => setCriarPastaAberto(true)} aoGrade={() => setEstudio("inicio")} aoIcones={() => setEstudio("icones")} aoEstudio={() => setEstudio("temas")} aoBloquear={() => { mudar((b) => ({ ...b, bloqueado: !b.bloqueado })); falar(banco.bloqueado ? "Layout desbloqueado." : "Layout bloqueado."); }} />}
 
       {criarPastaAberto && <CriarPasta candidatos={candidatos0} aoFechar={() => setCriarPastaAberto(false)} aoCriar={criarVarias} />}
 
-      {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} buscaInicial={gaveta.busca} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
+      {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} aoBuscar={() => setBusca(true)} aoOrganizar={() => setOrganizar(true)} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
 
       {pasta && !menu && <FolhaPasta pasta={pasta} rotulo={banco.tema.rotulos} apps={pasta.apps.map((a) => porPacote.get(a)).filter((a): a is AppInfo => !!a)}
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}
 
       {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
 
-      {estudio && <Estudio aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
+      {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
         aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (

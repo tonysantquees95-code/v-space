@@ -17,7 +17,7 @@ import { apagarCategoria, contagens, criarCategoria, editarCategoria, reordenarC
 import { NovaCategoria } from "./Menus";
 
 /** Atalhos de entrada (menus e botões abrem o editor já na parte certa). */
-export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "categorias";
+export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "categorias" | `${string}/${string}`;
 type Secao = "temas" | "inicio" | "categorias" | "apps" | "papel" | "widgets" | "config";
 interface Parte { id: string; nome: string; icone: NomeIcone }
 interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] }
@@ -29,9 +29,9 @@ const SECOES: DefSecao[] = [
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
-  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
-const ENTRADA: Record<AbaEstudio, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
+const ENTRADA: Record<string, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
 const CORES = ["#22d3ee", "#38bdf8", "#8ab4ff", "#a78bfa", "#e879f9", "#f472b6", "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#ffffff"];
 const FUNDOS_ESCUROS = ["#000000", "#05070d", "#0b1020", "#12081a", "#14080a", "#04100b", "#101010", "#1a1033"];
@@ -81,13 +81,13 @@ function Previa({ banco, porPacote, papel }: { banco: Banco; porPacote: Map<stri
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
-  aoOrganizar: () => void; aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
+  email: string; aoEntrarConta: () => void; aoSairDaConta: () => void; aoOrganizar: () => void; aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
-export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoOrganizar }: Props) {
+export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
   const [editCat, setEditCat] = useState<Categoria | "nova" | null>(null);
-  const [entrada] = useState(() => ENTRADA[abaInicial]);
+  const [entrada] = useState<[Secao, string]>(() => { const e = ENTRADA[abaInicial]; if (e) return e; const [s, p] = abaInicial.split("/"); const sec = SECOES.find((x) => x.id === s); return sec && sec.partes.some((x) => x.id === p) ? [sec.id, p!] : ["temas", "escolha"]; });
   const [secao, setSecao] = useState<Secao>(entrada[0]);
   const [parte, setParte] = useState<string>(entrada[1]);
   const [padrao, setPadrao] = useState<boolean | null>(null);
@@ -307,6 +307,15 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <Cartao titulo={`No seu início (${banco.widgets.length} de ${MAX_WIDGETS})`}>
           {banco.widgets.length === 0 ? <p className="text-sm text-suave">Nenhum widget ainda. Vá em “Adicionar”.</p>
             : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
+        </Cartao>
+      );
+      case "config/conta": return (
+        <Cartao titulo="Vetorial ID">
+          {email ? (
+            <div className="space-y-3"><p className="text-sm">Você está conectado como <b className="break-all">{email}</b>. A mesma conta vale para todos os apps da Vetorial Tech.</p><Botao onClick={aoSairDaConta}>Sair da conta</Botao></div>
+          ) : (
+            <div className="space-y-3"><p className="text-sm text-suave">Você ainda não entrou. A conta libera a inteligência artificial (Organizar com IA).</p><Botao variante="primario" onClick={aoEntrarConta}>Entrar com o Vetorial ID</Botao></div>
+          )}
         </Cartao>
       );
       case "config/gestos": return (

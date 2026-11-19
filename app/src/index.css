@@ -175,3 +175,13 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .trilho-item[aria-pressed="true"] { background: color-mix(in srgb, var(--color-neon, #7c5cff) 28%, transparent); border-color: var(--color-neon, #7c5cff); color: #fff; }
 .trilho-item:active { transform: scale(0.94); }
 .trilho-tracejado { border: 1.5px dashed #ffffff66; }
+
+/* Busca universal: resultados encostados embaixo (perto do teclado), campo na base */
+.busca { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: #070a14f2; backdrop-filter: blur(18px); padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+.busca-lista { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; padding: 12px 10px 4px; }
+.busca-conteudo { margin-top: auto; width: 100%; max-width: 36rem; margin-left: auto; margin-right: auto; }
+.busca-barra { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 12px 10px; max-width: 36rem; width: 100%; margin: 0 auto; }
+.busca-campo { flex: 1; min-width: 0; min-height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 999px; background: #ffffff14; border: 1px solid #ffffff26; color: var(--color-texto); }
+.busca-campo input { flex: 1; min-width: 0; background: transparent; outline: none; font-size: 16px; color: inherit; }
+.busca-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: #ffffff12; border: 1px solid #ffffff1f; font-size: 14px; color: var(--color-texto); }
+.busca-aba[aria-selected="true"] { background: color-mix(in srgb, var(--color-neon) 28%, transparent); border-color: var(--color-neon); font-weight: 700; }

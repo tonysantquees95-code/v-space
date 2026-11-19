@@ -26,7 +26,8 @@ const FAVS = ["com.google.android.dialer", "com.google.android.apps.messaging", 
 const cats = (extra = {}) => JSON.stringify({ ...JSON.parse(banco()), modo: "categorias", favoritos: FAVS, widgets: [{ id: "w1", tipo: "relogio-digital" }, { id: "w2", tipo: "bateria" }], ...extra });
 const entrar = async (p, nome) => { await p.getByRole("button", { name: new RegExp(`^${nome},`) }).click(); await p.waitForTimeout(250); };
 
-const base = { "vhome.tour": "1", "vhome.termos": TERMOS, "vhome.novidades.vistas": "9999" };
+const SESSAO = JSON.stringify({ token: "demo", email: "demo@vetorial.tech", nome: "Demo" });
+const base = { "vspace.sessao": SESSAO, "vhome.tour": "1", "vhome.termos": TERMOS, "vhome.novidades.vistas": "9999" };
 const livre = async (p) => { await p.waitForTimeout(150); };
 const abrirGaveta = async (p) => { await p.getByRole("button", { name: "Todos os apps" }).click(); await p.getByRole("dialog", { name: "Todos os apps" }).waitFor(); };
 const abrirEstudio = async (p) => { await p.getByRole("button", { name: "Abrir o Estúdio" }).click(); await p.getByRole("dialog", { name: "Estúdio" }).waitFor(); };
@@ -44,6 +45,7 @@ export default {
     grande: { ...base, "vhome.banco": grande },
     widgets: { ...base, "vhome.banco": comWidgets },
     redondo: { ...base, "vhome.banco": redondo },
+    semConta: { "vhome.tour": "1", "vhome.termos": TERMOS, "vhome.novidades.vistas": "9999" },
     categorias: { ...base, "vhome.banco": cats() },
     categoriasBloqueado: { ...base, "vhome.banco": cats({ bloqueado: true }) },
     categoriasVazio: { ...base, "vhome.banco": cats({ favoritos: [], widgets: [] }) },
@@ -85,9 +87,11 @@ export default {
     ["gaveta", "completo", abrirGaveta],
     ["gaveta-grade", "redondo", abrirGaveta],
     ["gaveta-letra", "completo", async (p) => { await abrirGaveta(p); const l = p.getByRole("button", { name: "Ir para a letra V" }); if (await l.isVisible().catch(() => false)) await l.click(); await p.waitForTimeout(400); }],
-    ["gaveta-busca", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("textbox", { name: "Pesquisar apps" }).fill("cam"); await p.waitForTimeout(200); await p.getByRole("dialog", { name: "Todos os apps" }).getByRole("button", { name: "Câmera" }).waitFor(); }],
-    ["gaveta-busca-vazia", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("textbox", { name: "Pesquisar apps" }).fill("zzzz"); await p.getByText(/Nenhum app com/).waitFor(); }],
-    ["gaveta-pela-busca", "completo", async (p) => { const b = p.getByRole("button", { name: "Pesquisar apps" }); if (!(await b.isVisible())) throw new Error("PULAR"); await b.click(); await p.getByRole("dialog", { name: "Todos os apps" }).waitFor(); }],
+    ["gaveta-busca", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("button", { name: "Pesquisar", exact: true }).click(); await p.getByRole("textbox", { name: "Pesquise qualquer coisa" }).fill("cam"); await p.getByRole("dialog", { name: "Pesquisar" }).getByText("Melhor resultado").waitFor(); }],
+    ["gaveta-busca-vazia", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("button", { name: "Pesquisar", exact: true }).click(); await p.getByRole("textbox", { name: "Pesquise qualquer coisa" }).fill("zzzz"); await p.getByRole("tab", { name: /Aplicativos/ }).waitFor(); await p.getByRole("tab", { name: /Aplicativos/ }).click(); await p.getByText(/Nenhum app com/).waitFor(); }],
+    ["busca-config", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("button", { name: "Pesquisar", exact: true }).click(); await p.getByRole("textbox", { name: "Pesquise qualquer coisa" }).fill("colunas"); await p.getByRole("dialog", { name: "Pesquisar" }).getByText("Colunas e linhas").first().waitFor(); }],
+    ["busca-inicial", "completo", async (p) => { await abrirGaveta(p); await p.getByRole("button", { name: "Pesquisar", exact: true }).click(); await p.getByRole("textbox", { name: "Pesquise qualquer coisa" }).waitFor(); }],
+    ["gaveta-pela-busca", "completo", async (p) => { const b = p.getByRole("button", { name: "Pesquisar apps" }); if (!(await b.isVisible())) throw new Error("PULAR"); await b.click(); await p.getByRole("dialog", { name: "Pesquisar" }).waitFor(); }],
     ["estudio-temas", "completo", async (p) => { await abrirEstudio(p); }],
     ["estudio-tema-brasa", "completo", async (p) => { await abrirEstudio(p); await p.getByRole("button", { name: /Brasa/ }).click(); await p.waitForTimeout(250); }],
     ["menu-tela-vazia", "completo", async (p) => { await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("dialog", { name: "Tela inicial" }).waitFor(); }],
@@ -116,7 +120,7 @@ export default {
     ["estudio-gaveta", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Aplicativos"); }],
     ["estudio-backup", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Backup"); await p.getByRole("button", { name: "Salvar backup" }).waitFor(); }],
     ["estudio-launcher", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Launcher"); await p.getByText("O V-Space é o launcher padrão").waitFor(); }],
-    ["estudio-gestos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await p.getByRole("switch", { name: "Bloquear layout" }).waitFor(); }],
+    ["estudio-gestos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Gestos"); await p.getByRole("switch", { name: "Bloquear layout" }).waitFor(); }],
     ["estudio-cenas", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cenas"); }],
     ["estudio-cena-aplicada", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cenas"); await p.getByRole("button", { name: "Cena Mar calmo" }).click(); await p.waitForTimeout(300); }],
     ["estudio-cores", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cores"); }],
@@ -152,6 +156,10 @@ export default {
     ["estudio-categorias-modo", "categorias", async (p) => { await abrirEstudio(p); await aba(p, "Categorias"); await aba(p, "Tela inicial"); }],
     ["estudio-categorias-lista", "categorias", async (p) => { await abrirEstudio(p); await aba(p, "Categorias"); await aba(p, "Suas categorias"); await p.getByRole("button", { name: "Editar Jogos" }).waitFor(); }],
     ["estudio-categorias-editar", "categorias", async (p) => { await abrirEstudio(p); await aba(p, "Categorias"); await aba(p, "Suas categorias"); await p.getByRole("button", { name: "Editar Jogos" }).click(); await p.getByRole("dialog", { name: "Editar categoria" }).waitFor(); }],
+    ["conta-entrada", "semConta", async (p) => { await p.getByRole("dialog", { name: "Entrar com o Vetorial ID" }).waitFor(); await p.getByRole("button", { name: "Entrar", exact: true }).waitFor(); }],
+    ["conta-criar", "semConta", async (p) => { await p.getByRole("button", { name: /Não tenho conta/ }).click(); await p.getByText("Senha de recuperação (6 números)").waitFor(); }],
+    ["conta-recuperar", "semConta", async (p) => { await p.getByRole("button", { name: "Recuperar" }).click(); await p.waitForTimeout(300); }],
+    ["estudio-conta", "categorias", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Conta"); await p.getByText("demo@vetorial.tech").waitFor(); }],
     ["estudio-grade-mais-colunas", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Início");
       await p.getByRole("button", { name: "Mais colunas" }).click(); await p.getByRole("button", { name: "Mais colunas" }).click(); await p.waitForTimeout(200);

@@ -1,6 +1,6 @@
 // Primeira abertura: conhecer as funções, entender as permissões e aceitar os termos.
 // Mudou o texto dos termos: suba VERSAO_DOS_TERMOS e a pessoa aceita de novo.
-export const VERSAO_DOS_TERMOS = 3;
+export const VERSAO_DOS_TERMOS = 4;
 const CHAVE_TERMOS = "vhome.termos";
 const CHAVE_TOUR = "vhome.tour";
 
@@ -21,7 +21,7 @@ export const TERMOS: { titulo: string; texto: string }[] = [
   { titulo: "2. Seus apps", texto: "Para mostrar os seus apps, o V-Space lê a lista de aplicativos instalados no aparelho. Essa lista fica só no aparelho. A única exceção é quando você toca em “Organizar com IA”: aí os NOMES dos apps e das categorias são enviados ao servidor da Vetorial Tech e a um serviço de inteligência artificial de terceiros, só para sugerir em qual categoria cada app fica. Nada é guardado pela Vetorial Tech e nenhum dado pessoal vai junto. Sem tocar nesse botão, nada sai do aparelho." },
   { titulo: "3. Mudanças no aparelho", texto: "Desinstalar um app é sempre uma ação que você confirma; quem remove é o próprio Android, que também pede a sua confirmação. Ocultar e tirar da tela não apaga nada." },
   { titulo: "4. Permissões", texto: "O V-Space só usa as permissões explicadas na tela anterior, para o fim descrito. Você pode retirá-las a qualquer momento nas configurações do aparelho; algumas funções deixam de funcionar sem elas." },
-  { titulo: "5. Privacidade", texto: "O layout e o tema ficam guardados no aparelho. O backup é um arquivo que você escolhe onde salvar. O V-Space não usa conta. Só envia algo à internet se você adicionar o widget de Clima: o nome da cidade e o ponto no mapa vão ao serviço Open-Meteo para buscar o tempo, e as atualizações do app são consultadas no servidor da Vetorial Tech e no GitHub. A agenda é apenas lida, no aparelho." },
+  { titulo: "5. Privacidade", texto: "Para usar o app você entra com o Vetorial ID, a conta única da Vetorial Tech: guardamos o seu e-mail e nome nos servidores da Vetorial Tech só para a conta funcionar, e o app guarda no aparelho um código de acesso (que sai quando você toca em Sair da conta). O layout e o tema ficam guardados no aparelho. O backup é um arquivo que você escolhe onde salvar. O V-Space não usa conta. Só envia algo à internet se você adicionar o widget de Clima: o nome da cidade e o ponto no mapa vão ao serviço Open-Meteo para buscar o tempo, e as atualizações do app são consultadas no servidor da Vetorial Tech e no GitHub. A agenda é apenas lida, no aparelho." },
   { titulo: "6. Garantias", texto: "O V-Space é oferecido como está. A Vetorial Tech não se responsabiliza por perdas decorrentes do uso; mantenha um backup do seu layout." },
   { titulo: "7. Mudanças", texto: "Estes termos podem mudar. Quando mudarem, o V-Space pede que você aceite de novo antes de continuar." },
 ];
