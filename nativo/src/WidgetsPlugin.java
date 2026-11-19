@@ -306,12 +306,23 @@ public class WidgetsPlugin extends Plugin {
 
     private String erroVista = "";
 
+    /** Pede ao app dono do widget que desenhe de novo (resolve o "Não foi possível adicionar widget" de widgets que ficaram sem atualização). */
+    private void pedirAtualizacao(int id, AppWidgetProviderInfo info) {
+        try {
+            Intent u = new Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            u.setComponent(info.provider);
+            u.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[] { id });
+            getContext().sendBroadcast(u);
+        } catch (Throwable ignora) { }
+    }
+
     private Envoltorio criarVista(int id) {
         try {
             AppWidgetProviderInfo info = gerente.getAppWidgetInfo(id);
             if (info == null) { erroVista = "O Android não reconhece mais este widget (o app dele foi removido ou atualizado). Remova e adicione de novo."; return null; }
             AppWidgetHostView hv = host.createView(getContext(), id, info);
             hv.setAppWidget(id, info);
+            pedirAtualizacao(id, info);
             return new Envoltorio(getContext(), id, hv);
         } catch (Throwable e) {
             erroVista = "Não consegui abrir este widget (" + e.getClass().getSimpleName() + "). Remova e adicione de novo.";
