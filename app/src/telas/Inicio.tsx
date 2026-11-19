@@ -78,6 +78,13 @@ function CorpoCategorias(props: Props) {
   );
 }
 
+/** Temperatura (quente/fria) e vinheta do papel de parede: uma camada de cor e outra de bordas escuras. */
+export function tomDoPapel(t: { temperatura: number; vinheta: number }): React.CSSProperties {
+  const k = Math.abs(t.temperatura) / 100; // até 0,5
+  const cor = t.temperatura >= 0 ? `rgba(255, 150, 40, ${k})` : `rgba(70, 140, 255, ${k})`;
+  const v = t.vinheta / 100;
+  return { background: `radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,${v}) 100%), linear-gradient(${cor}, ${cor})` };
+}
 export function Inicio(props: Props) {
   const { banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoEstudio, aoMenuVazio, papel } = props;
   const agora = useRelogio();
@@ -94,7 +101,7 @@ export function Inicio(props: Props) {
   return (
     <div className="inicio" onTouchStart={(e) => { const c = e.touches[0]!; const r = (e.target as Element).closest?.(".cat-corpo"); toque.current = r && r.scrollHeight > r.clientHeight + 4 ? null : { x: c.clientX, y: c.clientY }; }}
       onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60 && banco.gesto !== "nada") aoGaveta(banco.gesto === "pesquisa"); }}>
-      {t.fundo === "foto" && papel && <><div className="papel" aria-hidden style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px)` }} /><div className="papel-escuro" aria-hidden style={{ opacity: t.escuro / 100 }} /></>}
+      {t.fundo === "foto" && papel && <><div className="papel" aria-hidden style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px) saturate(${t.saturacao}%)` }} /><div className="papel-escuro" aria-hidden style={{ opacity: t.escuro / 100 }} /><div className="papel-tom" aria-hidden style={tomDoPapel(t)} /></>}
       <header className="inicio-topo">
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>

@@ -1,3 +1,4 @@
+import { definirSelos } from "./selos";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as AppNativo } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
@@ -15,6 +16,7 @@ import { aparelhoLocal, entrarDepois, guardarSessao, marcarEntrarDepois, sair as
 import { guardarBanco, lerBanco } from "./armazem";
 import { aplicarTema } from "./tema";
 import { motor } from "./motor";
+import { Icone } from "./icones";
 import { novasDesde, lerVisto, NOVIDADES, ultimoId } from "./novidades";
 import { precisaApresentar } from "./apresentacao";
 import { Inicio } from "./telas/Inicio";
@@ -58,6 +60,16 @@ export default function App() {
   const [agrupar, setAgrupar] = useState<string | null>(null);
   const [rever, setRever] = useState<"tour" | "termos" | null>(null);
   const [aviso, setAviso] = useState("");
+  // animação do cadeado ao travar/destravar o layout
+  const [cadeado, setCadeado] = useState<null | boolean>(null);
+  const bloqAntes = useRef(banco.bloqueado);
+  useEffect(() => {
+    if (bloqAntes.current === banco.bloqueado) return;
+    bloqAntes.current = banco.bloqueado;
+    setCadeado(banco.bloqueado);
+    const t = window.setTimeout(() => setCadeado(null), 1100);
+    return () => window.clearTimeout(t);
+  }, [banco.bloqueado]);
   const temporizador = useRef(0);
 
   const falar = useCallback((m: string) => { setAviso(m); window.clearTimeout(temporizador.current); temporizador.current = window.setTimeout(() => setAviso(""), 2600); }, []);
@@ -166,6 +178,16 @@ export default function App() {
   };
   const comAviso = (r: { banco: Banco; ok: boolean }, falha: string) => { setBanco(r.banco); if (!r.ok) falar(falha); };
 
+  // selos de notificação: atualiza a cada 5 s com o app aberto (precisa do acesso às notificações)
+  useEffect(() => {
+    let vivo = true;
+    const ler = () => { if (!document.hidden) void motor.selos().then((r) => { if (vivo) definirSelos(r); }); };
+    ler();
+    const t = window.setInterval(ler, 5000);
+    document.addEventListener("visibilitychange", ler);
+    return () => { vivo = false; window.clearInterval(t); document.removeEventListener("visibilitychange", ler); };
+  }, []);
+
   return (
     <>
       <Inicio banco={banco} aoMudarWidgets={(ws) => mudar((b) => ({ ...b, widgets: ws }))} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
@@ -218,6 +240,8 @@ export default function App() {
 
       {rever === "tour" && <div className="fixed inset-0 z-50 flex flex-col bg-fundo"><div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col px-5 pb-4 pt-[max(1.5rem,env(safe-area-inset-top))]"><Tour rotuloFinal="Fechar" aoTerminar={() => setRever(null)} aoFechar={() => setRever(null)} /></div></div>}
       {rever === "termos" && <Termos aoFechar={() => setRever(null)} />}
+
+      {cadeado !== null && <div className={`cadeado-anim ${cadeado ? "fecha" : "abre"}`} role="status" aria-label={cadeado ? "Layout bloqueado" : "Layout liberado"}><Icone nome="cadeado" tam={40} /><span>{cadeado ? "Layout bloqueado" : "Layout liberado"}</span></div>}
 
       {aviso && <div className="aviso-toast" role="status">{aviso}</div>}
     </>

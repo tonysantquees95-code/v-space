@@ -102,3 +102,13 @@ t2("widget real de app: só vale com provider e número do Android", () => {
   const b = addW({ widgets: [] }, { tipo: "externo", provider: "a.b/c.D", appId: 3, titulo: "X", w: 2, h: 3 }).banco;
   assert.equal(b.widgets[0].h, 3);
 });
+
+import { limparTema as _lt, temaPadrao as _tp } from "../src/dados.ts";
+import { test as _t } from "node:test";
+import _a from "node:assert/strict";
+_t("tema: saturação, temperatura e vinheta ficam nos limites", () => {
+  const p = _tp();
+  _a.equal(p.saturacao, 100); _a.equal(p.temperatura, 0); _a.equal(p.vinheta, 0);
+  const t = _lt({ ...p, saturacao: 999, temperatura: -999, vinheta: -5 });
+  _a.equal(t.saturacao, 200); _a.equal(t.temperatura, -50); _a.equal(t.vinheta, 0);
+});

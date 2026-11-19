@@ -16,6 +16,8 @@ export interface Tema {
   forma: Forma; tamanho: number; rotulos: boolean; gaveta: EstiloGaveta; botoes: EstiloBotao;
   /** papel de parede (fundo "foto"): desfoque em px e escurecimento em % */
   desfoque: number; escuro: number;
+  /** ajustes de cor do papel: saturação em % (100 = original), temperatura de -50 (fria) a 50 (quente) e vinheta (bordas escuras) em % */
+  saturacao: number; temperatura: number; vinheta: number;
   /** raio dos cartões e janelas (px), estilo do dock, pacote de ícones e estilo das pastas */
   cantos: number; dock: EstiloDock; pacote: PacoteIcones; pasta: EstiloPasta;
 }
@@ -122,15 +124,18 @@ export const LINHAS = { min: 4, max: 7 };
 export const TAMANHO_ICONE = { min: 40, max: 72 };
 export const DESFOQUE = { min: 0, max: 24 };
 export const ESCURO = { min: 0, max: 80 };
+export const SATURACAO = { min: 0, max: 200 };
+export const TEMPERATURA = { min: -50, max: 50 };
+export const VINHETA = { min: 0, max: 80 };
 export const CANTOS = { min: 0, max: 32 };
 export const GESTOS: readonly Gesto[] = ["gaveta", "pesquisa", "nada"];
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
@@ -242,6 +247,7 @@ export function limparTema(x: unknown): Tema {
     forma: escolha(t.forma, FORMAS, p.forma), tamanho: limitar(t.tamanho, TAMANHO_ICONE.min, TAMANHO_ICONE.max, p.tamanho),
     rotulos: typeof t.rotulos === "boolean" ? t.rotulos : p.rotulos, gaveta: escolha(t.gaveta, GAVETAS, p.gaveta), botoes: escolha(t.botoes, BOTOES, p.botoes),
     desfoque: limitar(t.desfoque, DESFOQUE.min, DESFOQUE.max, p.desfoque), escuro: limitar(t.escuro, ESCURO.min, ESCURO.max, p.escuro),
+    saturacao: limitar(t.saturacao, SATURACAO.min, SATURACAO.max, 100), temperatura: limitar(t.temperatura, TEMPERATURA.min, TEMPERATURA.max, 0), vinheta: limitar(t.vinheta, VINHETA.min, VINHETA.max, 0),
     cantos: limitar(t.cantos, CANTOS.min, CANTOS.max, p.cantos), dock: escolha(t.dock, DOCKS, p.dock), pacote: escolha(t.pacote, PACOTES, p.pacote), pasta: escolha(t.pasta, PASTAS, p.pasta),
   };
 }

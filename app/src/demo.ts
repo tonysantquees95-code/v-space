@@ -24,6 +24,7 @@ let instalados: AppInfo[] = NOMES.map(([pacote, nome], i) => ({ pacote: pacote.r
 const ouvintes = new Set<() => void>();
 const avisar = (msg: string) => { try { window.dispatchEvent(new CustomEvent("demo-aviso", { detail: msg })); } catch { /* sem janela */ } };
 
+let demoContatos = false;
 let demoTocando = true;
 export const motorDemo: Motor = {
   nome: "demo",
@@ -47,6 +48,11 @@ export const motorDemo: Motor = {
   sistema: async () => ({ wifi: true, movel: true, volume: 40 }),
   mostrarVolume: async () => avisar("(demonstração) mostraria o volume"),
   abrirAjuste: async (t) => avisar(`(demonstração) abriria os ajustes de ${t}`),
+  selos: async () => ({ "demo.musica": 3, "demo.gov": 1 }),
+  contatosPermitidos: async () => demoContatos,
+  pedirContatos: async () => { demoContatos = true; return true; },
+  buscarContatos: async (t) => [{ nome: "Maria Souza", numero: "(51) 99999-0001" }, { nome: "Mário Lima", numero: "(51) 99999-0002" }].filter((x) => x.nome.toLowerCase().includes(t.toLowerCase())),
+  discar: async (n) => avisar(`(demonstração) abriria o discador com ${n}`),
   widgetsExternos: async () => [
     { provider: "com.google.android.calendar/Agenda", pacote: "com.google.android.calendar", app: "Agenda", nome: "Compromissos no dia", w: 2, h: 2 },
     { provider: "com.google.android.calendar/Mes", pacote: "com.google.android.calendar", app: "Agenda", nome: "Visualização por mês", w: 4, h: 4 },

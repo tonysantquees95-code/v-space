@@ -11,6 +11,7 @@ export type TelaAjuste = "wifi" | "rede" | "bateria";
 export interface ExternoInfo { provider: string; pacote: string; app: string; nome: string; w: number; h: number; previa?: string }
 /** Posição de um widget real na tela: retângulo inteiro (x, y, w, h) e a parte visível (cx, cy, cw, ch), em px CSS. */
 export interface ItemExterno { id: number; x: number; y: number; w: number; h: number; cx: number; cy: number; cw: number; ch: number }
+export interface Contato { nome: string; numero: string }
 export interface EventosExternos { longo: (id: number) => void; rolar: (dy: number) => void }
 import { motorDemo } from "./demo";
 
@@ -44,6 +45,11 @@ export interface Motor {
   removerWidgetExterno(id: number): Promise<void>;
   mostrarExternos(itens: ItemExterno[]): Promise<void>;
   aoEventoExterno(ev: EventosExternos): () => void;
+  selos(): Promise<Record<string, number>>;
+  contatosPermitidos(): Promise<boolean>;
+  pedirContatos(): Promise<boolean>;
+  buscarContatos(texto: string): Promise<Contato[]>;
+  discar(numero: string): Promise<void>;
 }
 
 interface PluginWidgets {
@@ -78,6 +84,11 @@ interface PluginNativo {
   sistema(): Promise<Sistema>;
   mostrarVolume(): Promise<void>;
   abrirAjuste(o: { tela: string }): Promise<void>;
+  selos(): Promise<{ contagem: Record<string, number> }>;
+  contatosPermitidos(): Promise<{ permitida: boolean }>;
+  pedirContatos(): Promise<{ permitida: boolean }>;
+  buscarContatos(o: { texto: string }): Promise<{ contatos: { nome: string; numero: string }[] }>;
+  discar(o: { numero: string }): Promise<void>;
   addListener(evento: "appsMudaram", cb: () => void): Promise<{ remove: () => Promise<void> }>;
 }
 
@@ -120,6 +131,17 @@ function criarAndroid(): Motor {
     sistema: async () => { try { const s = await n.sistema(); return { wifi: !!s.wifi, movel: !!s.movel, volume: Number.isFinite(s.volume) ? Math.max(0, Math.min(100, Math.round(s.volume))) : 0 }; } catch { return { wifi: false, movel: false, volume: 0 }; } },
     mostrarVolume: () => n.mostrarVolume(),
     abrirAjuste: (tela) => n.abrirAjuste({ tela }),
+    selos: async () => {
+      try {
+        const r: Record<string, number> = {};
+        for (const [k, v] of Object.entries((await n.selos()).contagem ?? {})) if (typeof v === "number" && v > 0 && k.length < 200) r[k] = Math.min(999, Math.round(v));
+        return r;
+      } catch { return {}; }
+    },
+    contatosPermitidos: async () => { try { return (await n.contatosPermitidos()).permitida; } catch { return false; } },
+    pedirContatos: async () => { try { return (await n.pedirContatos()).permitida; } catch { return false; } },
+    buscarContatos: async (texto) => { try { return (await n.buscarContatos({ texto })).contatos.slice(0, 5).map((x) => ({ nome: String(x.nome).slice(0, 80), numero: String(x.numero).slice(0, 30) })); } catch { return []; } },
+    discar: (numero) => n.discar({ numero }),
     widgetsExternos: async () => {
       try {
         return (await w.listar()).widgets.filter((x) => x && typeof x.provider === "string" && /^[\w.]+\/[\w.$]+$/.test(x.provider)).slice(0, 300).map((x) => ({

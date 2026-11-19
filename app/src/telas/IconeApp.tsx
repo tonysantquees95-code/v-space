@@ -1,11 +1,14 @@
 import type { AppInfo, Pasta } from "../dados.ts";
 import { usePressaoLonga } from "../ui";
+import { textoDoSelo, useSelo } from "../selos";
 
 /** O desenho do ícone, na forma e no tamanho escolhidos no Estúdio. */
-export function Glifo({ app }: { app: AppInfo }) {
+export function Glifo({ app, selo = false }: { app: AppInfo; selo?: boolean }) {
+  const n = useSelo(selo ? app.pacote : "");
   return (
     <span className="glifo" aria-hidden>
       {app.icone ? <img src={app.icone} alt="" draggable={false} /> : <span className="glifo-letra">{app.nome.charAt(0).toUpperCase()}</span>}
+      {selo && n > 0 && <span className="selo">{textoDoSelo(n)}</span>}
     </span>
   );
 }
@@ -14,7 +17,7 @@ export function IconeApp({ app, rotulo, aoAbrir, aoLonga, className = "app-cel" 
   const { foiLongo, ...eventos } = usePressaoLonga(aoLonga);
   return (
     <button type="button" {...eventos} onClick={() => { if (!foiLongo()) aoAbrir(); }} className={className} aria-label={app.nome}>
-      <Glifo app={app} />
+      <Glifo app={app} selo />
       {rotulo && <span className="app-rotulo">{app.nome}</span>}
     </button>
   );

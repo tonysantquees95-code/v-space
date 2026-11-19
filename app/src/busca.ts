@@ -22,7 +22,7 @@ export const AJUSTES: Ajuste[] = [
   { titulo: "Estilo da gaveta", onde: "Aplicativos · Disposição", destino: "apps/gaveta", chaves: "gaveta lista grade letras" },
   { titulo: "Apps ocultos", onde: "Aplicativos · Ocultos", destino: "apps/ocultos", chaves: "ocultos esconder oculto mostrar" },
   { titulo: "Papel de parede", onde: "Papel de parede · Escolha", destino: "papel/escolha", chaves: "papel parede fundo foto galeria wallpaper" },
-  { titulo: "Desfoque e escurecimento", onde: "Papel de parede · Ajustes", destino: "papel/ajustes", chaves: "desfoque blur escuro escurecimento" },
+  { titulo: "Desfoque, escurecimento, cor e vinheta", onde: "Papel de parede · Ajustes", destino: "papel/ajustes", chaves: "desfoque blur escuro escurecimento saturacao temperatura vinheta cor" },
   { titulo: "Adicionar widget", onde: "Widgets · Adicionar", destino: "widgets/adicionar", chaves: "widget widgets relogio clima bateria agenda" },
   { titulo: "Gerenciar widgets", onde: "Widgets · Gerenciar", destino: "widgets/gerenciar", chaves: "widget widgets remover" },
   { titulo: "Vetorial ID (conta)", onde: "Configurações · Conta", destino: "config/conta", chaves: "conta vetorial id entrar sair login" },

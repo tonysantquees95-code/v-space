@@ -20,6 +20,10 @@ export const NOVIDADES: Novidade[] = [
   { id: 13, data: "2026-11-19", tipo: "melhoria", titulo: "Atalhos ao lado e gaveta que fecha puxando", texto: "Bateria, Wi-Fi, rede, temperatura e volume agora ficam no canto direito, acima das categorias. Na gaveta de apps, puxe para baixo para voltar à tela inicial.", },
   { id: 14, data: "2026-11-19", tipo: "correcao", titulo: "Organizar com IA e botão Entendi", texto: "A organização com IA passou a funcionar com muitos apps (ela desistia no meio). E o botão Entendi desta tela não fica mais escondido atrás da barra de navegação.", },
   { id: 15, data: "2026-11-19", tipo: "novo", titulo: "Widgets dos seus apps", texto: "Em Estúdio › Widgets › Adicionar, no fim da lista, aparecem os widgets de verdade dos apps instalados (Agenda, Bem-estar Digital e outros). O Android pode pedir permissão ao adicionar. Segure o widget na tela inicial para mover, mudar o tamanho ou remover; arrastar para cima ou para baixo sobre ele rola a tela.", },
+  { id: 16, data: "2026-11-19", tipo: "novo", titulo: "Papel de parede com mais ajustes", texto: "Em Estúdio › Papel de parede › Ajustes, além de desfoque e escurecimento, agora dá para mudar a saturação das cores, deixar a imagem mais fria ou mais quente e escurecer as bordas (vinheta).", },
+  { id: 17, data: "2026-11-19", tipo: "novo", titulo: "Selo de notificações nos ícones", texto: "Os apps com notificações ganham uma bolinha com o número no ícone. Usa o mesmo acesso às notificações do player de música (Estúdio › Configurações › Atalhos). O V-Space só conta, não lê o texto.", },
+  { id: 18, data: "2026-11-19", tipo: "novo", titulo: "Contatos na pesquisa", texto: "Ao pesquisar um nome, aparece um botão para procurar também nos contatos. O Android pergunta se você deixa; depois é só tocar no contato para abrir o discador.", },
+  { id: 19, data: "2026-11-19", tipo: "melhoria", titulo: "Cadeado animado", texto: "Ao bloquear ou liberar o layout, um cadeado aparece na tela e fecha ou abre, para você saber que deu certo.", },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

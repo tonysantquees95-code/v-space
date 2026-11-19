@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -316,8 +316,17 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           <label className="mb-3 block text-sm text-suave">Desfoque
             <input type="range" aria-label="Desfoque" className="mt-1 w-full" min={DESFOQUE.min} max={DESFOQUE.max} value={t.desfoque} onChange={(ev) => aoMudar((b) => ajustarTema(b, { desfoque: Number(ev.target.value) }))} />
           </label>
-          <label className="block text-sm text-suave">Escurecimento
+          <label className="mb-3 block text-sm text-suave">Escurecimento
             <input type="range" aria-label="Escurecimento" className="mt-1 w-full" min={ESCURO.min} max={ESCURO.max} value={t.escuro} onChange={(ev) => aoMudar((b) => ajustarTema(b, { escuro: Number(ev.target.value) }))} />
+          </label>
+          <label className="mb-3 block text-sm text-suave">Saturação das cores
+            <input type="range" aria-label="Saturação" className="mt-1 w-full" min={SATURACAO.min} max={SATURACAO.max} value={t.saturacao} onChange={(ev) => aoMudar((b) => ajustarTema(b, { saturacao: Number(ev.target.value) }))} />
+          </label>
+          <label className="mb-3 block text-sm text-suave">Temperatura (fria ← → quente)
+            <input type="range" aria-label="Temperatura" className="mt-1 w-full" min={TEMPERATURA.min} max={TEMPERATURA.max} value={t.temperatura} onChange={(ev) => aoMudar((b) => ajustarTema(b, { temperatura: Number(ev.target.value) }))} />
+          </label>
+          <label className="block text-sm text-suave">Vinheta (bordas escuras)
+            <input type="range" aria-label="Vinheta" className="mt-1 w-full" min={VINHETA.min} max={VINHETA.max} value={t.vinheta} onChange={(ev) => aoMudar((b) => ajustarTema(b, { vinheta: Number(ev.target.value) }))} />
           </label>
         </Cartao>
       ) : <p className="text-sm text-suave">Escolha um papel de parede primeiro (parte “Escolha”) para ajustar o desfoque e o escurecimento.</p>;
@@ -391,7 +400,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
             <Linha titulo="Mostrar o player" texto="Quando algo toca (Deezer, YouTube Music, Spotify…), aparece entre os widgets e os favoritos, com voltar, pausar e avançar."><Interruptor rotulo="Mostrar o player de música" ligado={banco.musica} aoMudar={(v) => aoMudar((b) => ({ ...b, musica: v }))} /></Linha>
             {musicaOk === false && (
               <div className="mt-3 space-y-2">
-                <Aviso>Para saber o que está tocando, o Android pede que você libere o V-Space em “Acesso às notificações”. O V-Space só vê o título, o artista e os botões do player; não lê nem guarda suas notificações, e nada sai do aparelho.</Aviso>
+                <Aviso>Para saber o que está tocando, o Android pede que você libere o V-Space em “Acesso às notificações”. O V-Space só vê o título, o artista e os botões do player e conta as notificações de cada app (o selo no ícone); não lê nem guarda o texto, e nada sai do aparelho.</Aviso>
                 <Botao variante="primario" onClick={() => void motor.pedirMusica()}><Icone nome="escudo" tam={18} />Liberar o acesso</Botao>
               </div>
             )}

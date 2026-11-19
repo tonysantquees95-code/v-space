@@ -52,7 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /** A ponte do V-Space com o Android: apps instalados, abrir, desinstalar, launcher padrão e backup em arquivo. */
-@CapacitorPlugin(name = "VetorialHome", permissions = { @Permission(strings = { Manifest.permission.READ_CALENDAR }, alias = "agenda") })
+@CapacitorPlugin(name = "VetorialHome", permissions = { @Permission(strings = { Manifest.permission.READ_CALENDAR }, alias = "agenda"), @Permission(strings = { Manifest.permission.READ_CONTACTS }, alias = "contatos") })
 public class VSpacePlugin extends Plugin {
     private final ExecutorService fundo = Executors.newSingleThreadExecutor();
     private BroadcastReceiver observador;
@@ -384,6 +384,79 @@ public class VSpacePlugin extends Plugin {
         o.put("nivel", nivel < 0 || escala <= 0 ? 0 : (nivel * 100) / escala);
         o.put("carregando", estado == BatteryManager.BATTERY_STATUS_CHARGING || estado == BatteryManager.BATTERY_STATUS_FULL);
         call.resolve(o);
+    }
+
+    /** Selos: quantas notificações cada app tem agora (só a contagem; precisa do acesso às notificações). */
+    @PluginMethod
+    public void selos(PluginCall call) {
+        JSObject r = new JSObject();
+        JSObject m = new JSObject();
+        for (java.util.Map.Entry<String, Integer> e : MusicaListener.contar().entrySet()) m.put(e.getKey(), e.getValue());
+        r.put("contagem", m);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void contatosPermitidos(PluginCall call) {
+        JSObject o = new JSObject();
+        o.put("permitida", getPermissionState("contatos") == PermissionState.GRANTED);
+        call.resolve(o);
+    }
+
+    @PluginMethod
+    public void pedirContatos(PluginCall call) {
+        if (getPermissionState("contatos") == PermissionState.GRANTED) { contatosPermitidos(call); return; }
+        requestPermissionForAlias("contatos", call, "fimContatos");
+    }
+
+    @PermissionCallback
+    private void fimContatos(PluginCall call) { contatosPermitidos(call); }
+
+    /** Procura contatos pelo nome (até 5). Só lê, no aparelho; nada sai dele. */
+    @PluginMethod
+    public void buscarContatos(final PluginCall call) {
+        if (getPermissionState("contatos") != PermissionState.GRANTED) { call.reject("Sem permissão dos contatos."); return; }
+        final String texto = call.getString("texto", "").trim();
+        if (texto.length() < 2 || texto.length() > 60) { JSObject v = new JSObject(); v.put("contatos", new JSArray()); call.resolve(v); return; }
+        fundo.execute(new Runnable() {
+            @Override
+            public void run() {
+                Cursor c = null;
+                try {
+                    String[] cols = { android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER };
+                    c = getContext().getContentResolver().query(android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI, cols,
+                        android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " LIKE ?", new String[] { "%" + texto + "%" },
+                        android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " COLLATE LOCALIZED ASC");
+                    JSArray lista = new JSArray();
+                    java.util.HashSet<String> vistos = new java.util.HashSet<>();
+                    while (c != null && c.moveToNext() && lista.length() < 5) {
+                        String nome = c.getString(0), numero = c.getString(1);
+                        if (nome == null || numero == null) continue;
+                        if (!vistos.add(nome + "|" + numero.replaceAll("[^0-9+]", ""))) continue;
+                        JSObject o = new JSObject();
+                        o.put("nome", nome);
+                        o.put("numero", numero);
+                        lista.put(o);
+                    }
+                    JSObject r = new JSObject();
+                    r.put("contatos", lista);
+                    call.resolve(r);
+                } catch (Throwable e) {
+                    call.reject("Não consegui buscar nos contatos.");
+                } finally {
+                    if (c != null) c.close();
+                }
+            }
+        });
+    }
+
+    /** Abre o discador já com o número (a pessoa toca em ligar). */
+    @PluginMethod
+    public void discar(PluginCall call) {
+        String n = call.getString("numero", "").replaceAll("[^0-9+*#]", "");
+        if (n.length() < 3 || n.length() > 30) { call.reject("Número inválido."); return; }
+        Intent i = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(n))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try { getContext().startActivity(i); call.resolve(); } catch (Exception e) { call.reject("Não consegui abrir o discador."); }
     }
 
     @PluginMethod
