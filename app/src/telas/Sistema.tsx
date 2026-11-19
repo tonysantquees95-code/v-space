@@ -40,7 +40,7 @@ export function MiniPlayer({ ligado, aoAbrirApp }: { ligado: boolean; aoAbrirApp
 }
 
 /** Faixa de atalhos do canto: bateria, Wi-Fi, rede móvel, temperatura e volume. Cada um abre a tela certa do sistema. */
-export function FaixaAtalhos({ banco, widgets }: { banco: Banco; widgets: Widget[] }) {
+export function FaixaAtalhos({ banco, widgets, vertical = false }: { banco: Banco; widgets: Widget[]; vertical?: boolean }) {
   const [bat, setBat] = useState<Bateria | null>(null);
   const [sis, setSis] = useState<Sistema | null>(null);
   const [clima, setClima] = useState<Clima | null>(null);
@@ -57,7 +57,7 @@ export function FaixaAtalhos({ banco, widgets }: { banco: Banco; widgets: Widget
   const nivel = bat?.nivel ?? 0;
   const anel = 2 * Math.PI * 16;
   return (
-    <nav className="atalhos" aria-label="Atalhos do aparelho">
+    <nav className={vertical ? "atalhos atalhos-v" : "atalhos"} aria-label="Atalhos do aparelho">
       <button type="button" className="atalho" aria-label={`Bateria ${nivel}%`} onClick={() => void motor.abrirAjuste("bateria")}>
         <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden><circle cx="20" cy="20" r="16" fill="none" stroke="#ffffff33" strokeWidth="3" /><circle cx="20" cy="20" r="16" fill="none" stroke={nivel <= 20 ? "#fb7185" : "var(--color-neon)"} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(anel * nivel) / 100} ${anel}`} transform="rotate(-90 20 20)" /></svg>
         <span className="atalho-num num">{bat ? nivel : "–"}</span>

@@ -6,6 +6,7 @@ import { IconeApp } from "./IconeApp";
 /** Gaveta: todos os apps (menos os ocultos), em ordem alfabética, com busca e as letras na lateral. */
 export function Gaveta({ apps, estilo, aoBuscar, aoOrganizar, aoFechar, aoAbrir, aoMenu }: { apps: AppInfo[]; estilo: EstiloGaveta; aoBuscar: () => void; aoOrganizar: () => void; aoFechar: () => void; aoAbrir: (p: string) => void; aoMenu: (p: string) => void }) {
   const rolagem = useRef<HTMLDivElement>(null);
+  const toque = useRef<{ x: number; y: number; topo: boolean } | null>(null);
   const grupos = useMemo(() => agruparPorLetra(apps), [apps]);
   const irParaLetra = (l: string) => { const el = rolagem.current?.querySelector<HTMLElement>(`[data-letra="${l}"]`); if (el && rolagem.current) rolagem.current.scrollTo({ top: el.offsetTop - rolagem.current.offsetTop, behavior: "smooth" }); };
 
@@ -15,7 +16,10 @@ export function Gaveta({ apps, estilo, aoBuscar, aoOrganizar, aoFechar, aoAbrir,
   const bloco = (lista: AppInfo[]) => <div className={estilo === "lista" ? "gaveta-lista" : "gaveta-grade"}>{lista.map(celula)}</div>;
 
   return (
-    <div className="gaveta" role="dialog" aria-label="Todos os apps">
+    <div className="gaveta" role="dialog" aria-label="Todos os apps"
+      onTouchStart={(e) => { const t = e.touches[0]!; toque.current = { x: t.clientX, y: t.clientY, topo: (rolagem.current?.scrollTop ?? 0) <= 2 }; }}
+      onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i || !i.topo) return; const t = e.changedTouches[0]!; if (t.clientY - i.y > 90 && Math.abs(t.clientX - i.x) < 70) aoFechar(); }}>
+      <div className="gaveta-alca" aria-hidden />
       <header className="gaveta-topo">
         <button type="button" onClick={aoBuscar} aria-label="Pesquisar" className="gaveta-busca text-left"><Icone nome="pesquisa" tam={20} /><span className="min-w-0 flex-1 truncate text-suave">Pesquisar em {apps.length} apps</span></button>
         <button type="button" onClick={aoFechar} aria-label="Fechar a gaveta" className="botao-vidro"><Icone nome="fechar" /></button>

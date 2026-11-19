@@ -64,6 +64,8 @@ function CorpoCategorias(props: Props) {
         </div>
         {!ativa && !lista.length && !pode && <p className="cat-vazio">Nenhum favorito ainda.</p>}
       </div>
+      <div className="lado">
+      <FaixaAtalhos banco={banco} widgets={banco.widgets} vertical />
       <nav className="trilho" aria-label="Categorias">
         <button type="button" className="trilho-item" aria-pressed={aba === "inicio"} aria-label="Favoritos e widgets" onClick={() => setAba("inicio")}><Icone nome="estrela" tam={22} /></button>
         {visiveis.map((c) => <button key={c.id} type="button" className="trilho-item" style={c.cor ? ({ "--cor-cat": c.cor } as React.CSSProperties) : undefined} data-cor={!!c.cor} aria-pressed={aba === c.id} aria-label={`${c.nome}, ${cont[c.id] ?? 0} apps`} onClick={() => setAba(c.id)}><Icone nome={c.icone} tam={22} /></button>)}
@@ -71,6 +73,7 @@ function CorpoCategorias(props: Props) {
         <button type="button" className="trilho-item" aria-label="Organizar com IA" onClick={aoOrganizar ?? nada}><Icone nome="brilho" tam={22} /></button>
         <button type="button" className="trilho-item" aria-label="Pesquisar apps" onClick={() => aoGaveta(true)}><Icone nome="pesquisa" tam={22} /></button>
       </nav>
+      </div>
     </div>
   );
 }
@@ -96,7 +99,7 @@ export function Inicio(props: Props) {
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>
       </header>
-      <FaixaAtalhos banco={banco} widgets={banco.widgets} />
+      {banco.modo !== "categorias" && <FaixaAtalhos banco={banco} widgets={banco.widgets} />}
 
       {banco.modo === "categorias" ? <CorpoCategorias {...props} /> : (
         <>

@@ -49,6 +49,7 @@ export default function App() {
   const [adiado, setAdiado] = useState(() => entrarDepois());
   const [pedirConta, setPedirConta] = useState(false);
   const [busca, setBusca] = useState(false);
+  useEffect(() => { const f = () => setBusca(true); window.addEventListener("vspace-busca", f); return () => window.removeEventListener("vspace-busca", f); }, []);
   const [papel, setPapel] = useState<string | null>(() => lerPapel());
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuAberto | null>(null);

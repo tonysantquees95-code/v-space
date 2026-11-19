@@ -10,7 +10,7 @@ function Svg({ children, tam = 24, style, ...r }: SVGProps<SVGSVGElement> & { ta
   return <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden {...r} style={{ ...estilo, ...style }}>{children}</svg>;
 }
 
-export type NomeIcone = "social" | "jogos" | "trabalho" | "ferramentas" | "carteira" | "sacola" | "midia" | "coracao" | "livro" | "estrela" | "brilho" | "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta" | "tocar" | "pausar" | "proxima" | "anterior" | "wifi" | "sinal" | "volume" | "nota" | "agenda" | "notas" | "ideias" | "criancas" | "sino" | "podcast" | "video" | "tv" | "galeria" | "esporte" | "acoes" | "banco" | "mercado" | "onibus" | "bike" | "casa" | "carro" | "aviao" | "camera" | "comida" | "saude" | "haltere" | "jornal" | "pino" | "chat" | "nuvem" | "relogio" | "globo" | "codigo" | "presente" | "bandeira" | "raio" | "lua" | "sol" | "folha" | "capelo" | "moeda" | "fone" | "mala" | "pata" | "cafe" | "ferramenta" | "telefone" | "email";
+export type NomeIcone = "bateria" | "reiniciar" | "social" | "jogos" | "trabalho" | "ferramentas" | "carteira" | "sacola" | "midia" | "coracao" | "livro" | "estrela" | "brilho" | "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta" | "tocar" | "pausar" | "proxima" | "anterior" | "wifi" | "sinal" | "volume" | "nota" | "agenda" | "notas" | "ideias" | "criancas" | "sino" | "podcast" | "video" | "tv" | "galeria" | "esporte" | "acoes" | "banco" | "mercado" | "onibus" | "bike" | "casa" | "carro" | "aviao" | "camera" | "comida" | "saude" | "haltere" | "jornal" | "pino" | "chat" | "nuvem" | "relogio" | "globo" | "codigo" | "presente" | "bandeira" | "raio" | "lua" | "sol" | "folha" | "capelo" | "moeda" | "fone" | "mala" | "pata" | "cafe" | "ferramenta" | "telefone" | "email";
 
 const DESENHOS: Record<NomeIcone, ReactElement> = {
   agenda: <><rect x="4" y="5.500" width="16" height="14" rx="2.500" /><path d="M4 10h16M8.500 4v3M15.500 4v3" /><path d="M8.500 13.500h.01M12 13.500h.01M15.500 13.500h.01M8.500 16.500h.01M12 16.500h.01" strokeWidth="2.400" /></>,
@@ -87,6 +87,8 @@ const DESENHOS: Record<NomeIcone, ReactElement> = {
   mostrar: <><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.6" /></>,
   dock: <><rect x="3.5" y="5" width="17" height="14" rx="2.6" /><path d="M7 15.5h10" /></>,
   tela: <><rect x="6.5" y="3" width="11" height="18" rx="2.6" /><path d="M10.5 18h3" /></>,
+  reiniciar: <><path d="M5 12a7 7 0 1 0 2.2-5.100" /><path d="M5 5v4h4" /></>,
+  bateria: <><rect x="7" y="4.500" width="10" height="16" rx="2.200" /><path d="M10 3h4" /><path d="M10.500 14.500h3" /></>,
   voltar: <path d="m14.5 5.5-6.5 6.5 6.5 6.5" />,
   ok: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   mais: <path d="M12 5v14M5 12h14" />,

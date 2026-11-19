@@ -22,21 +22,31 @@ export interface Tema {
 export interface Pasta { id: string; nome: string; apps: string[] }
 export type Item = { tipo: "app"; pacote: string } | { tipo: "pasta"; id: string };
 export interface Layout { colunas: number; linhas: number; paginas: Item[][]; dock: string[]; pastas: Pasta[] }
-export type TipoWidget = "relogio-digital" | "relogio-analogico" | "clima" | "bateria" | "agenda";
-export const TIPOS_WIDGET: readonly TipoWidget[] = ["relogio-digital", "relogio-analogico", "clima", "bateria", "agenda"];
-export const NOMES_WIDGET: Record<TipoWidget, string> = { "relogio-digital": "Relógio digital", "relogio-analogico": "Relógio analógico", clima: "Clima", bateria: "Bateria", agenda: "Agenda" };
-export const MAX_WIDGETS = 12;
+/** Catálogo dos widgets: [tipo, nome, colunas, linhas]. Acrescentar uma linha aqui e o desenho em telas/WidgetsExtra.tsx. */
+export const CATALOGO_WIDGET = [
+  ["relogio-digital", "Relógio digital", 4, 2], ["relogio-analogico", "Relógio analógico", 2, 2], ["clima", "Clima", 4, 2], ["bateria", "Bateria", 2, 2], ["agenda", "Agenda", 4, 2],
+  ["calendario", "Calendário do mês", 4, 4], ["notas", "Notas", 2, 2], ["contagem", "Contagem regressiva", 2, 2], ["frase", "Frase do dia", 4, 2], ["pomodoro", "Foco (Pomodoro)", 2, 2], ["mundo", "Horas pelo mundo", 4, 2],
+  ["relogio-alto", "Relógio alto", 4, 4], ["relogio-compacto", "Relógio compacto", 2, 1], ["relogio-vidro", "Relógio de vidro", 4, 3], ["relogio-editorial", "Relógio editorial", 4, 2],
+  ["relogio-empilhado", "Hora empilhada", 2, 2], ["relogio-flip", "Relógio de cartões", 4, 2], ["relogio-grande", "Relógio grande", 4, 2], ["relogio-agenda", "Relógio e agenda", 4, 2],
+  ["relogio-clima", "Relógio e clima", 4, 1], ["relogio-largo", "Relógio analógico largo", 4, 2], ["relogio-progresso", "Progresso do dia", 4, 2],
+  ["saudacao", "Saudação", 4, 2], ["relance", "Num relance", 4, 1], ["pesquisa", "Pesquisa global", 4, 1], ["mes-dia", "Mês e dia", 4, 2], ["semana", "Semana", 4, 2],
+  ["proximos", "Próximos eventos", 4, 2], ["saude-bateria", "Saúde da bateria", 2, 2], ["linha-status", "Linha de status", 2, 1],
+  ["tempo", "Tempo", 2, 2], ["tipo-clima", "Tipo de clima", 4, 2], ["previsao", "Previsão", 4, 2], ["por-hora", "Clima por hora", 4, 1], ["orbita", "Órbita", 2, 2],
+  ["musica-capa", "Música · Capa", 2, 2], ["musica-compacto", "Música · Compacto", 4, 1], ["musica-disco", "Música · Disco", 4, 2], ["musica-tocando", "Música · Tocando", 4, 2], ["musica-brilho", "Música · Brilho", 2, 2],
+] as const;
+export type TipoWidget = (typeof CATALOGO_WIDGET)[number][0];
+export const TIPOS_WIDGET: readonly TipoWidget[] = CATALOGO_WIDGET.map((x) => x[0]);
+export const NOMES_WIDGET = Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], x[1]])) as Record<TipoWidget, string>;
+export const MAX_WIDGETS = 16;
 export const COLUNAS_WIDGET = 4;
 export const ALTURA_MAX_WIDGET = 8;
 export type EstiloWidget = "vidro" | "fosco" | "solido" | "transparente";
 export const ESTILOS_WIDGET: readonly EstiloWidget[] = ["vidro", "fosco", "solido", "transparente"];
 export const NOMES_ESTILO_WIDGET: Record<EstiloWidget, string> = { vidro: "Vidro", fosco: "Fosco", solido: "Sólido", transparente: "Transparente" };
 /** Tamanho (em células: colunas × linhas) que cada widget tem ao ser colocado. */
-export const TAMANHO_WIDGET: Record<TipoWidget, { w: number; h: number }> = {
-  "relogio-digital": { w: 4, h: 2 }, "relogio-analogico": { w: 2, h: 2 }, clima: { w: 4, h: 2 }, bateria: { w: 2, h: 2 }, agenda: { w: 4, h: 2 },
-};
+export const TAMANHO_WIDGET = Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], { w: x[2], h: x[3] }])) as Record<TipoWidget, { w: number; h: number }>;
 /** Um widget solto na tela inicial: posição (x, y) e tamanho (w, h) em células de uma grade de 4 colunas. O clima guarda a cidade e o ponto no mapa. */
-export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number }
+export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number; titulo?: string; data?: string; texto?: string }
 export interface Retangulo { x: number; y: number; w: number; h: number }
 export const sobrepoe = (a: Retangulo, b: Retangulo): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const cabeEm = (ws: Widget[], r: Retangulo, ignorar?: string): boolean => !ws.some((x) => x.id !== ignorar && sobrepoe(x, r));
@@ -139,6 +149,14 @@ const limitar = (n: unknown, min: number, max: number, padrao: number): number =
 const cor = (v: unknown, padrao: string): string => (typeof v === "string" && REGEX_COR.test(v) ? v.toLowerCase() : padrao);
 const escolha = <T extends string>(v: unknown, lista: readonly T[], padrao: T): T => (lista.includes(v as T) ? (v as T) : padrao);
 const decimal = (v: unknown, min: number, max: number): number | null => (typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? Math.round(v * 1000) / 1000 : null);
+/** Data AAAA-MM-DD que existe de verdade (rejeita 2026-02-31). */
+export function dataValida(s: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const a = Number(m[1]), me = Number(m[2]), d = Number(m[3]);
+  const t = new Date(Date.UTC(a, me - 1, d));
+  return a >= 2000 && a <= 2100 && t.getUTCFullYear() === a && t.getUTCMonth() === me - 1 && t.getUTCDate() === d;
+}
 export function limparWidgets(x: unknown): Widget[] {
   const saida: Widget[] = [];
   const ids = new Set<string>();
@@ -162,16 +180,26 @@ export function limparWidgets(x: unknown): Widget[] {
       if (lat === null || lon === null || !cidade) continue; // clima sem lugar não funciona: sai em vez de ficar quebrado
       item.cidade = cidade; item.lat = lat; item.lon = lon;
     }
+    if (tipo === "contagem") {
+      const titulo = typeof o.titulo === "string" ? o.titulo.replace(/[<>]/g, "").slice(0, 30) : "";
+      if (titulo.trim()) item.titulo = titulo;
+      if (typeof o.data === "string" && dataValida(o.data)) item.data = o.data;
+    }
+    if (tipo === "notas" && typeof o.texto === "string") { const t = o.texto.replace(/[<>]/g, "").slice(0, 300); if (t.trim()) item.texto = t; }
     ids.add(id); saida.push(item);
   }
   return saida;
 }
-export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string; lat?: number; lon?: number; estilo?: EstiloWidget }): { banco: Banco; ok: boolean } {
+const dataEm = (dias: number, agora = new Date()): string => { const d = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + dias); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string; lat?: number; lon?: number; estilo?: EstiloWidget; titulo?: string; data?: string; texto?: string }): { banco: Banco; ok: boolean } {
   if (b.widgets.length >= MAX_WIDGETS) return { banco: b, ok: false };
   const usados = new Set(b.widgets.map((x) => x.id));
   let n = 1; while (usados.has(`w${n}`)) n++;
-  return { banco: { ...b, widgets: limparWidgets([...b.widgets, { ...w, id: `w${n}` }]) }, ok: true };
+  const padrao: Partial<Widget> = w.tipo === "contagem" ? { titulo: "Meu evento", data: dataEm(30) } : {};
+  return { banco: { ...b, widgets: limparWidgets([...b.widgets, { ...padrao, ...w, id: `w${n}` }]) }, ok: true };
 }
+/** Muda o texto de um widget (nota, título e data da contagem); passa pela mesma limpeza de sempre. */
+export const editarWidget = (ws: Widget[], id: string, campos: { titulo?: string; data?: string; texto?: string }): Widget[] => limparWidgets(ws.map((w) => (w.id === id ? { ...w, ...campos } : w)));
 export const removerWidget = (b: Banco, id: string): Banco => ({ ...b, widgets: b.widgets.filter((w) => w.id !== id) });
 export const ehPacote = (v: unknown): v is string => typeof v === "string" && REGEX_PACOTE.test(v);
 export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 24) || padrao;

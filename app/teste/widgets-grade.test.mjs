@@ -51,3 +51,44 @@ test("estilo só aceita os quatro", () => {
   assert.equal(acharLugar([], 4, 3).y, 0);
   assert.ok(Object.values(TAMANHO_WIDGET).every((t) => t.w >= 1 && t.w <= 4));
 });
+
+import { diasAte, gradeDoMes, fraseDoDia, minutosSegundos, FRASES } from "../src/widgets.ts";
+import { dataValida, editarWidget as editarW, adicionarWidget as addW, limparWidgets as limparW } from "../src/dados.ts";
+import { test as t2 } from "node:test";
+t2("novos widgets: calendário, contagem, frase, tempo", () => {
+  assert.equal(diasAte("2026-11-25", new Date(2026, 10, 19)), 6);
+  assert.equal(diasAte("2026-11-19", new Date(2026, 10, 19, 23, 59)), 0);
+  assert.equal(diasAte("2026-11-18", new Date(2026, 10, 19)), -1);
+  const g = gradeDoMes(2026, 10); // novembro/2026 começa num domingo
+  assert.equal(g[0][0], 1); assert.ok(g.every((l) => l.length === 7)); assert.equal(g.flat().filter(Boolean).length, 30);
+  assert.equal(fraseDoDia(new Date(2026, 10, 19)), fraseDoDia(new Date(2026, 10, 19, 23, 0)));
+  assert.ok(FRASES.includes(fraseDoDia()));
+  assert.equal(minutosSegundos(1500), "25:00"); assert.equal(minutosSegundos(61.2), "01:02"); assert.equal(minutosSegundos(-5), "00:00");
+  assert.ok(dataValida("2026-02-28")); assert.ok(!dataValida("2026-02-31")); assert.ok(!dataValida("ontem"));
+});
+t2("widgets de texto: nota, contagem e limpeza", () => {
+  const b = { widgets: [] };
+  const r = addW(b, { tipo: "contagem" }).banco;
+  assert.equal(r.widgets[0].titulo, "Meu evento"); assert.ok(dataValida(r.widgets[0].data));
+  const n = addW(r, { tipo: "notas" }).banco;
+  const id = n.widgets[1].id;
+  const e = editarW(n.widgets, id, { texto: "comprar <b>pão</b>" });
+  assert.equal(e[1].texto, "comprar bpão/b");
+  const ruim = limparW([{ tipo: "contagem", titulo: "x", data: "2026-13-40" }]);
+  assert.equal(ruim[0].data, undefined);
+  assert.equal(limparW([{ tipo: "notas", texto: "a".repeat(999) }])[0].texto.length, 300);
+});
+
+import { lerPrevisao, saudacao, progressoDoDia, diasDaSemana } from "../src/widgets.ts";
+import { CATALOGO_WIDGET, TIPOS_WIDGET, TAMANHO_WIDGET as TAM2, ALTURA_MAX_WIDGET as ALT2 } from "../src/dados.ts";
+t2("previsão, saudação, progresso, semana e catálogo", () => {
+  const time = ["2026-11-19T10:00", "2026-11-19T11:00", "2026-11-19T12:00", "2026-11-19T13:00"];
+  const p = lerPrevisao({ hourly: { time, temperature_2m: [20, 21, 22, 23.4], weather_code: [0, 1, 2, 3] }, daily: { time: ["2026-11-19", "2026-11-20"], temperature_2m_max: [28, 27], temperature_2m_min: [18, 17], weather_code: [0, 61] } }, "2026-11-19T11");
+  assert.equal(p.horas[0].h, 11); assert.equal(p.horas.length, 3); assert.equal(p.horas[2].temp, 23); assert.equal(p.dias[1].codigo, 61);
+  assert.equal(lerPrevisao({ hourly: {}, daily: {} }, "x"), null); assert.equal(lerPrevisao(null, "x"), null);
+  assert.equal(saudacao(new Date(2026, 0, 1, 9)), "Bom dia"); assert.equal(saudacao(new Date(2026, 0, 1, 15)), "Boa tarde"); assert.equal(saudacao(new Date(2026, 0, 1, 20)), "Boa noite");
+  assert.equal(progressoDoDia(new Date(2026, 0, 1, 12, 0)), 50);
+  const s = diasDaSemana(new Date(2026, 10, 19)); assert.equal(s.length, 7); assert.equal(s.filter((x) => x.hoje).length, 1); assert.equal(s[0].dia, 15);
+  assert.equal(new Set(TIPOS_WIDGET).size, CATALOGO_WIDGET.length);
+  for (const t of TIPOS_WIDGET) { assert.ok(TAM2[t].w >= 1 && TAM2[t].w <= 4 && TAM2[t].h <= ALT2); }
+});

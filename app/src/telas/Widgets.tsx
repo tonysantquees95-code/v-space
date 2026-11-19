@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ajustarWidget, alturaDosWidgets, COLUNAS_WIDGET, estiloDoWidget, ESTILOS_WIDGET, moverWidget, NOMES_ESTILO_WIDGET, NOMES_WIDGET, type EstiloWidget, type Retangulo, type TipoWidget, type Widget } from "../dados.ts";
+import { ajustarWidget, alturaDosWidgets, editarWidget, COLUNAS_WIDGET, estiloDoWidget, ESTILOS_WIDGET, moverWidget, NOMES_ESTILO_WIDGET, NOMES_WIDGET, type EstiloWidget, type Retangulo, type TipoWidget, type Widget } from "../dados.ts";
 import { Icone } from "../icones";
+import { CorpoExtra, CorpoVivo, EXEMPLO, definirLugar } from "./WidgetsExtra";
 import { usePressaoLonga } from "../ui";
 import { motor } from "../motor";
-import { angulosDoRelogio, buscarClima, descreverTempo, horaDoEvento, type Bateria, type Clima, type Evento } from "../widgets";
+import { angulosDoRelogio, buscarClima, descreverTempo, diasAte, fraseDoDia, gradeDoMes, horaDoEvento, minutosSegundos, type Bateria, type Clima, type Evento } from "../widgets";
 
 function useAgora(ms = 15_000): Date {
   const [d, setD] = useState(() => new Date());
@@ -79,6 +80,9 @@ export function BateriaWidget() {
   );
 }
 
+export function AgendaPermissao() {
+  return <button type="button" className="widget-link" onClick={() => void motor.pedirAgenda().then(() => window.dispatchEvent(new Event("vspace-agenda")))}>Permitir agenda</button>;
+}
 function AgendaWidget() {
   const [ok, setOk] = useState<boolean | null>(null);
   const [lista, setLista] = useState<Evento[]>([]);
@@ -113,8 +117,109 @@ export const CORPO = (w: Widget) => {
     case "clima": return <ClimaWidget w={w} />;
     case "bateria": return <BateriaWidget />;
     case "agenda": return <AgendaWidget />;
+    case "calendario": return <CalendarioWidget />;
+    case "notas": return <NotasVisual texto={w.texto} />;
+    case "contagem": return <ContagemVisual titulo={w.titulo} data={w.data} />;
+    case "frase": return <FraseWidget />;
+    case "pomodoro": return <PomodoroWidget />;
+    case "mundo": return <MundoWidget />;
+    default: return <CorpoVivo tipo={w.tipo} />;
   }
 };
+
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const DIAS_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
+export function CalendarioWidget() {
+  const d = useAgora(60_000);
+  const linhas = gradeDoMes(d.getFullYear(), d.getMonth());
+  return (
+    <div className="widget-corpo cal">
+      <div className="cal-topo"><span className="widget-titulo">{MESES[d.getMonth()]}</span><span className="widget-leve num">{d.getFullYear()}</span></div>
+      <div className="cal-grade" role="grid" aria-label={`Calendário de ${MESES[d.getMonth()]} de ${d.getFullYear()}`}>
+        {DIAS_SEMANA.map((s, i) => <span key={`s${i}`} className="cal-sem" role="columnheader">{s}</span>)}
+        {linhas.flat().map((n, i) => <span key={i} role="gridcell" className="cal-dia num" data-hoje={n === d.getDate()} data-fds={i % 7 === 0 || i % 7 === 6}>{n ?? ""}</span>)}
+      </div>
+    </div>
+  );
+}
+
+export function NotasVisual({ texto }: { texto?: string }) {
+  return (
+    <div className="widget-corpo notas">
+      <div className="widget-titulo">Nota</div>
+      {texto ? <p className="notas-texto">{texto}</p> : <p className="widget-leve">Segure o widget e toque em Editar para escrever.</p>}
+    </div>
+  );
+}
+
+export function ContagemVisual({ titulo, data }: { titulo?: string; data?: string }) {
+  if (!data) return <div className="widget-corpo"><div className="widget-titulo">{titulo ?? "Contagem"}</div><div className="widget-leve">Segure o widget para escolher a data.</div></div>;
+  const n = diasAte(data);
+  const [a, m, di] = data.split("-");
+  return (
+    <div className="widget-corpo contagem">
+      <div className="widget-titulo truncate">{titulo ?? "Meu evento"}</div>
+      <div className="widget-grande num">{n === 0 ? "Hoje" : Math.abs(n)}</div>
+      <div className="widget-leve">{n === 0 ? "é o dia!" : n > 0 ? (n === 1 ? "dia restante" : "dias restantes") : (n === -1 ? "dia atrás" : "dias atrás")} · {di}/{m}/{a}</div>
+    </div>
+  );
+}
+
+function FraseWidget() {
+  const d = useAgora(10 * 60_000);
+  return (
+    <div className="widget-corpo frase">
+      <div className="widget-titulo">Frase do dia</div>
+      <p className="frase-texto">{fraseDoDia(d)}</p>
+    </div>
+  );
+}
+
+const FOCO = 25 * 60, PAUSA = 5 * 60;
+export function PomodoroWidget() {
+  const [fase, setFase] = useState<"foco" | "pausa">("foco");
+  const [resta, setResta] = useState(FOCO);
+  const [fim, setFim] = useState<number | null>(null);
+  useEffect(() => {
+    if (fim === null) return;
+    const t = window.setInterval(() => {
+      const s = Math.ceil((fim - Date.now()) / 1000);
+      if (s > 0) { setResta(s); return; }
+      window.clearInterval(t);
+      const prox = fase === "foco" ? "pausa" : "foco";
+      setFase(prox); setResta(prox === "foco" ? FOCO : PAUSA); setFim(null);
+      try { navigator.vibrate?.([200, 100, 200]); } catch { /* sem vibração */ }
+    }, 500);
+    return () => window.clearInterval(t);
+  }, [fim, fase]);
+  const rodando = fim !== null;
+  const total = fase === "foco" ? FOCO : PAUSA;
+  const pausar = () => { setResta(Math.max(1, Math.ceil(((fim ?? Date.now()) - Date.now()) / 1000))); setFim(null); };
+  const zerar = () => { setFim(null); setFase("foco"); setResta(FOCO); };
+  return (
+    <div className="widget-corpo pomo">
+      <div className="widget-titulo">{fase === "foco" ? "Foco" : "Pausa"}</div>
+      <div className="widget-grande num" role="timer" aria-label={`Faltam ${minutosSegundos(resta)}`}>{minutosSegundos(resta)}</div>
+      <div className="widget-barra" aria-hidden><i style={{ width: `${Math.round(((total - resta) / total) * 100)}%` }} /></div>
+      <div className="pomo-botoes">
+        <button type="button" className="pomo-btn" onClick={() => (rodando ? pausar() : setFim(Date.now() + resta * 1000))}>{rodando ? "Pausar" : "Iniciar"}</button>
+        <button type="button" className="pomo-btn pomo-zero" onClick={zerar} aria-label="Zerar o tempo"><Icone nome="reiniciar" tam={16} /></button>
+      </div>
+    </div>
+  );
+}
+
+const FUSOS = [["Brasília", "America/Sao_Paulo"], ["Lisboa", "Europe/Lisbon"], ["Nova York", "America/New_York"], ["Tóquio", "Asia/Tokyo"]] as const;
+export function MundoWidget() {
+  const d = useAgora(15_000);
+  return (
+    <div className="widget-corpo mundo">
+      {FUSOS.map(([nome, fuso]) => (
+        <div key={fuso} className="mundo-item"><span className="widget-leve">{nome}</span><span className="num mundo-hora">{d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: fuso })}</span></div>
+      ))}
+    </div>
+  );
+}
 
 /** Dados de exemplo para a galeria: mostram como o widget fica antes de ser colocado. */
 const CLIMA_EXEMPLO: Clima = { temp: 24, codigo: 2, max: 28, min: 18, vento: 12, dia: true };
@@ -123,9 +228,10 @@ const AGENDA_EXEMPLO: Evento[] = [
   { titulo: "Almoço", inicio: new Date().setHours(12, 30, 0, 0), fim: 0, diaTodo: false },
   { titulo: "Pagar fatura", inicio: new Date().setHours(0, 0, 0, 0), fim: 0, diaTodo: true },
 ];
+const dataDeExemplo = (dias: number): string => { const d = new Date(Date.now() + dias * 86_400_000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 export function PreviaWidget({ tipo, estilo = "vidro" }: { tipo: TipoWidget; estilo?: EstiloWidget }) {
-  const corpo = tipo === "clima" ? <ClimaVisual c={CLIMA_EXEMPLO} cidade="Sua cidade" /> : tipo === "agenda" ? <AgendaVisual lista={AGENDA_EXEMPLO} /> : tipo === "bateria" ? <BateriaVisual nivel={76} /> : tipo === "relogio-analogico" ? <RelogioAnalogico /> : <RelogioDigital />;
-  return <article className="widget widget-previa" data-estilo={estilo}>{corpo}</article>;
+  const corpo = tipo === "clima" ? <ClimaVisual c={CLIMA_EXEMPLO} cidade="Sua cidade" /> : tipo === "agenda" ? <AgendaVisual lista={AGENDA_EXEMPLO} /> : tipo === "bateria" ? <BateriaVisual nivel={76} /> : tipo === "relogio-analogico" ? <RelogioAnalogico /> : tipo === "notas" ? <NotasVisual texto="Comprar pão, ligar para o dentista, pagar a fatura." /> : tipo === "contagem" ? <ContagemVisual titulo="Viagem" data={dataDeExemplo(12)} /> : tipo === "calendario" ? <CalendarioWidget /> : tipo === "frase" ? <FraseWidget /> : tipo === "pomodoro" ? <PomodoroWidget /> : tipo === "mundo" ? <MundoWidget /> : tipo === "relogio-digital" ? <RelogioDigital /> : <CorpoExtra tipo={tipo} d={EXEMPLO} />;
+  return <article className="widget widget-previa" data-estilo={estilo} inert>{corpo}</article>;
 }
 export function BateriaVisual({ nivel }: { nivel: number }) {
   return (
@@ -166,6 +272,7 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
   const [arr, setArr] = useState<Arrasto | null>(null);
   const area = useRef<HTMLDivElement>(null);
   const atual = widgets.find((w) => w.id === sel) ?? null;
+  definirLugar(widgets);
   useEffect(() => { if (sel && !widgets.some((w) => w.id === sel)) setSel(null); }, [widgets, sel]);
   useEffect(() => { if (bloqueado) setSel(null); }, [bloqueado]);
   // ao editar, traz o widget para a parte de cima da tela, longe do quadro de opções
@@ -220,6 +327,13 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
           <div className="widget-estilos" role="group" aria-label="Estilo do widget">
             {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" aria-pressed={atual.estilo === s} onClick={() => aoMudar(estiloDoWidget(widgets, atual.id, s))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
           </div>
+          {atual.tipo === "notas" && <label className="widget-campo">Texto da nota<textarea value={atual.texto ?? ""} maxLength={300} rows={3} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { texto: e.target.value }))} /></label>}
+          {atual.tipo === "contagem" && (
+            <div className="widget-campos">
+              <label className="widget-campo">Nome<input type="text" value={atual.titulo ?? ""} maxLength={30} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { titulo: e.target.value }))} /></label>
+              <label className="widget-campo">Data<input type="date" value={atual.data ?? ""} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { data: e.target.value }))} /></label>
+            </div>
+          )}
           <div className="widget-passos">
             <span className="passo" role="group" aria-label="Largura"><button type="button" aria-label="Mais estreito" disabled={atual.w <= 1} onClick={() => passo("w", -1)}><Icone nome="menos" tam={18} /></button><span>Largura</span><button type="button" aria-label="Mais largo" onClick={() => passo("w", 1)}><Icone nome="mais" tam={18} /></button></span>
             <span className="passo" role="group" aria-label="Altura"><button type="button" aria-label="Mais baixo" disabled={atual.h <= 1} onClick={() => passo("h", -1)}><Icone nome="menos" tam={18} /></button><span>Altura</span><button type="button" aria-label="Mais alto" onClick={() => passo("h", 1)}><Icone nome="mais" tam={18} /></button></span>
