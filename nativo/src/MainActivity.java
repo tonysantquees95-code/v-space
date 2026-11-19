@@ -19,6 +19,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(VSpacePlugin.class);
+        registerPlugin(AtualizadorPlugin.class);
         super.onCreate(savedInstanceState);
         Window w = getWindow();
         WindowCompat.setDecorFitsSystemWindows(w, false);

@@ -8,6 +8,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 1, data: "2026-11-18", tipo: "novo", titulo: "Primeira versão do V-Space", texto: "Tela inicial com dock e pastas, gaveta de apps com busca e letras, e o Estúdio para mudar cores, ícones e tamanhos do seu jeito, com backup." },
   { id: 2, data: "2026-11-18", tipo: "novo", titulo: "Papel de parede e menu da tela inicial", texto: "Segure um espaço vazio da tela inicial para abrir um menu com atalhos. Agora você pode usar uma foto da galeria ou um papel pronto como fundo, com desfoque e escurecimento ajustáveis." },
   { id: 3, data: "2026-11-18", tipo: "correcao", titulo: "Nada fica embaixo das barras", texto: "O V-Space agora fica entre a barra de notificações e a barra de navegação, mesmo quando elas são fixas." },
+  { id: 4, data: "2026-11-18", tipo: "novo", titulo: "Atualização dentro do app", texto: "Quando sair uma versão nova, o V-Space baixa sozinho e você só toca em Instalar. Também dá para procurar em Estúdio › Sobre › Procurar atualização." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

@@ -14,6 +14,8 @@ import { Inicio } from "./telas/Inicio";
 import { Gaveta } from "./telas/Gaveta";
 import { Estudio, type AbaEstudio } from "./telas/Estudio";
 import { lerPapel } from "./papel";
+import { Atualizacao } from "./telas/Atualizacao";
+import { BUILD, ehNativo, haNovaVersao, marcarConferida, precisaConferir, procurarVersao, ultimaConferencia, type InfoVersao } from "./atualizacao";
 import { EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, type Origem } from "./telas/Menus";
 import { Apresentacao, Termos, Tour } from "./telas/Apresentacao";
 import { Novidades } from "./telas/Novidades";
@@ -29,6 +31,7 @@ export default function App() {
   const [gaveta, setGaveta] = useState<{ busca: boolean } | null>(null);
   const [estudio, setEstudio] = useState<false | AbaEstudio>(false);
   const [menuVazio, setMenuVazio] = useState(false);
+  const [nova, setNova] = useState<InfoVersao | null>(null);
   const [papel, setPapel] = useState<string | null>(() => lerPapel());
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuAberto | null>(null);
@@ -41,6 +44,17 @@ export default function App() {
   useEffect(() => { const f = (e: Event) => falar(String((e as CustomEvent).detail ?? "")); window.addEventListener("demo-aviso", f); return () => window.removeEventListener("demo-aviso", f); }, [falar]);
 
   useEffect(() => { aplicarTema(banco.tema); guardarBanco(banco); }, [banco]);
+
+  // versão nova: confere ao abrir (no máximo a cada 6 horas) e começa a baixar sozinha
+  useEffect(() => {
+    if (!ehNativo() || BUILD <= 0 || !precisaConferir(ultimaConferencia(), Date.now())) return;
+    void procurarVersao().then((v) => { marcarConferida(); if (haNovaVersao(BUILD, v.numero)) setNova(v); }).catch(() => undefined);
+  }, []);
+  const procurarAgora = useCallback(async () => {
+    if (!ehNativo() || BUILD <= 0) { falar("A atualização funciona no app instalado."); return; }
+    try { const v = await procurarVersao(); marcarConferida(); if (haNovaVersao(BUILD, v.numero)) setNova(v); else falar("Você já está na versão mais nova."); }
+    catch (e) { falar(e instanceof Error ? e.message : "Não consegui consultar agora."); }
+  }, [falar]);
 
   // lista de apps do aparelho: carrega ao abrir e de novo quando algo é instalado ou removido
   const carregar = useCallback(async () => {
@@ -69,7 +83,7 @@ export default function App() {
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
   const temCamada = !!(menu || agrupar || rever || pastaAberta || estudio || gaveta);
   const fecharTopo = useCallback(() => {
-    if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
+    if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
   }, [menu, agrupar, rever, pastaAberta, estudio, gaveta]);
   const topo = useRef(fecharTopo); topo.current = fecharTopo;
   useEffect(() => {
@@ -79,7 +93,7 @@ export default function App() {
   }, []);
   // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
   useEffect(() => {
-    const f = () => { setMenuVazio(false); setMenu(null); setAgrupar(null); setRever(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    const f = () => { setMenuVazio(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
     window.addEventListener("vspaceinicio", f);
     return () => window.removeEventListener("vspaceinicio", f);
   }, []);
@@ -108,7 +122,9 @@ export default function App() {
       {pasta && !menu && <FolhaPasta pasta={pasta} rotulo={banco.tema.rotulos} apps={pasta.apps.map((a) => porPacote.get(a)).filter((a): a is AppInfo => !!a)}
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}
 
-      {estudio && <Estudio abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
+      {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
+
+      {estudio && <Estudio aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
         aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (

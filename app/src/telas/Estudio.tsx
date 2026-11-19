@@ -31,10 +31,10 @@ function Paleta({ valor, cores, aoEscolher, rotulo }: { valor: string; cores: st
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
-  abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
+  aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
-export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel }: Props) {
+export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar }: Props) {
   const [aba, setAba] = useState<Aba>(abaInicial);
   const [padrao, setPadrao] = useState<boolean | null>(null);
   const [confirmaZero, setConfirmaZero] = useState(false);
@@ -179,7 +179,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       {aba === "sobre" && (
         <div className="space-y-4">
           <Cartao titulo="V-Space"><p className="text-sm text-suave">Launcher da Vetorial Tech para Android. Nesta fase está em testes (beta). Versão {import.meta.env.VITE_BUILD ? `1.${String(import.meta.env.VITE_BUILD)}` : "de desenvolvimento"}.</p></Cartao>
-          <div className="flex flex-col gap-2"><Botao onClick={aoTour}>Rever a apresentação</Botao><Botao onClick={aoTermos}>Termos de uso</Botao></div>
+          <div className="flex flex-col gap-2"><Botao onClick={() => void aoProcurar()}>Procurar atualização</Botao><Botao onClick={aoTour}>Rever a apresentação</Botao><Botao onClick={aoTermos}>Termos de uso</Botao></div>
         </div>
       )}
     </Folha>
