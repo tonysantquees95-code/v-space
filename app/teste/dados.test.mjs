@@ -222,3 +222,10 @@ test("ordenar não muda a lista original e desempata pelo pacote", () => {
   assert.deepEqual(o.map((a) => a.pacote), ["a1", "a2", "b"]);
   assert.deepEqual(original.map((a) => a.pacote), ["b", "a2", "a1"]);
 });
+
+test("limparTema: papel de parede (desfoque e escurecimento) respeita limites", () => {
+  const a = limparTema({ fundo: "foto", desfoque: 999, escuro: -5 });
+  assert.equal(a.fundo, "foto"); assert.equal(a.desfoque, 24); assert.equal(a.escuro, 0);
+  const b = limparTema({ fundo: "foto", desfoque: "x" });
+  assert.equal(b.desfoque, 0); assert.equal(b.escuro, 30);
+});

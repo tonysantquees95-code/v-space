@@ -81,6 +81,13 @@ export default {
     ["gaveta-pela-busca", "completo", async (p) => { const b = p.getByRole("button", { name: "Pesquisar apps" }); if (!(await b.isVisible())) throw new Error("PULAR"); await b.click(); await p.getByRole("dialog", { name: "Todos os apps" }).waitFor(); }],
     ["estudio-temas", "completo", async (p) => { await abrirEstudio(p); }],
     ["estudio-tema-brasa", "completo", async (p) => { await abrirEstudio(p); await p.getByRole("button", { name: /Brasa/ }).click(); await p.waitForTimeout(250); }],
+    ["menu-tela-vazia", "completo", async (p) => { await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("dialog", { name: "Tela inicial" }).waitFor(); }],
+    ["estudio-papel", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); }],
+    ["estudio-papel-pronto", "completo", async (p) => {
+      await abrirEstudio(p); await aba(p, "Papel de parede");
+      await p.getByRole("button", { name: "Papel Oceano" }).click(); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
+      await p.getByRole("slider", { name: "Desfoque" }).fill("8"); await p.waitForTimeout(250);
+    }],
     ["estudio-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Ícones"); }],
     ["estudio-inicio", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); }],
     ["estudio-gaveta", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Gaveta"); }],

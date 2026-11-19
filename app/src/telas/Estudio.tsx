@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  ajustarTema, COLUNAS, escolherTema, exportar, importar, LINHAS, mostrar, mudarGrade, NOMES_DOS_TEMAS, ordenar, reconciliar, TAMANHO_ICONE, TEMAS,
+  ajustarTema, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, mostrar, mudarGrade, NOMES_DOS_TEMAS, ordenar, reconciliar, TAMANHO_ICONE, TEMAS,
   type AppInfo, type Banco, type EstiloBotao, type EstiloGaveta, type Forma, type Fundo,
 } from "../dados.ts";
 import { fundoCss } from "../tema";
 import { motor } from "../motor";
+import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
 import { Icone } from "../icones";
 import { Aviso, Botao, Cartao, Folha, Interruptor, Linha, Passo, Seletor } from "../ui";
 
-type Aba = "temas" | "icones" | "inicio" | "gaveta" | "backup" | "sobre";
-const ABAS: { id: Aba; nome: string }[] = [{ id: "temas", nome: "Temas" }, { id: "icones", nome: "Ícones" }, { id: "inicio", nome: "Início" }, { id: "gaveta", nome: "Gaveta" }, { id: "backup", nome: "Backup" }, { id: "sobre", nome: "Sobre" }];
+export type AbaEstudio = "temas" | "papel" | "icones" | "inicio" | "gaveta" | "backup" | "sobre";
+type Aba = AbaEstudio;
+const ABAS: { id: Aba; nome: string }[] = [{ id: "temas", nome: "Temas" }, { id: "papel", nome: "Papel de parede" }, { id: "icones", nome: "Ícones" }, { id: "inicio", nome: "Início" }, { id: "gaveta", nome: "Gaveta" }, { id: "backup", nome: "Backup" }, { id: "sobre", nome: "Sobre" }];
 const CORES = ["#22d3ee", "#38bdf8", "#8ab4ff", "#a78bfa", "#e879f9", "#f472b6", "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#ffffff"];
 const FUNDOS_ESCUROS = ["#000000", "#05070d", "#0b1020", "#12081a", "#14080a", "#04100b", "#101010", "#1a1033"];
 const FORMAS: { id: Forma; nome: string }[] = [{ id: "original", nome: "Original" }, { id: "circulo", nome: "Círculo" }, { id: "squircle", nome: "Arredondado" }, { id: "quadrado", nome: "Quadrado" }];
@@ -29,16 +31,25 @@ function Paleta({ valor, cores, aoEscolher, rotulo }: { valor: string; cores: st
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
+  abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
-export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos }: Props) {
-  const [aba, setAba] = useState<Aba>("temas");
+export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel }: Props) {
+  const [aba, setAba] = useState<Aba>(abaInicial);
   const [padrao, setPadrao] = useState<boolean | null>(null);
   const [confirmaZero, setConfirmaZero] = useState(false);
   const [erro, setErro] = useState("");
   useEffect(() => { void motor.ehPadrao().then(setPadrao).catch(() => setPadrao(null)); }, []);
   const t = banco.tema;
   const ocultos = ordenar(apps.filter((a) => banco.ocultos.includes(a.pacote)));
+
+  const usar = (url: string | null) => {
+    if (!url) { setErro("Não consegui abrir essa imagem."); return; }
+    if (!guardarPapel(url)) { setErro("Não há espaço para guardar esse papel de parede."); return; }
+    setErro(""); aoPapel(url); aoMudar((b) => ajustarTema(b, { fundo: "foto" }));
+  };
+  const daGaleria = async () => { const u = await escolherFoto(); if (u) usar(u); };
+  const semPapel = () => { apagarPapel(); aoPapel(null); aoMudar((b) => ajustarTema(b, { fundo: "aurora" })); aviso("Papel de parede removido."); };
 
   const salvar = async () => {
     setErro("");
@@ -76,6 +87,35 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           <Cartao titulo="Cor principal"><Paleta rotulo="Cor principal" valor={t.cor} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor: c }))} /></Cartao>
           <Cartao titulo="Cor de apoio"><Paleta rotulo="Cor de apoio" valor={t.cor2} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor2: c }))} /></Cartao>
           <Cartao titulo="Botões"><Seletor<EstiloBotao> rotulo="Estilo dos botões" valor={t.botoes} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { botoes: v }))} opcoes={[{ id: "degrade", nome: "Degradê" }, { id: "contorno", nome: "Contorno" }, { id: "solido", nome: "Sólido" }]} /></Cartao>
+        </div>
+      )}
+
+      {aba === "papel" && (
+        <div className="space-y-4">
+          {erro && <Aviso tom="erro">{erro}</Aviso>}
+          <div className="papel-previa" aria-label="Prévia do papel de parede">
+            {t.fundo === "foto" && papel ? <><div className="papel" style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px)` }} /><div className="papel-escuro" style={{ opacity: t.escuro / 100 }} /></> : <div className="papel" style={{ background: fundoCss(t) }} />}
+            <div className="papel-rotulo num">{new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Botao variante="primario" onClick={() => void daGaleria()}><Icone nome="papel" tam={18} />Escolher da galeria</Botao>
+            {t.fundo === "foto" && <Botao onClick={semPapel}>Remover papel</Botao>}
+          </div>
+          <Cartao titulo="Papéis da Vetorial">
+            <div className="grid grid-cols-3 gap-2">
+              {PRONTOS.map((p) => <button key={p.id} type="button" aria-label={`Papel ${p.nome}`} className="papel-pronto" style={{ background: `linear-gradient(160deg, ${p.cores[1]}99, ${p.cores[0]} 55%, ${p.cores[2]}88)` }} onClick={() => usar(desenharPronto(p))}><span>{p.nome}</span></button>)}
+            </div>
+          </Cartao>
+          {t.fundo === "foto" && (
+            <Cartao titulo="Ajustes">
+              <label className="mb-3 block text-sm text-suave">Desfoque
+                <input type="range" aria-label="Desfoque" className="mt-1 w-full" min={DESFOQUE.min} max={DESFOQUE.max} value={t.desfoque} onChange={(ev) => aoMudar((b) => ajustarTema(b, { desfoque: Number(ev.target.value) }))} />
+              </label>
+              <label className="block text-sm text-suave">Escurecimento
+                <input type="range" aria-label="Escurecimento" className="mt-1 w-full" min={ESCURO.min} max={ESCURO.max} value={t.escuro} onChange={(ev) => aoMudar((b) => ajustarTema(b, { escuro: Number(ev.target.value) }))} />
+              </label>
+            </Cartao>
+          )}
         </div>
       )}
 

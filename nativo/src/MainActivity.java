@@ -6,7 +6,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
@@ -25,6 +28,14 @@ public class MainActivity extends BridgeActivity {
         WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, w.getDecorView());
         c.setAppearanceLightStatusBars(false);
         c.setAppearanceLightNavigationBars(false);
+        // O app fica ENTRE a barra de notificações e a de navegação (fixas ou não): o conteúdo ganha margem do tamanho das barras.
+        final View conteudo = findViewById(android.R.id.content);
+        ViewCompat.setOnApplyWindowInsetsListener(conteudo, (v, insets) -> {
+            Insets b = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(b.left, b.top, b.right, b.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.requestApplyInsets(conteudo);
     }
 
     /** Apertar o botão início com o V-Space já aberto: avisa a tela para fechar janelas e voltar à primeira página. */

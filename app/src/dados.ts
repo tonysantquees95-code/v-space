@@ -4,12 +4,14 @@
 export interface AppInfo { pacote: string; nome: string; icone?: string }
 export type Forma = "original" | "circulo" | "squircle" | "quadrado";
 export type EstiloGaveta = "lista" | "grade";
-export type Fundo = "aurora" | "noite" | "neon" | "cor";
+export type Fundo = "aurora" | "noite" | "neon" | "cor" | "foto";
 export type EstiloBotao = "degrade" | "contorno" | "solido";
 
 export interface Tema {
   id: string; cor: string; cor2: string; fundo: Fundo; fundoCor: string;
   forma: Forma; tamanho: number; rotulos: boolean; gaveta: EstiloGaveta; botoes: EstiloBotao;
+  /** papel de parede (fundo "foto"): desfoque em px e escurecimento em % */
+  desfoque: number; escuro: number;
 }
 export interface Pasta { id: string; nome: string; apps: string[] }
 export type Item = { tipo: "app"; pacote: string } | { tipo: "pasta"; id: string };
@@ -21,20 +23,22 @@ export const MAX_PAGINAS = 8;
 export const COLUNAS = { min: 3, max: 6 };
 export const LINHAS = { min: 4, max: 7 };
 export const TAMANHO_ICONE = { min: 40, max: 72 };
+export const DESFOQUE = { min: 0, max: 24 };
+export const ESCURO = { min: 0, max: 80 };
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade" },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido" },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade" },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno" },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade" },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30 },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30 },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30 },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30 },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30 },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
 const REGEX_COR = /^#[0-9a-fA-F]{6}$/;
 const REGEX_PACOTE = /^[A-Za-z0-9_.]{1,200}$/;
 const FORMAS: Forma[] = ["original", "circulo", "squircle", "quadrado"];
-const FUNDOS: Fundo[] = ["aurora", "noite", "neon", "cor"];
+const FUNDOS: Fundo[] = ["aurora", "noite", "neon", "cor", "foto"];
 const BOTOES: EstiloBotao[] = ["degrade", "contorno", "solido"];
 const GAVETAS: EstiloGaveta[] = ["lista", "grade"];
 
@@ -59,6 +63,7 @@ export function limparTema(x: unknown): Tema {
     cor: cor(t.cor, p.cor), cor2: cor(t.cor2, p.cor2), fundo: escolha(t.fundo, FUNDOS, p.fundo), fundoCor: cor(t.fundoCor, p.fundoCor),
     forma: escolha(t.forma, FORMAS, p.forma), tamanho: limitar(t.tamanho, TAMANHO_ICONE.min, TAMANHO_ICONE.max, p.tamanho),
     rotulos: typeof t.rotulos === "boolean" ? t.rotulos : p.rotulos, gaveta: escolha(t.gaveta, GAVETAS, p.gaveta), botoes: escolha(t.botoes, BOTOES, p.botoes),
+    desfoque: limitar(t.desfoque, DESFOQUE.min, DESFOQUE.max, p.desfoque), escuro: limitar(t.escuro, ESCURO.min, ESCURO.max, p.escuro),
   };
 }
 

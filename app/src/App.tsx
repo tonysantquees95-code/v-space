@@ -12,8 +12,9 @@ import { novasDesde, lerVisto, NOVIDADES, ultimoId } from "./novidades";
 import { precisaApresentar } from "./apresentacao";
 import { Inicio } from "./telas/Inicio";
 import { Gaveta } from "./telas/Gaveta";
-import { Estudio } from "./telas/Estudio";
-import { EscolherParceiro, FolhaPasta, MenuApp, type Origem } from "./telas/Menus";
+import { Estudio, type AbaEstudio } from "./telas/Estudio";
+import { lerPapel } from "./papel";
+import { EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, type Origem } from "./telas/Menus";
 import { Apresentacao, Termos, Tour } from "./telas/Apresentacao";
 import { Novidades } from "./telas/Novidades";
 
@@ -26,7 +27,9 @@ export default function App() {
   const [apresentar, setApresentar] = useState(() => precisaApresentar());
   const [novidades, setNovidades] = useState(() => { const v = lerVisto(); return v !== null && v < ultimoId() ? novasDesde(v, NOVIDADES) : []; });
   const [gaveta, setGaveta] = useState<{ busca: boolean } | null>(null);
-  const [estudio, setEstudio] = useState(false);
+  const [estudio, setEstudio] = useState<false | AbaEstudio>(false);
+  const [menuVazio, setMenuVazio] = useState(false);
+  const [papel, setPapel] = useState<string | null>(() => lerPapel());
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuAberto | null>(null);
   const [agrupar, setAgrupar] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export default function App() {
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
   const temCamada = !!(menu || agrupar || rever || pastaAberta || estudio || gaveta);
   const fecharTopo = useCallback(() => {
-    if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
+    if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
   }, [menu, agrupar, rever, pastaAberta, estudio, gaveta]);
   const topo = useRef(fecharTopo); topo.current = fecharTopo;
   useEffect(() => {
@@ -76,7 +79,7 @@ export default function App() {
   }, []);
   // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
   useEffect(() => {
-    const f = () => { setMenu(null); setAgrupar(null); setRever(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    const f = () => { setMenuVazio(false); setMenu(null); setAgrupar(null); setRever(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
     window.addEventListener("vspaceinicio", f);
     return () => window.removeEventListener("vspaceinicio", f);
   }, []);
@@ -96,14 +99,16 @@ export default function App() {
   return (
     <>
       <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
-        aoGaveta={(busca) => setGaveta({ busca })} aoEstudio={() => setEstudio(true)} />
+        aoGaveta={(busca) => setGaveta({ busca })} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel} />
+
+      {menuVazio && <MenuVazio aoFechar={() => setMenuVazio(false)} aoPapel={() => setEstudio("papel")} aoApps={() => setGaveta({ busca: false })} aoIcones={() => setEstudio("icones")} aoGrade={() => setEstudio("inicio")} aoEstudio={() => setEstudio("temas")} />}
 
       {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} buscaInicial={gaveta.busca} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
 
       {pasta && !menu && <FolhaPasta pasta={pasta} rotulo={banco.tema.rotulos} apps={pasta.apps.map((a) => porPacote.get(a)).filter((a): a is AppInfo => !!a)}
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}
 
-      {estudio && <Estudio banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
+      {estudio && <Estudio abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
         aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (

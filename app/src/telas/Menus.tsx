@@ -72,3 +72,19 @@ export function EscolherParceiro({ app, candidatos, aoFechar, aoEscolher }: { ap
     </Folha>
   );
 }
+
+/** Aperto longo na tela inicial vazia: atalhos para personalizar. */
+export function MenuVazio({ aoFechar, aoPapel, aoApps, aoIcones, aoGrade, aoEstudio }: { aoFechar: () => void; aoPapel: () => void; aoApps: () => void; aoIcones: () => void; aoGrade: () => void; aoEstudio: () => void }) {
+  const acao = (f: () => void) => () => { aoFechar(); f(); };
+  return (
+    <Folha titulo="Tela inicial" aoFechar={aoFechar}>
+      <div className="flex flex-col">
+        <Opcao icone="papel" texto="Papel de parede" aoClicar={acao(aoPapel)} />
+        <Opcao icone="gaveta" texto="Adicionar aplicativos" aoClicar={acao(aoApps)} />
+        <Opcao icone="forma" texto="Personalizar ícones" aoClicar={acao(aoIcones)} />
+        <Opcao icone="grade" texto="Grade da tela inicial" aoClicar={acao(aoGrade)} />
+        <Opcao icone="estudio" texto="Abrir o Estúdio" aoClicar={acao(aoEstudio)} />
+      </div>
+    </Folha>
+  );
+}

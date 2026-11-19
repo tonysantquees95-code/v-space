@@ -15,15 +15,15 @@ const data = (d: Date) => d.toLocaleDateString("pt-BR", { weekday: "long", day: 
 interface Props {
   banco: Banco; porPacote: Map<string, AppInfo>;
   aoAbrirApp: (pacote: string) => void; aoMenuApp: (pacote: string, origem: "tela" | "dock") => void; aoAbrirPasta: (id: string) => void;
-  aoGaveta: (busca: boolean) => void; aoEstudio: () => void;
+  aoGaveta: (busca: boolean) => void; aoEstudio: () => void; aoMenuVazio: () => void; papel: string | null;
 }
 
-export function Inicio({ banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoEstudio }: Props) {
+export function Inicio({ banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, aoGaveta, aoEstudio, aoMenuVazio, papel }: Props) {
   const agora = useRelogio();
   const pager = useRef<HTMLDivElement>(null);
   const [pg, setPg] = useState(0);
   const toque = useRef<{ x: number; y: number } | null>(null);
-  const vazio = usePressaoLonga(aoEstudio);
+  const vazio = usePressaoLonga(aoMenuVazio);
   const soNoVazio = (e: { target: unknown; currentTarget: unknown }) => e.target === e.currentTarget;
   const { colunas, linhas, paginas, dock, pastas } = banco.layout;
   const t = banco.tema;
@@ -33,6 +33,7 @@ export function Inicio({ banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, 
   return (
     <div className="inicio" onTouchStart={(e) => { const c = e.touches[0]!; toque.current = { x: c.clientX, y: c.clientY }; }}
       onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60) aoGaveta(false); }}>
+      {t.fundo === "foto" && papel && <><div className="papel" aria-hidden style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px)` }} /><div className="papel-escuro" aria-hidden style={{ opacity: t.escuro / 100 }} /></>}
       <header className="inicio-topo">
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>

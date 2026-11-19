@@ -19,3 +19,10 @@
 - O APK só compila no GitHub Actions (`.github/workflows/app.yml`): `npx cap add android`, copia `nativo/src/*.java` (plugin `VetorialHome` + `MainActivity`) e ajusta o manifesto (HOME/DEFAULT, QUERY_ALL_PACKAGES).
 - Mudou a interface do plugin (`nativo/src/VSpacePlugin.java`)? Ajuste `app/src/motor.ts` e o motor de demonstração `app/src/demo.ts`.
 - A assinatura do APK vem do servidor da Vênus; o repositório precisa estar em `REPOS_PERMITIDOS` (`vetorial-servidor/servidor/src/ci/assinatura.js`).
+
+## Entre as barras do Android (regra dos departamentos)
+- O app fica ENTRE a barra de notificações e a barra de navegação (fixas ou não): nada pode ficar embaixo delas. No Android nativo isso vem de `MainActivity` (margem do tamanho das barras); confira no Visualizador em todos os tamanhos antes de gerar o APK.
+
+## Publicação e atualização (regra dos departamentos)
+- Todo APK finalizado vai direto para o Painel Dev (ver e baixar), e o app precisa estar listado lá.
+- O app se atualiza por dentro (verificar → barra de download → Instalar), igual aos outros da suíte. O Vindex enxerga todos os apps.
