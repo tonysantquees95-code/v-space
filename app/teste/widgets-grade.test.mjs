@@ -92,3 +92,13 @@ t2("previsão, saudação, progresso, semana e catálogo", () => {
   assert.equal(new Set(TIPOS_WIDGET).size, CATALOGO_WIDGET.length);
   for (const t of TIPOS_WIDGET) { assert.ok(TAM2[t].w >= 1 && TAM2[t].w <= 4 && TAM2[t].h <= ALT2); }
 });
+
+t2("widget real de app: só vale com provider e número do Android", () => {
+  const ok = limparW([{ tipo: "externo", provider: "com.google.android.calendar/com.x.Agenda", appId: 7, titulo: "Agenda: Mês", w: 4, h: 4 }]);
+  assert.equal(ok.length, 1); assert.equal(ok[0].appId, 7); assert.equal(ok[0].w, 4);
+  assert.equal(limparW([{ tipo: "externo", provider: "invalido", appId: 7 }]).length, 0);
+  assert.equal(limparW([{ tipo: "externo", provider: "a.b/c.D" }]).length, 0);
+  assert.equal(limparW([{ tipo: "externo", provider: "a.b/c.D", appId: -1 }]).length, 0);
+  const b = addW({ widgets: [] }, { tipo: "externo", provider: "a.b/c.D", appId: 3, titulo: "X", w: 2, h: 3 }).banco;
+  assert.equal(b.widgets[0].h, 3);
+});

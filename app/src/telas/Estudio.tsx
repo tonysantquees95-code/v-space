@@ -7,7 +7,7 @@ import {
 } from "../dados.ts";
 import { CENAS, aplicarCena } from "../cenas";
 import { fundoCss } from "../tema";
-import { motor } from "../motor";
+import { motor, type ExternoInfo } from "../motor";
 import { Icone, type NomeIcone } from "../icones";
 import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
 import { buscarLugares, type Lugar } from "../widgets";
@@ -116,6 +116,19 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
   const [confirmaZero, setConfirmaZero] = useState(false);
   const [erro, setErro] = useState("");
   const [cidade, setCidade] = useState("");
+  const [externos, setExternos] = useStateP<ExternoInfo[] | null>(null);
+  const [criandoExterno, setCriandoExterno] = useStateP("");
+  useEffect(() => { if (secao === "widgets" && parte === "adicionar" && externos === null) void motor.widgetsExternos().then(setExternos); }, [secao, parte, externos]);
+  const incluirExterno = async (x: ExternoInfo) => {
+    if (banco.widgets.length >= MAX_WIDGETS) { setErro(`Cabem até ${MAX_WIDGETS} widgets. Remova um para colocar outro.`); return; }
+    setErro(""); setCriandoExterno(x.provider);
+    try {
+      const r = await motor.criarWidgetExterno(x.provider);
+      aoMudar((b) => adicionarWidget(b, { tipo: "externo", provider: x.provider, appId: r.id, titulo: `${x.app}: ${x.nome}`.slice(0, 60), w: r.w, h: r.h }).banco);
+      aviso(`${x.nome} adicionado.`);
+    } catch (e) { setErro(e instanceof Error && e.message ? e.message : "Não consegui adicionar esse widget."); }
+    setCriandoExterno("");
+  };
   const [lugares, setLugares] = useState<Lugar[] | null>(null);
   const [procurando, setProcurando] = useState(false);
   const [musicaOk, setMusicaOk] = useState<boolean | null>(null);
@@ -331,12 +344,27 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
               </Cartao>
             );
           })}
+          <div className="galeria-aviso">
+            <h3 className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-suave">Widgets dos seus apps</h3>
+            <p className="mt-1 text-sm text-suave">São os widgets de verdade dos apps instalados (Agenda, Bem-estar Digital…). O Android pode pedir permissão ao adicionar. Segure um deles na tela inicial para mover, mudar o tamanho ou remover.</p>
+            {externos === null && <p className="mt-2 text-sm text-suave">Procurando…</p>}
+            {externos !== null && externos.length === 0 && <p className="mt-2 text-sm text-suave">{motor.nome === "android" ? "Nenhum widget de app encontrado." : "Disponível no aparelho."}</p>}
+          </div>
+          {(externos ?? []).map((x) => (
+            <Cartao key={x.provider} titulo={`${x.app} · ${x.w}×${x.h}`} className="galeria-item">
+              <div className="galeria-caixa" role="img" aria-label={`Prévia de ${x.nome}, tamanho ${x.w} por ${x.h}`}>
+                <PreviaEscalada w={x.w} h={x.h}>{x.previa ? <img src={`data:image/png;base64,${x.previa}`} alt="" draggable={false} className="externo-previa" /> : <div className="externo"><b className="truncate">{x.nome}</b></div>}</PreviaEscalada>
+              </div>
+              <p className="mt-1 truncate text-xs text-suave">{x.nome}</p>
+              <div className="mt-2"><Botao variante="primario" disabled={cheio || criandoExterno !== ""} aria-label={`Adicionar ${x.app}: ${x.nome}`} onClick={() => void incluirExterno(x)}><Icone nome="mais" tam={16} />{criandoExterno === x.provider ? "Adicionando…" : "Adicionar"}</Botao></div>
+            </Cartao>
+          ))}
         </div>
       );
       case "widgets/gerenciar": return (
         <Cartao titulo={`No seu início (${banco.widgets.length} de ${MAX_WIDGETS})`}>
           {banco.widgets.length === 0 ? <p className="text-sm text-suave">Nenhum widget ainda. Vá em “Adicionar”.</p>
-            : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
+            : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{x.tipo === "externo" && x.titulo ? x.titulo : NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
         </Cartao>
       );
       case "config/conta": return (

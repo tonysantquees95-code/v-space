@@ -26,6 +26,8 @@ import { BUILD, ehNativo, haNovaVersao, marcarConferida, precisaConferir, procur
 import { CriarPasta, EscolherApps, EscolherCategoria, EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, NovaCategoria, type Origem } from "./telas/Menus";
 import { Apresentacao, Termos, Tour } from "./telas/Apresentacao";
 import { Novidades } from "./telas/Novidades";
+import { ocultarExternos } from "./telas/Externos";
+import { motor as motorApp } from "./motor";
 
 interface MenuAberto { pacote: string; origem: Origem; pastaId?: string }
 
@@ -109,6 +111,14 @@ export default function App() {
 
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
   const temCamada = !!(busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
+  useEffect(() => { ocultarExternos(temCamada); }, [temCamada]);
+  // widget real que saiu do banco (remover, restaurar, importar): devolve o número ao Android
+  const idsExternos = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    const agora = new Set(banco.widgets.filter((w) => w.tipo === "externo" && w.appId !== undefined).map((w) => w.appId as number));
+    for (const id of idsExternos.current) if (!agora.has(id)) void motorApp.removerWidgetExterno(id);
+    idsExternos.current = agora;
+  }, [banco.widgets]);
   const fecharTopo = useCallback(() => {
     if (busca) setBusca(false); else if (pedirConta) setPedirConta(false); else if (organizar) setOrganizar(false); else if (novaCat) setNovaCat(false); else if (mover) setMover(null); else if (addCat) setAddCat(null); else if (favoritosAberto) setFavoritosAberto(false); else if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
   }, [menu, agrupar, rever, pastaAberta, estudio, gaveta, organizar, novaCat, mover, addCat, favoritosAberto, criarPastaAberto, nova, menuVazio]);

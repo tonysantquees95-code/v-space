@@ -47,6 +47,15 @@ export const motorDemo: Motor = {
   sistema: async () => ({ wifi: true, movel: true, volume: 40 }),
   mostrarVolume: async () => avisar("(demonstração) mostraria o volume"),
   abrirAjuste: async (t) => avisar(`(demonstração) abriria os ajustes de ${t}`),
+  widgetsExternos: async () => [
+    { provider: "com.google.android.calendar/Agenda", pacote: "com.google.android.calendar", app: "Agenda", nome: "Compromissos no dia", w: 2, h: 2 },
+    { provider: "com.google.android.calendar/Mes", pacote: "com.google.android.calendar", app: "Agenda", nome: "Visualização por mês", w: 4, h: 4 },
+    { provider: "com.google.android.apps.wellbeing/Tempo", pacote: "com.google.android.apps.wellbeing", app: "Bem-estar Digital", nome: "Seu tempo de tela", w: 2, h: 2 },
+  ],
+  criarWidgetExterno: async (provider) => ({ id: 100 + (provider.length % 50), w: provider.endsWith("Mes") ? 4 : 2, h: provider.endsWith("Mes") ? 4 : 2 }),
+  removerWidgetExterno: async () => undefined,
+  mostrarExternos: async () => undefined,
+  aoEventoExterno: () => () => undefined,
   agendaPermitida: async () => true,
   pedirAgenda: async () => true,
   eventos: async () => {

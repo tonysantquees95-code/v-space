@@ -471,3 +471,5 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .previa-escala { width: 100%; overflow: hidden; }
 .galeria-item .botao, .galeria-item button { width: 100%; }
 .galeria-item button { font-size: .82rem; min-height: 40px; padding-inline: 8px; }
+.externo { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.externo-previa { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }

@@ -34,9 +34,11 @@ export const CATALOGO_WIDGET = [
   ["tempo", "Tempo", 2, 2], ["tipo-clima", "Tipo de clima", 4, 2], ["previsao", "Previsão", 4, 2], ["por-hora", "Clima por hora", 4, 1], ["orbita", "Órbita", 2, 2],
   ["musica-capa", "Música · Capa", 2, 2], ["musica-compacto", "Música · Compacto", 4, 1], ["musica-disco", "Música · Disco", 4, 2], ["musica-tocando", "Música · Tocando", 4, 2], ["musica-brilho", "Música · Brilho", 2, 2],
 ] as const;
-export type TipoWidget = (typeof CATALOGO_WIDGET)[number][0];
-export const TIPOS_WIDGET: readonly TipoWidget[] = CATALOGO_WIDGET.map((x) => x[0]);
-export const NOMES_WIDGET = Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], x[1]])) as Record<TipoWidget, string>;
+/** "externo" é o widget real de outro app (Google Agenda etc.): não faz parte do catálogo próprio. */
+export type TipoWidget = (typeof CATALOGO_WIDGET)[number][0] | "externo";
+export const TIPOS_WIDGET = CATALOGO_WIDGET.map((x) => x[0]) as readonly Exclude<TipoWidget, "externo">[];
+const TIPOS_VALIDOS: readonly TipoWidget[] = [...TIPOS_WIDGET, "externo"];
+export const NOMES_WIDGET = { ...Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], x[1]])), externo: "Widget de app" } as Record<TipoWidget, string>;
 export const MAX_WIDGETS = 16;
 export const COLUNAS_WIDGET = 4;
 export const ALTURA_MAX_WIDGET = 8;
@@ -44,9 +46,9 @@ export type EstiloWidget = "vidro" | "fosco" | "solido" | "transparente";
 export const ESTILOS_WIDGET: readonly EstiloWidget[] = ["vidro", "fosco", "solido", "transparente"];
 export const NOMES_ESTILO_WIDGET: Record<EstiloWidget, string> = { vidro: "Vidro", fosco: "Fosco", solido: "Sólido", transparente: "Transparente" };
 /** Tamanho (em células: colunas × linhas) que cada widget tem ao ser colocado. */
-export const TAMANHO_WIDGET = Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], { w: x[2], h: x[3] }])) as Record<TipoWidget, { w: number; h: number }>;
+export const TAMANHO_WIDGET = { ...Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], { w: x[2], h: x[3] }])), externo: { w: 2, h: 2 } } as Record<TipoWidget, { w: number; h: number }>;
 /** Um widget solto na tela inicial: posição (x, y) e tamanho (w, h) em células de uma grade de 4 colunas. O clima guarda a cidade e o ponto no mapa. */
-export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number; titulo?: string; data?: string; texto?: string }
+export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number; titulo?: string; data?: string; texto?: string; provider?: string; appId?: number }
 export interface Retangulo { x: number; y: number; w: number; h: number }
 export const sobrepoe = (a: Retangulo, b: Retangulo): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const cabeEm = (ws: Widget[], r: Retangulo, ignorar?: string): boolean => !ws.some((x) => x.id !== ignorar && sobrepoe(x, r));
@@ -164,7 +166,7 @@ export function limparWidgets(x: unknown): Widget[] {
     if (saida.length >= MAX_WIDGETS) break;
     if (!w || typeof w !== "object") continue;
     const o = w as Record<string, unknown>;
-    if (!TIPOS_WIDGET.includes(o.tipo as TipoWidget)) continue;
+    if (!TIPOS_VALIDOS.includes(o.tipo as TipoWidget)) continue;
     const id = typeof o.id === "string" && /^[a-z0-9_-]{1,20}$/.test(o.id) && !ids.has(o.id) ? o.id : `w${saida.length + 1}-${saida.length * 7 + 3}`;
     if (ids.has(id)) continue;
     const tipo = o.tipo as TipoWidget;
@@ -180,6 +182,12 @@ export function limparWidgets(x: unknown): Widget[] {
       if (lat === null || lon === null || !cidade) continue; // clima sem lugar não funciona: sai em vez de ficar quebrado
       item.cidade = cidade; item.lat = lat; item.lon = lon;
     }
+    if (tipo === "externo") {
+      if (typeof o.provider !== "string" || !/^[\w.]+\/[\w.$]+$/.test(o.provider) || o.provider.length > 300 || !Number.isInteger(o.appId) || (o.appId as number) < 0) continue; // sem número do Android não há o que mostrar
+      item.provider = o.provider; item.appId = o.appId as number;
+      const t = typeof o.titulo === "string" ? o.titulo.replace(/[<>]/g, "").slice(0, 60) : "";
+      if (t.trim()) item.titulo = t;
+    }
     if (tipo === "contagem") {
       const titulo = typeof o.titulo === "string" ? o.titulo.replace(/[<>]/g, "").slice(0, 30) : "";
       if (titulo.trim()) item.titulo = titulo;
@@ -191,7 +199,7 @@ export function limparWidgets(x: unknown): Widget[] {
   return saida;
 }
 const dataEm = (dias: number, agora = new Date()): string => { const d = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + dias); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string; lat?: number; lon?: number; estilo?: EstiloWidget; titulo?: string; data?: string; texto?: string }): { banco: Banco; ok: boolean } {
+export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string; lat?: number; lon?: number; estilo?: EstiloWidget; titulo?: string; data?: string; texto?: string; provider?: string; appId?: number; w?: number; h?: number }): { banco: Banco; ok: boolean } {
   if (b.widgets.length >= MAX_WIDGETS) return { banco: b, ok: false };
   const usados = new Set(b.widgets.map((x) => x.id));
   let n = 1; while (usados.has(`w${n}`)) n++;

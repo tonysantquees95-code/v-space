@@ -7,6 +7,11 @@ export interface Musica { tem: boolean; pacote?: string; app?: string; titulo?: 
 export interface Sistema { wifi: boolean; movel: boolean; volume: number }
 export type ComandoMusica = "pausar" | "tocar" | "proxima" | "anterior" | "parar";
 export type TelaAjuste = "wifi" | "rede" | "bateria";
+/** Widget de outro app que dá para colocar na tela inicial. `previa` é uma imagem PNG em base64. */
+export interface ExternoInfo { provider: string; pacote: string; app: string; nome: string; w: number; h: number; previa?: string }
+/** Posição de um widget real na tela: retângulo inteiro (x, y, w, h) e a parte visível (cx, cy, cw, ch), em px CSS. */
+export interface ItemExterno { id: number; x: number; y: number; w: number; h: number; cx: number; cy: number; cw: number; ch: number }
+export interface EventosExternos { longo: (id: number) => void; rolar: (dy: number) => void }
 import { motorDemo } from "./demo";
 
 export interface Motor {
@@ -34,6 +39,20 @@ export interface Motor {
   sistema(): Promise<Sistema>;
   mostrarVolume(): Promise<void>;
   abrirAjuste(tela: TelaAjuste): Promise<void>;
+  widgetsExternos(): Promise<ExternoInfo[]>;
+  criarWidgetExterno(provider: string): Promise<{ id: number; w: number; h: number }>;
+  removerWidgetExterno(id: number): Promise<void>;
+  mostrarExternos(itens: ItemExterno[]): Promise<void>;
+  aoEventoExterno(ev: EventosExternos): () => void;
+}
+
+interface PluginWidgets {
+  listar(): Promise<{ widgets: ExternoInfo[] }>;
+  criar(o: { provider: string }): Promise<{ id: number; w: number; h: number }>;
+  remover(o: { id: number }): Promise<void>;
+  mostrar(o: { itens: ItemExterno[] }): Promise<void>;
+  addListener(evento: "widgetLongo", cb: (o: { id: number }) => void): Promise<{ remove: () => Promise<void> }>;
+  addListener(evento: "widgetRolar", cb: (o: { dy: number }) => void): Promise<{ remove: () => Promise<void> }>;
 }
 
 interface PluginNativo {
@@ -64,6 +83,7 @@ interface PluginNativo {
 
 function criarAndroid(): Motor {
   const n = registerPlugin<PluginNativo>("VetorialHome");
+  const w = registerPlugin<PluginWidgets>("VetorialWidgets");
   return {
     nome: "android",
     apps: async () => (await n.listarApps()).apps.map((a) => ({ pacote: a.pacote, nome: a.nome, icone: a.icone ? `data:image/png;base64,${a.icone}` : undefined, instalado: typeof a.instalado === "number" && a.instalado > 0 ? a.instalado : undefined })),
@@ -100,6 +120,24 @@ function criarAndroid(): Motor {
     sistema: async () => { try { const s = await n.sistema(); return { wifi: !!s.wifi, movel: !!s.movel, volume: Number.isFinite(s.volume) ? Math.max(0, Math.min(100, Math.round(s.volume))) : 0 }; } catch { return { wifi: false, movel: false, volume: 0 }; } },
     mostrarVolume: () => n.mostrarVolume(),
     abrirAjuste: (tela) => n.abrirAjuste({ tela }),
+    widgetsExternos: async () => {
+      try {
+        return (await w.listar()).widgets.filter((x) => x && typeof x.provider === "string" && /^[\w.]+\/[\w.$]+$/.test(x.provider)).slice(0, 300).map((x) => ({
+          provider: x.provider, pacote: String(x.pacote ?? "").slice(0, 200), app: String(x.app ?? "").slice(0, 60), nome: String(x.nome ?? "").slice(0, 60),
+          w: Math.max(1, Math.min(4, Math.round(Number(x.w) || 2))), h: Math.max(1, Math.min(8, Math.round(Number(x.h) || 2))),
+          previa: typeof x.previa === "string" && x.previa.length < 400_000 ? x.previa : undefined,
+        }));
+      } catch { return []; }
+    },
+    criarWidgetExterno: async (provider) => { const r = await w.criar({ provider }); return { id: Math.round(r.id), w: Math.max(1, Math.min(4, Math.round(r.w) || 2)), h: Math.max(1, Math.min(8, Math.round(r.h) || 2)) }; },
+    removerWidgetExterno: async (id) => { try { await w.remover({ id }); } catch { /* já saiu */ } },
+    mostrarExternos: async (itens) => { try { await w.mostrar({ itens }); } catch { /* sem widgets reais agora */ } },
+    aoEventoExterno: (ev) => {
+      const fins: (() => Promise<void>)[] = []; let parou = false;
+      void w.addListener("widgetLongo", (o) => ev.longo(o.id)).then((h) => { if (parou) void h.remove(); else fins.push(h.remove); });
+      void w.addListener("widgetRolar", (o) => ev.rolar(o.dy)).then((h) => { if (parou) void h.remove(); else fins.push(h.remove); });
+      return () => { parou = true; fins.forEach((f) => void f()); };
+    },
   };
 }
 

@@ -20,6 +20,10 @@
 - Mudou a interface do plugin (`nativo/src/VSpacePlugin.java`)? Ajuste `app/src/motor.ts` e o motor de demonstração `app/src/demo.ts`.
 - A assinatura do APK vem do servidor da Vênus; o repositório precisa estar em `REPOS_PERMITIDOS` (`vetorial-servidor/servidor/src/ci/assinatura.js`).
 
+## Widgets reais de outros apps
+- `nativo/src/WidgetsPlugin.java` (AppWidgetHost): lista os widgets instalados, cria/remove e desenha o widget do app POR CIMA da WebView no retângulo que a tela reserva (`app/src/telas/Externos.tsx` conta a posição a cada quadro). Janelas abertas e a edição escondem o widget real. Segurar abre a edição; arrastar na vertical rola a tela.
+- Mudou a interface do plugin? Ajuste `app/src/motor.ts` e `app/src/demo.ts`. Só dá para testar no aparelho.
+
 ## Entre as barras do Android (regra dos departamentos)
 - O app fica ENTRE a barra de notificações e a barra de navegação (fixas ou não): nada pode ficar embaixo delas. No Android nativo isso vem de `MainActivity` (margem do tamanho das barras); confira no Visualizador em todos os tamanhos antes de gerar o APK.
 

@@ -19,6 +19,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 12, data: "2026-11-19", tipo: "novo", titulo: "40 widgets para escolher", texto: "A lista de widgets ganhou relógios de vários estilos, clima por hora e por dia, calendário, semana, próximos eventos, pesquisa, notas, contagem regressiva, foco (Pomodoro), horas pelo mundo e cinco players de música. Cada um mostra uma prévia e o tamanho antes de você colocar. Os de clima usam a cidade do widget Clima.", },
   { id: 13, data: "2026-11-19", tipo: "melhoria", titulo: "Atalhos ao lado e gaveta que fecha puxando", texto: "Bateria, Wi-Fi, rede, temperatura e volume agora ficam no canto direito, acima das categorias. Na gaveta de apps, puxe para baixo para voltar à tela inicial.", },
   { id: 14, data: "2026-11-19", tipo: "correcao", titulo: "Organizar com IA e botão Entendi", texto: "A organização com IA passou a funcionar com muitos apps (ela desistia no meio). E o botão Entendi desta tela não fica mais escondido atrás da barra de navegação.", },
+  { id: 15, data: "2026-11-19", tipo: "novo", titulo: "Widgets dos seus apps", texto: "Em Estúdio › Widgets › Adicionar, no fim da lista, aparecem os widgets de verdade dos apps instalados (Agenda, Bem-estar Digital e outros). O Android pode pedir permissão ao adicionar. Segure o widget na tela inicial para mover, mudar o tamanho ou remover; arrastar para cima ou para baixo sobre ele rola a tela.", },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

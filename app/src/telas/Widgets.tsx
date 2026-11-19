@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ajustarWidget, alturaDosWidgets, editarWidget, COLUNAS_WIDGET, estiloDoWidget, ESTILOS_WIDGET, moverWidget, NOMES_ESTILO_WIDGET, NOMES_WIDGET, type EstiloWidget, type Retangulo, type TipoWidget, type Widget } from "../dados.ts";
 import { Icone } from "../icones";
 import { CorpoExtra, CorpoVivo, EXEMPLO, definirLugar } from "./WidgetsExtra";
+import { ExternoCorpo } from "./Externos";
 import { usePressaoLonga } from "../ui";
 import { motor } from "../motor";
 import { angulosDoRelogio, buscarClima, descreverTempo, diasAte, fraseDoDia, gradeDoMes, horaDoEvento, minutosSegundos, type Bateria, type Clima, type Evento } from "../widgets";
@@ -123,6 +124,7 @@ export const CORPO = (w: Widget) => {
     case "frase": return <FraseWidget />;
     case "pomodoro": return <PomodoroWidget />;
     case "mundo": return <MundoWidget />;
+    case "externo": return <ExternoCorpo w={w} />;
     default: return <CorpoVivo tipo={w.tipo} />;
   }
 };
@@ -275,6 +277,12 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
   definirLugar(widgets);
   useEffect(() => { if (sel && !widgets.some((w) => w.id === sel)) setSel(null); }, [widgets, sel]);
   useEffect(() => { if (bloqueado) setSel(null); }, [bloqueado]);
+  // segurar um widget real (desenhado pelo Android) abre a edição dele
+  useEffect(() => {
+    const f = (e: Event) => { const id = (e as CustomEvent<number>).detail; const w = widgets.find((x) => x.tipo === "externo" && x.appId === id); if (w && !bloqueado) setSel(w.id); };
+    window.addEventListener("vspace-widget-longo", f);
+    return () => window.removeEventListener("vspace-widget-longo", f);
+  }, [widgets, bloqueado]);
   // ao editar, traz o widget para a parte de cima da tela, longe do quadro de opções
   useEffect(() => { if (sel) window.setTimeout(() => area.current?.querySelector<HTMLElement>("[data-selecionado=true]")?.scrollIntoView({ block: "center", behavior: "smooth" }), 60); }, [sel]);
   if (!widgets.length) return null;
@@ -323,7 +331,7 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
       {atual && <div className="widget-reserva" aria-hidden />}
       {atual && (
         <div className="widget-acoes" role="dialog" aria-label={`Editar ${NOMES_WIDGET[atual.tipo]}`}>
-          <div className="widget-acoes-topo"><strong className="truncate">{NOMES_WIDGET[atual.tipo]}</strong><span className="text-sm text-suave">{atual.w}×{atual.h}</span></div>
+          <div className="widget-acoes-topo"><strong className="truncate">{atual.tipo === "externo" && atual.titulo ? atual.titulo : NOMES_WIDGET[atual.tipo]}</strong><span className="text-sm text-suave">{atual.w}×{atual.h}</span></div>
           <div className="widget-estilos" role="group" aria-label="Estilo do widget">
             {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" aria-pressed={atual.estilo === s} onClick={() => aoMudar(estiloDoWidget(widgets, atual.id, s))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
           </div>
