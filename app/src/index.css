@@ -94,7 +94,7 @@ html[data-forma="original"] .glifo { overflow: visible; }
 .papel-pronto span { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 6px; font-size: .72rem; font-weight: 600; text-align: center; background: linear-gradient(transparent, #000a); }
 
 /* widgets da tela inicial */
-.widgets { flex: none; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 18px 8px; scrollbar-width: none; }
+.widgets { flex: none; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 18px; padding: 4px 18px 8px; scrollbar-width: none; }
 .widgets::-webkit-scrollbar { display: none; }
 .widget { flex: 0 0 min(80%, 300px); min-height: 104px; scroll-snap-align: start; border-radius: 1.3rem; border: 1px solid #ffffff1f; background: #ffffff14; backdrop-filter: blur(14px); color: var(--color-texto); display: flex; }
 .widget-corpo { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
