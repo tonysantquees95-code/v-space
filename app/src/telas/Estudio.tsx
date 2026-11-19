@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -11,10 +11,12 @@ import { motor } from "../motor";
 import { Icone, type NomeIcone } from "../icones";
 import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
 import { buscarLugares, type Lugar } from "../widgets";
+import { PreviaWidget } from "./Widgets";
 import { Aviso, Botao, Cartao, Interruptor, Linha, Passo, Seletor } from "../ui";
 import { Inicio } from "./Inicio";
 import { apagarCategoria, contagens, criarCategoria, editarCategoria, reordenarCategoria } from "../categorias.ts";
 import { NovaCategoria } from "./Menus";
+import { usosDosApps } from "../busca.ts";
 
 /** Atalhos de entrada (menus e botões abrem o editor já na parte certa). */
 export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "categorias" | `${string}/${string}`;
@@ -29,7 +31,7 @@ const SECOES: DefSecao[] = [
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
-  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
 const ENTRADA: Record<string, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
@@ -53,8 +55,8 @@ function Paleta({ valor, cores, aoEscolher, rotulo }: { valor: string; cores: st
   );
 }
 
-/** A tela inicial de verdade, em miniatura: muda ao vivo enquanto você mexe. Só para olhar (não aceita toque). */
-function Previa({ banco, porPacote, papel }: { banco: Banco; porPacote: Map<string, AppInfo>; papel: string | null }) {
+/** A tela inicial de verdade, em miniatura: muda ao vivo enquanto você mexe. Tocar nela volta para a tela inicial. */
+function Previa({ banco, porPacote, papel, aoVoltar }: { banco: Banco; porPacote: Map<string, AppInfo>; papel: string | null; aoVoltar: () => void }) {
   const caixa = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0.4);
   const proporcao = Math.min(2.2, Math.max(1.6, (typeof window === "undefined" ? 2 : window.innerHeight / Math.max(1, window.innerWidth))));
@@ -68,7 +70,7 @@ function Previa({ banco, porPacote, papel }: { banco: Banco; porPacote: Map<stri
   }, [A]);
   const nada = () => undefined;
   return (
-    <div className="editor-previa" ref={caixa} aria-hidden>
+    <div className="editor-previa" ref={caixa} role="button" tabIndex={0} aria-label="Voltar para a tela inicial" title="Toque para voltar à tela inicial" onClick={aoVoltar} onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); aoVoltar(); } }}>
       <div className="previa-moldura" style={{ width: L * k, height: A * k }} {...{ inert: true }}>
         <div className="previa-tela" style={{ width: L, height: A, transform: `scale(${k})` }}>
           <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={nada} aoMenuApp={nada} aoAbrirPasta={nada} aoGaveta={nada} aoEstudio={nada} aoMenuVazio={nada} papel={papel} />
@@ -96,6 +98,8 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
   const [cidade, setCidade] = useState("");
   const [lugares, setLugares] = useState<Lugar[] | null>(null);
   const [procurando, setProcurando] = useState(false);
+  const [musicaOk, setMusicaOk] = useState<boolean | null>(null);
+  useEffect(() => { if (secao === "config" && parte === "atalhos") { const ler = () => { void motor.musicaPermitida().then(setMusicaOk); }; ler(); document.addEventListener("visibilitychange", ler); return () => document.removeEventListener("visibilitychange", ler); } }, [secao, parte]);
   useEffect(() => { void motor.ehPadrao().then(setPadrao).catch(() => setPadrao(null)); }, []);
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") aoFechar(); };
@@ -199,7 +203,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         </div>
       );
       case "categorias/lista": {
-        const cont = contagens(banco, apps);
+        const cont = contagens(banco, apps, usosDosApps());
         return (
           <div className="space-y-4">
             <Botao variante="primario" className="w-full" onClick={aoOrganizar}><span className="inline-flex items-center gap-2"><Icone nome="brilho" tam={20} />Organizar com IA</span></Botao>
@@ -285,22 +289,28 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         </Cartao>
       ) : <p className="text-sm text-suave">Escolha um papel de parede primeiro (parte “Escolha”) para ajustar o desfoque e o escurecimento.</p>;
       case "widgets/adicionar": return (
-        <div className="space-y-4">
-          <Cartao titulo={`Widgets (${banco.widgets.length} de ${MAX_WIDGETS})`}>
-            <div className="flex flex-wrap gap-2">
-              {TIPOS_WIDGET.filter((x) => x !== "clima").map((x) => <Botao key={x} disabled={cheio} onClick={() => incluir(x)}><Icone nome="mais" tam={18} />{NOMES_WIDGET[x]}</Botao>)}
-            </div>
-            <p className="mt-2 text-xs text-suave">A agenda pede permissão para ler seus compromissos (só leitura) na primeira vez que aparecer.</p>
-          </Cartao>
-          <Cartao titulo="Clima">
-            <p className="mb-2 text-sm text-suave">Digite a cidade. O nome dela é enviado ao serviço Open-Meteo só para achar o tempo; nada mais sai do aparelho.</p>
-            <div className="flex gap-2">
-              <input value={cidade} maxLength={40} aria-label="Cidade" placeholder="Ex.: Porto Alegre" onChange={(ev) => setCidade(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") void procurarCidade(); }}
-                className="min-h-11 min-w-0 flex-1 rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
-              <Botao variante="primario" disabled={procurando || cidade.trim().length < 2} onClick={() => void procurarCidade()}>{procurando ? "Procurando…" : "Procurar"}</Botao>
-            </div>
-            {lugares && lugares.length > 0 && <ul className="mt-3 space-y-1">{lugares.map((l) => <li key={`${l.lat},${l.lon}`}><button type="button" disabled={cheio} onClick={() => { incluir("clima", { cidade: l.nome, lat: l.lat, lon: l.lon }); setLugares(null); setCidade(""); }} className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-white/5 disabled:opacity-40"><Icone nome="mais" tam={18} /><span className="min-w-0 truncate">{l.nome}</span></button></li>)}</ul>}
-          </Cartao>
+        <div className="space-y-3">
+          <p className="text-sm text-suave">Veja como cada widget fica e o tamanho dele antes de colocar. Depois, segure o widget na tela inicial para mover, redimensionar ou mudar o estilo ({banco.widgets.length} de {MAX_WIDGETS}).</p>
+          {TIPOS_WIDGET.map((x) => {
+            const tam = TAMANHO_WIDGET[x];
+            return (
+              <Cartao key={x} titulo={`${NOMES_WIDGET[x]} · ${tam.w}×${tam.h}`}>
+                <div className="galeria-caixa" aria-label={`Prévia de ${NOMES_WIDGET[x]}, tamanho ${tam.w} por ${tam.h}`} role="img"><div className="galeria-previa" style={{ width: `${(tam.w / 4) * 100}%`, aspectRatio: `${tam.w * 83 - 8} / ${tam.h * 72 - 8}` }}><PreviaWidget tipo={x} /></div></div>
+                {x === "agenda" && <p className="mt-2 text-xs text-suave">Pede permissão para ler seus compromissos (só leitura) na primeira vez.</p>}
+                {x === "clima" ? (
+                  <>
+                    <p className="my-2 text-sm text-suave">Digite a cidade. O nome dela é enviado ao serviço Open-Meteo só para achar o tempo; nada mais sai do aparelho.</p>
+                    <div className="flex gap-2">
+                      <input value={cidade} maxLength={40} aria-label="Cidade" placeholder="Ex.: Porto Alegre" onChange={(ev) => setCidade(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") void procurarCidade(); }}
+                        className="min-h-11 min-w-0 flex-1 rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+                      <Botao variante="primario" disabled={procurando || cidade.trim().length < 2} onClick={() => void procurarCidade()}>{procurando ? "Procurando…" : "Procurar"}</Botao>
+                    </div>
+                    {lugares && lugares.length > 0 && <ul className="mt-3 space-y-1">{lugares.map((l) => <li key={`${l.lat},${l.lon}`}><button type="button" disabled={cheio} onClick={() => { incluir("clima", { cidade: l.nome, lat: l.lat, lon: l.lon }); setLugares(null); setCidade(""); }} className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-white/5 disabled:opacity-40"><Icone nome="mais" tam={18} /><span className="min-w-0 truncate">{l.nome}</span></button></li>)}</ul>}
+                  </>
+                ) : <div className="mt-3"><Botao variante="primario" disabled={cheio} onClick={() => incluir(x)}><Icone nome="mais" tam={18} />Adicionar {NOMES_WIDGET[x].toLowerCase()}</Botao></div>}
+              </Cartao>
+            );
+          })}
         </div>
       );
       case "widgets/gerenciar": return (
@@ -322,6 +332,23 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <div className="space-y-4">
           <Cartao titulo="Deslizar para cima na tela inicial"><Seletor<Gesto> rotulo="Deslizar para cima" valor={banco.gesto} opcoes={GESTOS} aoMudar={(v) => aoMudar((b) => ({ ...b, gesto: v }))} /></Cartao>
           <Cartao><Linha titulo="Bloquear layout" texto="Impede tirar, mover ou agrupar apps da tela inicial sem querer."><Interruptor rotulo="Bloquear layout" ligado={banco.bloqueado} aoMudar={(v) => aoMudar((b) => ({ ...b, bloqueado: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "config/atalhos": return (
+        <div className="space-y-4">
+          <Cartao titulo="Faixa de atalhos">
+            <Linha titulo="Mostrar na tela inicial" texto="Bateria, Wi-Fi, rede móvel, temperatura (do widget de clima) e volume. Cada um abre a tela certa do aparelho."><Interruptor rotulo="Mostrar a faixa de atalhos" ligado={banco.faixa} aoMudar={(v) => aoMudar((b) => ({ ...b, faixa: v }))} /></Linha>
+          </Cartao>
+          <Cartao titulo="Música tocando">
+            <Linha titulo="Mostrar o player" texto="Quando algo toca (Deezer, YouTube Music, Spotify…), aparece entre os widgets e os favoritos, com voltar, pausar e avançar."><Interruptor rotulo="Mostrar o player de música" ligado={banco.musica} aoMudar={(v) => aoMudar((b) => ({ ...b, musica: v }))} /></Linha>
+            {musicaOk === false && (
+              <div className="mt-3 space-y-2">
+                <Aviso>Para saber o que está tocando, o Android pede que você libere o V-Space em “Acesso às notificações”. O V-Space só vê o título, o artista e os botões do player; não lê nem guarda suas notificações, e nada sai do aparelho.</Aviso>
+                <Botao variante="primario" onClick={() => void motor.pedirMusica()}><Icone nome="escudo" tam={18} />Liberar o acesso</Botao>
+              </div>
+            )}
+            {musicaOk === true && <p className="mt-2 text-sm text-suave">Acesso liberado. O player aparece sozinho quando algo estiver tocando.</p>}
+          </Cartao>
         </div>
       );
       case "config/backup": return (
@@ -367,7 +394,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <div role="tablist" aria-label="Seções do Estúdio" aria-orientation="vertical" className="editor-col">
           {SECOES.map((s) => <button key={s.id} role="tab" type="button" aria-selected={secao === s.id} onClick={() => ir(s.id)} className="editor-item"><span className="editor-icone"><Icone nome={s.icone} tam={26} /></span><span>{s.nome}</span></button>)}
         </div>
-        <Previa banco={banco} porPacote={porPacote} papel={papel} />
+        <Previa banco={banco} porPacote={porPacote} papel={papel} aoVoltar={aoFechar} />
         <div role="tablist" aria-label={`Partes de ${def.nome}`} aria-orientation="vertical" className="editor-col">
           {def.partes.map((p) => <button key={p.id} role="tab" type="button" aria-selected={parte === p.id} onClick={() => { setParte(p.id); setErro(""); }} className="editor-item"><span className="editor-icone"><Icone nome={p.icone} tam={26} /></span><span>{p.nome}</span></button>)}
         </div>
@@ -381,7 +408,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         </div>
       </section>
       {editCat && <NovaCategoria inicial={editCat === "nova" ? undefined : editCat} aoFechar={() => setEditCat(null)}
-        aoSalvar={(nome, icone) => aoMudar((b) => (editCat === "nova" ? criarCategoria(b, nome, icone).banco : editarCategoria(b, editCat.id, { nome, icone })))} />}
+        aoSalvar={({ nome, icone, cor, conteudo }) => aoMudar((b) => (editCat === "nova" ? criarCategoria(b, nome, icone, { cor, conteudo }).banco : editarCategoria(b, editCat.id, { nome, icone, cor: cor ?? null, conteudo })))} />}
     </div>
   );
 }

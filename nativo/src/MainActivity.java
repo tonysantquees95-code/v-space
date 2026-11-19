@@ -16,6 +16,9 @@ import com.getcapacitor.BridgeActivity;
 
 /** Tela principal do V-Space: o launcher ocupa a tela inteira (por trás das barras) e nunca fecha com o "voltar". */
 public class MainActivity extends BridgeActivity {
+    /** Tamanho das barras do sistema em dp: topo, base, esquerda, direita. A tela web usa para não deixar nada embaixo delas. */
+    public static volatile float[] barrasDp = new float[] {0, 0, 0, 0, 0};
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(VSpacePlugin.class);
@@ -29,11 +32,16 @@ public class MainActivity extends BridgeActivity {
         WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, w.getDecorView());
         c.setAppearanceLightStatusBars(false);
         c.setAppearanceLightNavigationBars(false);
-        // O app fica ENTRE a barra de notificações e a de navegação (fixas ou não): o conteúdo ganha margem do tamanho das barras.
+        // O fundo aparece por trás das barras (tela única), mas o conteúdo fica ENTRE elas: a tela web recebe o tamanho
+        // das barras e afasta o que é tocável (--barra-topo / --barra-base).
         final View conteudo = findViewById(android.R.id.content);
         ViewCompat.setOnApplyWindowInsetsListener(conteudo, (v, insets) -> {
             Insets b = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(b.left, b.top, b.right, b.bottom);
+            float d = getResources().getDisplayMetrics().density;
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            barrasDp = new float[] {b.top / d, b.bottom / d, b.left / d, b.right / d, ime.bottom / d};
+            v.setPadding(0, 0, 0, 0);
+            try { getBridge().triggerWindowJSEvent("vspacebarras"); } catch (Exception ignora) { }
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(conteudo);

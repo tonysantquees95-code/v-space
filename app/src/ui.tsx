@@ -73,14 +73,14 @@ export function Folha({ titulo, aoFechar, children, alta = false }: { titulo: st
     return () => window.removeEventListener("keydown", tecla);
   }, []);
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60" onClick={aoFechar}>
+    <div className="folha-fundo fixed inset-0 z-40 flex items-end justify-center bg-black/60" onClick={aoFechar}>
       <div role="dialog" aria-modal="true" aria-label={titulo} onClick={(e) => e.stopPropagation()}
-        className={`folha flex w-full max-w-lg flex-col rounded-t-3xl border border-b-0 border-borda bg-painel ${alta ? "h-[calc(100dvh-1rem)]" : "max-h-[calc(100dvh-1rem)]"}`}>
+        className={`folha flex w-full max-w-lg flex-col rounded-t-3xl border border-b-0 border-borda bg-painel ${alta ? "folha-alta" : "folha-baixa"}`}>
         <header className="flex flex-none items-center justify-between gap-2 px-5 pb-1 pt-4">
           <h2 className="min-w-0 truncate text-lg font-extrabold">{titulo}</h2>
           <button type="button" onClick={aoFechar} aria-label="Fechar" className="grid size-11 flex-none place-items-center rounded-full text-suave hover:bg-white/5"><Icone nome="fechar" /></button>
         </header>
-        <div className="rolagem min-h-0 flex-1 overflow-y-auto px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">{children}</div>
+        <div className="rolagem min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
       </div>
     </div>
   );

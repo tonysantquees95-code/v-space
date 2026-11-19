@@ -1,7 +1,7 @@
 // Lógica pura do launcher (sem tela): layout da tela inicial, dock, pastas, busca, backup.
 // Tudo que vem do disco ou de um backup passa por limparBanco. Sem imports de fora, para o teste do Node rodar.
 
-export interface AppInfo { pacote: string; nome: string; icone?: string }
+export interface AppInfo { pacote: string; nome: string; icone?: string; instalado?: number }
 export type Forma = "original" | "circulo" | "squircle" | "quadrado";
 export type EstiloGaveta = "lista" | "grade";
 export type Fundo = "aurora" | "noite" | "neon" | "cor" | "foto";
@@ -25,13 +25,63 @@ export interface Layout { colunas: number; linhas: number; paginas: Item[][]; do
 export type TipoWidget = "relogio-digital" | "relogio-analogico" | "clima" | "bateria" | "agenda";
 export const TIPOS_WIDGET: readonly TipoWidget[] = ["relogio-digital", "relogio-analogico", "clima", "bateria", "agenda"];
 export const NOMES_WIDGET: Record<TipoWidget, string> = { "relogio-digital": "Relógio digital", "relogio-analogico": "Relógio analógico", clima: "Clima", bateria: "Bateria", agenda: "Agenda" };
-export const MAX_WIDGETS = 4;
-/** Um widget na faixa da tela inicial. O clima guarda a cidade e o ponto no mapa (achados uma vez, na hora de adicionar). */
-export interface Widget { id: string; tipo: TipoWidget; cidade?: string; lat?: number; lon?: number }
+export const MAX_WIDGETS = 12;
+export const COLUNAS_WIDGET = 4;
+export const ALTURA_MAX_WIDGET = 8;
+export type EstiloWidget = "vidro" | "fosco" | "solido" | "transparente";
+export const ESTILOS_WIDGET: readonly EstiloWidget[] = ["vidro", "fosco", "solido", "transparente"];
+export const NOMES_ESTILO_WIDGET: Record<EstiloWidget, string> = { vidro: "Vidro", fosco: "Fosco", solido: "Sólido", transparente: "Transparente" };
+/** Tamanho (em células: colunas × linhas) que cada widget tem ao ser colocado. */
+export const TAMANHO_WIDGET: Record<TipoWidget, { w: number; h: number }> = {
+  "relogio-digital": { w: 4, h: 2 }, "relogio-analogico": { w: 2, h: 2 }, clima: { w: 4, h: 2 }, bateria: { w: 2, h: 2 }, agenda: { w: 4, h: 2 },
+};
+/** Um widget solto na tela inicial: posição (x, y) e tamanho (w, h) em células de uma grade de 4 colunas. O clima guarda a cidade e o ponto no mapa. */
+export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number }
+export interface Retangulo { x: number; y: number; w: number; h: number }
+export const sobrepoe = (a: Retangulo, b: Retangulo): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const cabeEm = (ws: Widget[], r: Retangulo, ignorar?: string): boolean => !ws.some((x) => x.id !== ignorar && sobrepoe(x, r));
+const inteiro = (v: unknown, min: number, max: number): number | null => (typeof v === "number" && Number.isInteger(v) && v >= min && v <= max ? v : null);
+/** Primeiro espaço livre (de cima para baixo, da esquerda para a direita) onde cabe w × h. */
+export function acharLugar(ws: Widget[], w: number, h: number): { x: number; y: number } {
+  for (let y = 0; ; y++) for (let x = 0; x + w <= COLUNAS_WIDGET; x++) if (cabeEm(ws, { x, y, w, h })) return { x, y };
+}
+/** Mover: se o lugar pedido está ocupado, desce até achar espaço livre na mesma coluna. */
+export function moverWidget(ws: Widget[], id: string, x: number, y: number): Widget[] {
+  const a = ws.find((w) => w.id === id);
+  if (!a) return ws;
+  const nx = Math.max(0, Math.min(COLUNAS_WIDGET - a.w, Math.round(x)));
+  let ny = Math.max(0, Math.round(y));
+  while (!cabeEm(ws, { x: nx, y: ny, w: a.w, h: a.h }, id)) ny++;
+  return ws.map((w) => (w.id === id ? { ...w, x: nx, y: ny } : w));
+}
+/** Redimensionar (e, puxando pela borda de cima/esquerda, mover): null quando bate em outro widget ou sai da grade. */
+export function ajustarWidget(ws: Widget[], id: string, r: Retangulo): Widget[] | null {
+  const x = inteiro(r.x, 0, COLUNAS_WIDGET - 1), y = inteiro(r.y, 0, 400), w = inteiro(r.w, 1, COLUNAS_WIDGET), h = inteiro(r.h, 1, ALTURA_MAX_WIDGET);
+  if (x === null || y === null || w === null || h === null || x + w > COLUNAS_WIDGET) return null;
+  if (!ws.some((a) => a.id === id) || !cabeEm(ws, { x, y, w, h }, id)) return null;
+  return ws.map((a) => (a.id === id ? { ...a, x, y, w, h } : a));
+}
+export const estiloDoWidget = (ws: Widget[], id: string, estilo: EstiloWidget): Widget[] => ws.map((w) => (w.id === id && ESTILOS_WIDGET.includes(estilo) ? { ...w, estilo } : w));
+export const alturaDosWidgets = (ws: Widget[]): number => ws.reduce((m, w) => Math.max(m, w.y + w.h), 0);
 export type ModoInicio = "categorias" | "grade";
-export const ICONES_CATEGORIA = ["social", "jogos", "trabalho", "ferramentas", "carteira", "sacola", "midia", "coracao", "livro", "pasta"] as const;
+export const ICONES_CATEGORIA = ["estrela", "casa", "coracao", "social", "chat", "telefone", "email", "agenda", "relogio", "notas", "ideias", "criancas", "pata", "lua", "presente", "sino", "nota", "fone", "podcast", "video", "tv", "camera", "galeria", "jogos", "jornal", "livro", "midia", "esporte", "haltere", "saude", "comida", "cafe", "trabalho", "capelo", "codigo", "acoes", "carteira", "banco", "sacola", "mercado", "pasta", "pino", "aviao", "carro", "onibus", "bike", "globo", "folha", "sol", "mala", "ferramentas", "brilho", "ajustes", "nuvem", "escudo", "raio", "bandeira"] as const;
 export type IconeCategoria = (typeof ICONES_CATEGORIA)[number];
-export interface Categoria { id: string; nome: string; icone: IconeCategoria }
+/** Os ícones de categoria por assunto, com nome, para a pessoa achar o que combina. */
+export const GRUPOS_ICONES: readonly { nome: string; itens: readonly (readonly [IconeCategoria, string])[] }[] = [
+  { nome: "Dia a dia", itens: [["estrela", "Estrela"], ["casa", "Página inicial"], ["coracao", "Saúde e fitness"], ["social", "Pessoas"], ["chat", "Conversa"], ["telefone", "Chamadas"], ["email", "E-mail"], ["agenda", "Agenda"], ["relogio", "Hora"], ["notas", "Notas"], ["ideias", "Ideias"], ["criancas", "Crianças"], ["pata", "Animais"], ["lua", "Sono"], ["presente", "Presentes"], ["sino", "Sino"]] },
+  { nome: "Mídia e lazer", itens: [["nota", "Música"], ["fone", "Áudio"], ["podcast", "Podcasts"], ["video", "Vídeo"], ["tv", "TV"], ["camera", "Fotos"], ["galeria", "Galeria"], ["jogos", "Jogos"], ["jornal", "Notícias"], ["livro", "Livros"], ["midia", "Streaming"], ["esporte", "Esportes"]] },
+  { nome: "Comida e saúde", itens: [["haltere", "Exercício"], ["saude", "Saúde"], ["comida", "Comida"], ["cafe", "Café"]] },
+  { nome: "Trabalho e dinheiro", itens: [["trabalho", "Trabalho"], ["capelo", "Escola"], ["codigo", "Código"], ["acoes", "Ações"], ["carteira", "Finanças"], ["banco", "Banco"], ["sacola", "Compras"], ["mercado", "Mercado"], ["pasta", "Arquivos"]] },
+  { nome: "Viagem e ar livre", itens: [["pino", "Mapas"], ["aviao", "Viagens"], ["carro", "Carro"], ["onibus", "Transporte"], ["bike", "Bike"], ["globo", "Web"], ["folha", "Natureza"], ["sol", "Clima"], ["mala", "Malas"]] },
+  { nome: "Ferramentas", itens: [["ferramentas", "Utilitários"], ["brilho", "Destaques"], ["ajustes", "Configurações"], ["nuvem", "Nuvem"], ["escudo", "Segurança"], ["raio", "Energia"], ["bandeira", "Marcadores"]] },
+];
+/** Cores que a categoria pode ter (aparecem no trilho e no título). */
+export const CORES_CATEGORIA = ["#64b5f6", "#ff7eb6", "#ffd166", "#81c784", "#b0bec5", "#b39ddb", "#ffab70", "#ff8a80", "#4dd0e1", "#9fa8da"] as const;
+export type ConteudoCategoria = "escolhe" | "mais-usados" | "recentes";
+export const CONTEUDOS: readonly ConteudoCategoria[] = ["escolhe", "mais-usados", "recentes"];
+export const NOMES_CONTEUDO: Record<ConteudoCategoria, string> = { escolhe: "Apps que você escolhe", "mais-usados": "Mais usados", recentes: "Instalados recentemente" };
+export interface Categoria { id: string; nome: string; icone: IconeCategoria; cor?: string; conteudo?: ConteudoCategoria }
+export const ehDinamica = (c: Pick<Categoria, "conteudo"> | undefined): boolean => !!c && (c.conteudo === "mais-usados" || c.conteudo === "recentes");
 /** Categorias que o V-Space traz. "ferramentas" é a reserva: o app que ninguém soube classificar cai nela. */
 export const CATEGORIAS_PADRAO: Categoria[] = [
   { id: "social", nome: "Social e notícias", icone: "social" },
@@ -49,7 +99,7 @@ export const MAX_CATEGORIAS = 14;
 export const MAX_FAVORITOS = 16;
 export const MODOS: readonly ModoInicio[] = ["categorias", "grade"];
 export interface Banco {
-  v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean;
+  v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean; musica: boolean; faixa: boolean;
   modo: ModoInicio; categorias: Categoria[]; atribuidos: Record<string, string>; manuais: string[]; favoritos: string[];
 }
 
@@ -99,7 +149,13 @@ export function limparWidgets(x: unknown): Widget[] {
     if (!TIPOS_WIDGET.includes(o.tipo as TipoWidget)) continue;
     const id = typeof o.id === "string" && /^[a-z0-9_-]{1,20}$/.test(o.id) && !ids.has(o.id) ? o.id : `w${saida.length + 1}-${saida.length * 7 + 3}`;
     if (ids.has(id)) continue;
-    const item: Widget = { id, tipo: o.tipo as TipoWidget };
+    const tipo = o.tipo as TipoWidget;
+    const pad = TAMANHO_WIDGET[tipo];
+    let lar = inteiro(o.w, 1, COLUNAS_WIDGET) ?? pad.w; const alt = inteiro(o.h, 1, ALTURA_MAX_WIDGET) ?? pad.h;
+    let x = inteiro(o.x, 0, COLUNAS_WIDGET - 1), y = inteiro(o.y, 0, 400);
+    if (x !== null && x + lar > COLUNAS_WIDGET) lar = COLUNAS_WIDGET - x;
+    if (x === null || y === null || !cabeEm(saida, { x, y, w: lar, h: alt })) { const l = acharLugar(saida, lar, alt); x = l.x; y = l.y; }
+    const item: Widget = { id, tipo, x, y, w: lar, h: alt, estilo: escolha(o.estilo, ESTILOS_WIDGET, "vidro") };
     if (item.tipo === "clima") {
       const lat = decimal(o.lat, -90, 90), lon = decimal(o.lon, -180, 180);
       const cidade = typeof o.cidade === "string" ? o.cidade.replace(/[<>]/g, "").trim().slice(0, 40) : "";
@@ -110,7 +166,7 @@ export function limparWidgets(x: unknown): Widget[] {
   }
   return saida;
 }
-export function adicionarWidget(b: Banco, w: Omit<Widget, "id">): { banco: Banco; ok: boolean } {
+export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string; lat?: number; lon?: number; estilo?: EstiloWidget }): { banco: Banco; ok: boolean } {
   if (b.widgets.length >= MAX_WIDGETS) return { banco: b, ok: false };
   const usados = new Set(b.widgets.map((x) => x.id));
   let n = 1; while (usados.has(`w${n}`)) n++;
@@ -122,7 +178,7 @@ export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").re
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, musica: true, faixa: true, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
 
 export function limparCategorias(x: unknown): Categoria[] {
   const saida: Categoria[] = [];
@@ -132,7 +188,10 @@ export function limparCategorias(x: unknown): Categoria[] {
     const q = c as Record<string, unknown>;
     if (typeof q.id !== "string" || !/^[a-z0-9_-]{1,30}$/.test(q.id) || ids.has(q.id)) continue;
     ids.add(q.id);
-    saida.push({ id: q.id, nome: nomeLimpo(q.nome, "Categoria"), icone: escolha(q.icone, ICONES_CATEGORIA, "pasta") });
+    const cat: Categoria = { id: q.id, nome: nomeLimpo(q.nome, "Categoria"), icone: escolha(q.icone, ICONES_CATEGORIA, "pasta") };
+    if (typeof q.cor === "string" && (CORES_CATEGORIA as readonly string[]).includes(q.cor)) cat.cor = q.cor;
+    if (q.id !== CATEGORIA_RESERVA && (q.conteudo === "mais-usados" || q.conteudo === "recentes")) cat.conteudo = q.conteudo;
+    saida.push(cat);
   }
   if (!saida.some((c) => c.id === CATEGORIA_RESERVA)) saida.push({ ...CATEGORIAS_PADRAO.find((c) => c.id === CATEGORIA_RESERVA)! });
   return saida;
@@ -207,7 +266,7 @@ export function limparBanco(x: unknown): Banco {
   const favoritos: string[] = [];
   for (const a of Array.isArray(b.favoritos) ? b.favoritos : []) if (ehPacote(a) && !favoritos.includes(a) && favoritos.length < MAX_FAVORITOS) favoritos.push(a);
 
-  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true };
+  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true, musica: b.musica !== false, faixa: b.faixa !== false };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */

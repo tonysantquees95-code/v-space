@@ -1,6 +1,7 @@
 // Pede ao servidor para a IA separar os apps em categorias. Só vão NOMES de apps e de categorias (nada pessoal).
 import { SERVIDOR, ehNativo } from "./atualizacao";
 import { categoriaDe } from "./categorias.ts";
+import { ehDinamica } from "./dados.ts";
 import type { AppInfo, Banco } from "./dados.ts";
 
 export const MAX_APPS_IA = 400;
@@ -23,7 +24,7 @@ export async function organizarComIA(banco: Banco, apps: AppInfo[], token = ""):
   try {
     r = await fetch(`${SERVIDOR}/organizar`, {
       method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, signal: AbortSignal.timeout(45_000),
-      body: JSON.stringify({ categorias: banco.categorias.map((c) => ({ id: c.id, nome: c.nome })), apps: lista.map((a) => ({ pacote: a.pacote, nome: a.nome })) }),
+      body: JSON.stringify({ categorias: banco.categorias.filter((c) => !ehDinamica(c)).map((c) => ({ id: c.id, nome: c.nome })), apps: lista.map((a) => ({ pacote: a.pacote, nome: a.nome })) }),
     });
   } catch { throw new Error("Sem internet agora. A organização do aparelho continua valendo."); }
   if (r.status === 401 || r.status === 409) throw new SemSessao();

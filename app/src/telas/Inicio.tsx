@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIAS_PADRAO, type AppInfo, type Banco } from "../dados.ts";
 import { appsDaCategoria, contagens } from "../categorias.ts";
+import { usosDosApps } from "../busca.ts";
+import { ehDinamica } from "../dados.ts";
 import { Icone } from "../icones";
 import { usePressaoLonga } from "../ui";
 import { IconeApp, PastaCel } from "./IconeApp";
-import { FaixaWidgets } from "./Widgets";
+import { AreaWidgets } from "./Widgets";
+import { FaixaAtalhos, MiniPlayer } from "./Sistema";
 
 function useRelogio(): Date {
   const [agora, setAgora] = useState(() => new Date());
@@ -18,23 +21,25 @@ interface Props {
   banco: Banco; porPacote: Map<string, AppInfo>;
   aoAbrirApp: (pacote: string) => void; aoMenuApp: (pacote: string, origem: "tela" | "dock") => void; aoAbrirPasta: (id: string) => void;
   aoGaveta: (busca: boolean) => void; aoEstudio: () => void; aoMenuVazio: () => void; papel: string | null;
-  aoMenuFavorito?: (pacote: string) => void; aoMenuCategoria?: (pacote: string) => void; aoAdicionarFavorito?: () => void; aoAdicionarNaCategoria?: (id: string) => void; aoOrganizar?: () => void; aoNovaCategoria?: () => void; abaInicial?: string;
+  aoMudarWidgets?: (ws: Banco["widgets"]) => void; aoMenuFavorito?: (pacote: string) => void; aoMenuCategoria?: (pacote: string) => void; aoAdicionarFavorito?: () => void; aoAdicionarNaCategoria?: (id: string) => void; aoOrganizar?: () => void; aoNovaCategoria?: () => void; abaInicial?: string;
 }
 
 /** Trilho + página: a tela inicial só com widgets e favoritos; cada categoria é uma página. */
-function CorpoCategorias({ banco, porPacote, aoAbrirApp, aoMenuFavorito, aoMenuCategoria, aoGaveta, aoMenuVazio, aoAdicionarFavorito, aoAdicionarNaCategoria, aoOrganizar, aoNovaCategoria, abaInicial }: Props) {
+function CorpoCategorias(props: Props) {
+  const { banco, porPacote, aoAbrirApp, aoMenuFavorito, aoMenuCategoria, aoGaveta, aoMenuVazio, aoAdicionarFavorito, aoAdicionarNaCategoria, aoOrganizar, aoNovaCategoria, abaInicial } = props;
   const [aba, setAba] = useState(abaInicial ?? "inicio");
   const vazio = usePressaoLonga(aoMenuVazio);
   const t = banco.tema;
   const todos = [...porPacote.values()];
-  const cont = contagens(banco, todos);
+  const usos = usosDosApps();
+  const cont = contagens(banco, todos, usos);
   const padrao = new Set(CATEGORIAS_PADRAO.map((c) => c.id));
   // categoria que a pessoa criou aparece mesmo vazia; as de fábrica só quando têm app
   const visiveis = banco.categorias.filter((c) => (cont[c.id] ?? 0) > 0 || c.id === aba || !padrao.has(c.id));
   const ativa = aba === "inicio" ? null : banco.categorias.find((c) => c.id === aba) ?? null;
   const nada = () => undefined;
   const soNoVazio = (e: { target: unknown; currentTarget: unknown }) => e.target === e.currentTarget;
-  const lista = ativa ? appsDaCategoria(banco, todos, ativa.id) : banco.favoritos.map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a && !banco.ocultos.includes(a.pacote));
+  const lista = ativa ? appsDaCategoria(banco, todos, ativa.id, usos) : banco.favoritos.map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a && !banco.ocultos.includes(a.pacote));
   const eventosVazio = { onPointerDown: (e: React.PointerEvent) => { if (soNoVazio(e)) vazio.onPointerDown(e); }, onPointerMove: vazio.onPointerMove, onPointerUp: vazio.onPointerUp, onPointerLeave: vazio.onPointerLeave, onPointerCancel: vazio.onPointerCancel, onContextMenu: (e: React.MouseEvent) => { if (soNoVazio(e)) vazio.onContextMenu(e); else e.preventDefault(); } };
   const pode = !banco.bloqueado;
   // deslizar para o lado troca de categoria (favoritos ← → categorias, na ordem do trilho)
@@ -43,17 +48,17 @@ function CorpoCategorias({ banco, porPacote, aoAbrirApp, aoMenuFavorito, aoMenuC
   const trocar = (delta: 1 | -1) => { const k = ordem.indexOf(aba); const n = ordem[k + delta]; if (n) setAba(n); };
   return (
     <div className="cat-area"
-      onTouchStart={(e) => { const c = e.touches[0]!; arrasto.current = (e.target as Element).closest?.(".widgets") ? null : { x: c.clientX, y: c.clientY }; }}
+      onTouchStart={(e) => { const c = e.touches[0]!; arrasto.current = (e.target as Element).closest?.(".widgets-area, .widget-acoes") ? null : { x: c.clientX, y: c.clientY }; }}
       onTouchEnd={(e) => { const s = arrasto.current; arrasto.current = null; if (!s) return; const c = e.changedTouches[0]!; const dx = c.clientX - s.x, dy = c.clientY - s.y; if (Math.abs(dx) > 70 && Math.abs(dy) < 55) trocar(dx < 0 ? 1 : -1); }}>
       <div className="cat-corpo" {...eventosVazio}>
         {ativa ? (
-          <header className="cat-cabeca"><h2 className="cat-titulo">{ativa.nome}</h2><p className="cat-sub">{lista.length} {lista.length === 1 ? "app" : "apps"}</p></header>
+          <header className="cat-cabeca"><h2 className="cat-titulo" style={ativa.cor ? { color: ativa.cor } : undefined}>{ativa.nome}</h2><p className="cat-sub">{lista.length} {lista.length === 1 ? "app" : "apps"}{ativa.conteudo === "mais-usados" && !lista.length ? " · abra apps pelo V-Space e eles aparecem aqui" : ""}</p></header>
         ) : (
-          <><FaixaWidgets widgets={banco.widgets} /><h2 className="cat-secao">Favoritos</h2></>
+          <><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? nada} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} /><h2 className="cat-secao">Favoritos</h2></>
         )}
         <div className="cat-grade" {...eventosVazio}>
           {lista.map((a) => <IconeApp key={a.pacote} app={a} rotulo={t.rotulos} className="app-cel" aoAbrir={() => aoAbrirApp(a.pacote)} aoLonga={() => (ativa ? (aoMenuCategoria ?? nada) : (aoMenuFavorito ?? nada))(a.pacote)} />)}
-          {pode && <button type="button" className="app-cel" onClick={() => (ativa ? (aoAdicionarNaCategoria ?? nada)(ativa.id) : (aoAdicionarFavorito ?? nada)())} aria-label={ativa ? `Adicionar apps a ${ativa.nome}` : "Adicionar favoritos"}>
+          {pode && !ehDinamica(ativa ?? undefined) && <button type="button" className="app-cel" onClick={() => (ativa ? (aoAdicionarNaCategoria ?? nada)(ativa.id) : (aoAdicionarFavorito ?? nada)())} aria-label={ativa ? `Adicionar apps a ${ativa.nome}` : "Adicionar favoritos"}>
             <span className="glifo glifo-adiciona" aria-hidden><Icone nome="mais" tam={26} /></span>{t.rotulos && <span className="app-rotulo">Adiciona</span>}
           </button>}
         </div>
@@ -61,7 +66,7 @@ function CorpoCategorias({ banco, porPacote, aoAbrirApp, aoMenuFavorito, aoMenuC
       </div>
       <nav className="trilho" aria-label="Categorias">
         <button type="button" className="trilho-item" aria-pressed={aba === "inicio"} aria-label="Favoritos e widgets" onClick={() => setAba("inicio")}><Icone nome="estrela" tam={22} /></button>
-        {visiveis.map((c) => <button key={c.id} type="button" className="trilho-item" aria-pressed={aba === c.id} aria-label={`${c.nome}, ${cont[c.id] ?? 0} apps`} onClick={() => setAba(c.id)}><Icone nome={c.icone} tam={22} /></button>)}
+        {visiveis.map((c) => <button key={c.id} type="button" className="trilho-item" style={c.cor ? ({ "--cor-cat": c.cor } as React.CSSProperties) : undefined} data-cor={!!c.cor} aria-pressed={aba === c.id} aria-label={`${c.nome}, ${cont[c.id] ?? 0} apps`} onClick={() => setAba(c.id)}><Icone nome={c.icone} tam={22} /></button>)}
         {pode && <button type="button" className="trilho-item trilho-tracejado" aria-label="Nova categoria" onClick={aoNovaCategoria ?? nada}><Icone nome="mais" tam={20} /></button>}
         <button type="button" className="trilho-item" aria-label="Organizar com IA" onClick={aoOrganizar ?? nada}><Icone nome="brilho" tam={22} /></button>
         <button type="button" className="trilho-item" aria-label="Pesquisar apps" onClick={() => aoGaveta(true)}><Icone nome="pesquisa" tam={22} /></button>
@@ -91,10 +96,11 @@ export function Inicio(props: Props) {
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>
       </header>
+      <FaixaAtalhos banco={banco} widgets={banco.widgets} />
 
       {banco.modo === "categorias" ? <CorpoCategorias {...props} /> : (
         <>
-      <FaixaWidgets widgets={banco.widgets} />
+      <div className="widgets-grade"><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} /></div>
 
       <div className="pager" ref={pager} onScroll={(e) => { const el = e.currentTarget; setPg(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); }}>
         {paginas.map((itens, i) => (

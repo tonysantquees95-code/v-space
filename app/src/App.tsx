@@ -5,6 +5,7 @@ import {
   adicionarNaPasta, adicionarNaTela, ajustarTema, bancoPadrao, criarPasta, layoutInicial, naTela, ocultar, paraODock, reconciliar, removerDaTela, renomearPasta, tirarDaPasta, tirarDoDock,
   type AppInfo, type Banco,
 } from "./dados.ts";
+import { ehDinamica } from "./dados.ts";
 import { categoriaDe, criarCategoria, desfavoritar, favoritar, moverParaCategoria } from "./categorias.ts";
 import { Organizar } from "./telas/Organizar";
 import { Conta } from "./telas/Conta";
@@ -119,8 +120,11 @@ export default function App() {
   // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
   useEffect(() => {
     const f = () => { setBusca(false); setPedirConta(false); setOrganizar(false); setNovaCat(false); setMover(null); setAddCat(null); setFavoritosAberto(false); setMenuVazio(false); setCriarPastaAberto(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    const barras = () => { void motor.barras().then((b) => { const s = document.documentElement.style; s.setProperty("--barra-topo", `${b.topo}px`); s.setProperty("--barra-base", `${b.base}px`); s.setProperty("--barra-esq", `${b.esq}px`); s.setProperty("--barra-dir", `${b.dir}px`); const vv = window.visualViewport; const web = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0; s.setProperty("--teclado", `${Math.max(b.teclado, web)}px`); }); };
+    window.visualViewport?.addEventListener("resize", barras);
+    barras(); window.addEventListener("vspacebarras", barras); window.addEventListener("resize", barras);
     window.addEventListener("vspaceinicio", f);
-    return () => window.removeEventListener("vspaceinicio", f);
+    return () => { window.removeEventListener("vspaceinicio", f); window.removeEventListener("vspacebarras", barras); window.removeEventListener("resize", barras); window.visualViewport?.removeEventListener("resize", barras); };
   }, []);
   useEffect(() => { const t = (e: KeyboardEvent) => { if (e.key === "Escape" && temCamada) fecharTopo(); }; window.addEventListener("keydown", t); return () => window.removeEventListener("keydown", t); }, [temCamada, fecharTopo]);
 
@@ -153,7 +157,7 @@ export default function App() {
 
   return (
     <>
-      <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
+      <Inicio banco={banco} aoMudarWidgets={(ws) => mudar((b) => ({ ...b, widgets: ws }))} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
         aoGaveta={(abrirBusca) => (abrirBusca ? setBusca(true) : setGaveta({ busca: false }))} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel}
         aoMenuFavorito={(pacote) => setMenu({ pacote, origem: "favorito" })} aoMenuCategoria={(pacote) => setMenu({ pacote, origem: "categoria" })}
         aoAdicionarFavorito={() => setFavoritosAberto(true)} aoAdicionarNaCategoria={setAddCat} aoOrganizar={() => setOrganizar(true)} aoNovaCategoria={() => setNovaCat(true)} />
@@ -162,8 +166,8 @@ export default function App() {
         aoConfirmar={(p) => { mudar((b) => ({ ...b, favoritos: p.slice(0, 16) })); if (p.length > 16) falar("O máximo é 16 favoritos."); }} />}
       {addCat && (() => { const c = banco.categorias.find((x) => x.id === addCat); return c ? <EscolherApps titulo={`Adicionar a ${c.nome}`} texto="Toque nos apps que vão para esta categoria." botao="Mover para cá" candidatos={visiveis.filter((a) => categoriaDe(banco, a) !== c.id)}
         aoFechar={() => setAddCat(null)} aoConfirmar={(p) => mudar((b) => p.reduce((acc, x) => moverParaCategoria(acc, x, c.id), b))} /> : null; })()}
-      {mover && porPacote.get(mover) && <EscolherCategoria app={porPacote.get(mover)!} categorias={banco.categorias} atual={categoriaDe(banco, porPacote.get(mover)!)} aoFechar={() => setMover(null)} aoEscolher={(id) => mudar((b) => moverParaCategoria(b, mover, id))} />}
-      {novaCat && <NovaCategoria aoFechar={() => setNovaCat(false)} aoSalvar={(nome, icone) => { const r = criarCategoria(banco, nome, icone); if (!r.ok) falar("Limite de categorias atingido."); else setBanco(r.banco); }} />}
+      {mover && porPacote.get(mover) && <EscolherCategoria app={porPacote.get(mover)!} categorias={banco.categorias.filter((c) => !ehDinamica(c))} atual={categoriaDe(banco, porPacote.get(mover)!)} aoFechar={() => setMover(null)} aoEscolher={(id) => mudar((b) => moverParaCategoria(b, mover, id))} />}
+      {novaCat && <NovaCategoria aoFechar={() => setNovaCat(false)} aoSalvar={({ nome, icone, cor, conteudo }) => { const r = criarCategoria(banco, nome, icone, { cor, conteudo }); if (!r.ok) falar("Limite de categorias atingido."); else setBanco(r.banco); }} />}
       {organizar && <Organizar banco={banco} apps={apps} token={sessao?.token ?? ""} aoPedirConta={() => { setOrganizar(false); setPedirConta(true); }} aoMudar={mudar} aoFechar={() => setOrganizar(false)} />}
       {busca && <Busca apps={visiveis} aoFechar={() => setBusca(false)} aoAbrirApp={abrir}
         aoAjuste={(destino) => { setBusca(false); if (destino === "@organizar") setOrganizar(true); else { setGaveta(null); setEstudio(destino as AbaEstudio); } }}
@@ -183,7 +187,7 @@ export default function App() {
       {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
 
       {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
-        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (
         <MenuApp app={appDoMenu} origem={menu.origem} noDock={banco.layout.dock.includes(menu.pacote)} naTela={naTela(banco).has(menu.pacote)} bloqueado={banco.bloqueado} podeAgrupar={naTela(banco).size >= 2} favorito={banco.favoritos.includes(menu.pacote)}

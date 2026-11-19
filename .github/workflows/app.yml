@@ -80,7 +80,7 @@ jobs:
           m = "android/app/src/main/AndroidManifest.xml"
           t = open(m, encoding="utf-8").read()
           # permissões: ver todos os apps instalados (o launcher precisa) e desinstalar pelo menu
-          perms = '    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />\n    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <uses-permission android:name="android.permission.READ_CALENDAR" />\n'
+          perms = '    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />\n    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <uses-permission android:name="android.permission.READ_CALENDAR" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n'
           t = t.replace("<application", perms + "    <application", 1)
           # a tela do V-Space vira "tela inicial" do Android: categorias HOME e DEFAULT, uma única instância, sem aparecer nos recentes duplicada
           home = '<intent-filter>\n                <action android:name="android.intent.action.MAIN" />\n                <category android:name="android.intent.category.HOME" />\n                <category android:name="android.intent.category.DEFAULT" />\n            </intent-filter>\n        '
@@ -88,6 +88,9 @@ jobs:
           t = re.sub(r'android:launchMode="[^"]*"', 'android:launchMode="singleTask"', t, count=1)
           if 'android:launchMode' not in t:
               t = t.replace("<activity", '<activity android:launchMode="singleTask" android:stateNotNeeded="true"', 1)
+          # serviço vazio que dá acesso à sessão de mídia (música tocando) quando a pessoa libera as notificações
+          servico = '    <service android:name=".MusicaListener" android:label="V-Space" android:exported="true" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">\n            <intent-filter>\n                <action android:name="android.service.notification.NotificationListenerService" />\n            </intent-filter>\n        </service>\n    '
+          t = t.replace("</application>", servico + "</application>", 1)
           open(m, "w", encoding="utf-8").write(t)
           PY
           grep -n "HOME\|launchMode\|QUERY_ALL" android/app/src/main/AndroidManifest.xml

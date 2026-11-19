@@ -105,3 +105,36 @@ test("limparBanco: categorias, atribuições e favoritos lixo viram valores segu
   assert.deepEqual(r.favoritos, ["com.c"]); assert.deepEqual(r.atribuidos, {}); assert.deepEqual(r.manuais, []);
   assert.equal(limparBanco(null).categorias.length, CATEGORIAS_PADRAO.length);
 });
+
+import { GRUPOS_ICONES, ICONES_CATEGORIA, CORES_CATEGORIA, ehDinamica } from "../src/dados.ts";
+
+test("grupos de ícones cobrem todos os ícones, sem repetir", () => {
+  const ids = GRUPOS_ICONES.flatMap((g) => g.itens.map(([i]) => i));
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual([...ids].sort(), [...ICONES_CATEGORIA].sort());
+  assert.ok(ICONES_CATEGORIA.length >= 50);
+});
+
+test("limparCategorias aceita só cor da paleta e conteúdo válido (reserva nunca é dinâmica)", () => {
+  const r = limparCategorias([{ id: "a", nome: "A", icone: "casa", cor: CORES_CATEGORIA[2], conteudo: "recentes" }, { id: "b", nome: "B", icone: "xx", cor: "#123456", conteudo: "maluco" }, { id: "ferramentas", nome: "F", icone: "pasta", conteudo: "mais-usados" }]);
+  assert.equal(r[0].cor, CORES_CATEGORIA[2]); assert.equal(r[0].conteudo, "recentes");
+  assert.equal(r[1].cor, undefined); assert.equal(r[1].conteudo, undefined); assert.equal(r[1].icone, "pasta");
+  assert.equal(r.find((c) => c.id === "ferramentas").conteudo, undefined);
+});
+
+test("categoria dinâmica: recentes e mais usados, e ninguém é movido para elas", () => {
+  let b = bancoPadrao();
+  b = criarCategoria(b, "Novos", "sino", { conteudo: "recentes" }).banco;
+  b = criarCategoria(b, "Top", "estrela", { conteudo: "mais-usados", cor: CORES_CATEGORIA[0] }).banco;
+  const apps = [{ pacote: "a.a", nome: "A", instalado: 100 }, { pacote: "b.b", nome: "B", instalado: 300 }, { pacote: "c.c", nome: "C" }];
+  const novos = b.categorias.find((c) => c.nome === "Novos"), top = b.categorias.find((c) => c.nome === "Top");
+  assert.ok(ehDinamica(novos) && ehDinamica(top));
+  assert.deepEqual(appsDaCategoria(b, apps, novos.id).map((a) => a.pacote), ["b.b", "a.a"]);
+  assert.deepEqual(appsDaCategoria(b, apps, top.id, { "c.c": 5, "a.a": 2 }).map((a) => a.pacote), ["c.c", "a.a"]);
+  assert.equal(contagens(b, apps, { "c.c": 1 })[top.id], 1);
+  assert.equal(moverParaCategoria(b, "a.a", novos.id), b);
+  // o app continua na categoria de verdade (as dinâmicas só mostram, não tiram)
+  assert.equal(contagens(b, apps)[novos.id], 2);
+  const e = editarCategoria(b, top.id, { cor: null });
+  assert.equal(e.categorias.find((c) => c.id === top.id).cor, undefined);
+});

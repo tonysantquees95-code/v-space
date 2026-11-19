@@ -2,6 +2,11 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import type { AppInfo } from "./dados.ts";
 import type { Bateria, Evento } from "./widgets";
+
+export interface Musica { tem: boolean; pacote?: string; app?: string; titulo?: string; artista?: string; tocando?: boolean; capa?: string }
+export interface Sistema { wifi: boolean; movel: boolean; volume: number }
+export type ComandoMusica = "pausar" | "tocar" | "proxima" | "anterior" | "parar";
+export type TelaAjuste = "wifi" | "rede" | "bateria";
 import { motorDemo } from "./demo";
 
 export interface Motor {
@@ -18,13 +23,21 @@ export interface Motor {
   salvarArquivo(nome: string, texto: string): Promise<boolean>;
   lerArquivo(): Promise<string | null>;
   bateria(): Promise<Bateria | null>;
+  barras(): Promise<{ topo: number; base: number; esq: number; dir: number; teclado: number }>;
   agendaPermitida(): Promise<boolean>;
   pedirAgenda(): Promise<boolean>;
   eventos(): Promise<Evento[]>;
+  musicaPermitida(): Promise<boolean>;
+  pedirMusica(): Promise<void>;
+  musica(): Promise<Musica>;
+  musicaComando(acao: ComandoMusica): Promise<void>;
+  sistema(): Promise<Sistema>;
+  mostrarVolume(): Promise<void>;
+  abrirAjuste(tela: TelaAjuste): Promise<void>;
 }
 
 interface PluginNativo {
-  listarApps(): Promise<{ apps: { pacote: string; nome: string; icone?: string }[] }>;
+  listarApps(): Promise<{ apps: { pacote: string; nome: string; icone?: string; instalado?: number }[] }>;
   abrir(o: { pacote: string }): Promise<void>;
   detalhes(o: { pacote: string }): Promise<void>;
   abrirUrl(o: { url: string }): Promise<void>;
@@ -35,9 +48,17 @@ interface PluginNativo {
   salvarArquivo(o: { nome: string; texto: string }): Promise<{ ok: boolean }>;
   lerArquivo(): Promise<{ texto: string | null }>;
   bateria(): Promise<{ nivel: number; carregando: boolean }>;
+  barras(): Promise<{ topo: number; base: number; esq: number; dir: number; teclado: number }>;
   agendaPermitida(): Promise<{ permitida: boolean }>;
   pedirAgenda(): Promise<{ permitida: boolean }>;
   eventosHoje(): Promise<{ eventos: { titulo: string; inicio: number; fim: number; diaTodo: boolean }[] }>;
+  musicaPermitida(): Promise<{ permitida: boolean }>;
+  pedirMusica(): Promise<void>;
+  musica(): Promise<Musica>;
+  musicaComando(o: { acao: string }): Promise<void>;
+  sistema(): Promise<Sistema>;
+  mostrarVolume(): Promise<void>;
+  abrirAjuste(o: { tela: string }): Promise<void>;
   addListener(evento: "appsMudaram", cb: () => void): Promise<{ remove: () => Promise<void> }>;
 }
 
@@ -45,7 +66,7 @@ function criarAndroid(): Motor {
   const n = registerPlugin<PluginNativo>("VetorialHome");
   return {
     nome: "android",
-    apps: async () => (await n.listarApps()).apps.map((a) => ({ pacote: a.pacote, nome: a.nome, icone: a.icone ? `data:image/png;base64,${a.icone}` : undefined })),
+    apps: async () => (await n.listarApps()).apps.map((a) => ({ pacote: a.pacote, nome: a.nome, icone: a.icone ? `data:image/png;base64,${a.icone}` : undefined, instalado: typeof a.instalado === "number" && a.instalado > 0 ? a.instalado : undefined })),
     abrir: (pacote) => n.abrir({ pacote }),
     detalhes: (pacote) => n.detalhes({ pacote }),
     abrirUrl: (url) => n.abrirUrl({ url }),
@@ -60,10 +81,25 @@ function criarAndroid(): Motor {
     abrirAjustesInicio: () => n.abrirAjustesInicio(),
     salvarArquivo: async (nome, texto) => (await n.salvarArquivo({ nome, texto })).ok,
     lerArquivo: async () => (await n.lerArquivo()).texto,
+    barras: async () => { try { const b = await n.barras(); const f = (x: number) => (Number.isFinite(x) ? Math.max(0, Math.min(200, x)) : 0); return { topo: f(b.topo), base: f(b.base), esq: f(b.esq), dir: f(b.dir), teclado: f(b.teclado ?? 0) }; } catch { return { topo: 0, base: 0, esq: 0, dir: 0, teclado: 0 }; } },
     bateria: async () => { try { const b = await n.bateria(); return Number.isFinite(b.nivel) ? { nivel: Math.max(0, Math.min(100, Math.round(b.nivel))), carregando: !!b.carregando } : null; } catch { return null; } },
     agendaPermitida: async () => { try { return (await n.agendaPermitida()).permitida; } catch { return false; } },
     pedirAgenda: async () => { try { return (await n.pedirAgenda()).permitida; } catch { return false; } },
     eventos: async () => { try { return (await n.eventosHoje()).eventos.slice(0, 4).map((e) => ({ titulo: String(e.titulo || "Sem título").slice(0, 60), inicio: Number(e.inicio), fim: Number(e.fim), diaTodo: !!e.diaTodo })); } catch { return []; } },
+    musicaPermitida: async () => { try { return (await n.musicaPermitida()).permitida; } catch { return false; } },
+    pedirMusica: () => n.pedirMusica(),
+    musica: async () => {
+      try {
+        const x = await n.musica();
+        if (!x || !x.tem) return { tem: false };
+        const capa = typeof x.capa === "string" && x.capa.startsWith("data:image/jpeg;base64,") && x.capa.length < 60_000 ? x.capa : undefined;
+        return { tem: true, pacote: String(x.pacote ?? "").slice(0, 200), app: String(x.app ?? "").slice(0, 40), titulo: String(x.titulo ?? "").slice(0, 120), artista: String(x.artista ?? "").slice(0, 120), tocando: !!x.tocando, capa };
+      } catch { return { tem: false }; }
+    },
+    musicaComando: (acao) => n.musicaComando({ acao }),
+    sistema: async () => { try { const s = await n.sistema(); return { wifi: !!s.wifi, movel: !!s.movel, volume: Number.isFinite(s.volume) ? Math.max(0, Math.min(100, Math.round(s.volume))) : 0 }; } catch { return { wifi: false, movel: false, volume: 0 }; } },
+    mostrarVolume: () => n.mostrarVolume(),
+    abrirAjuste: (tela) => n.abrirAjuste({ tela }),
   };
 }
 

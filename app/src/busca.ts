@@ -27,6 +27,8 @@ export const AJUSTES: Ajuste[] = [
   { titulo: "Gerenciar widgets", onde: "Widgets · Gerenciar", destino: "widgets/gerenciar", chaves: "widget widgets remover" },
   { titulo: "Vetorial ID (conta)", onde: "Configurações · Conta", destino: "config/conta", chaves: "conta vetorial id entrar sair login" },
   { titulo: "Gesto de deslizar para cima", onde: "Configurações · Gestos", destino: "config/gestos", chaves: "gesto deslizar cima pesquisa gaveta" },
+  { titulo: "Faixa de atalhos (Wi-Fi, volume, bateria)", onde: "Configurações · Atalhos", destino: "config/atalhos", chaves: "atalhos wifi volume bateria faixa temperatura rede" },
+  { titulo: "Player de música na tela inicial", onde: "Configurações · Atalhos", destino: "config/atalhos", chaves: "musica player tocando deezer spotify youtube notificacoes" },
   { titulo: "Bloquear layout", onde: "Configurações · Gestos", destino: "config/gestos", chaves: "bloquear layout travar trava" },
   { titulo: "Backup e restauração", onde: "Configurações · Backup", destino: "config/backup", chaves: "backup restaurar exportar importar salvar" },
   { titulo: "Launcher padrão", onde: "Configurações · Launcher", destino: "config/padrao", chaves: "padrao launcher inicio voltar anterior" },
@@ -84,4 +86,12 @@ export const buscasRecentes = (): string[] => ler(CH_BUSCAS);
 export const guardarBusca = (q: string): void => gravar(CH_BUSCAS, registrarRecente(ler(CH_BUSCAS), q, 8));
 export const limparBuscas = (): void => gravar(CH_BUSCAS, []);
 export const appsRecentes = (): string[] => ler(CH_APPS);
-export const guardarAppRecente = (pacote: string): void => gravar(CH_APPS, registrarRecente(ler(CH_APPS), pacote, 12));
+export const guardarAppRecente = (pacote: string): void => { gravar(CH_APPS, registrarRecente(ler(CH_APPS), pacote, 12)); contarUso(pacote); };
+/** Quantas vezes cada app foi aberto pelo V-Space (alimenta a categoria "Mais usados"; nada sai do aparelho). */
+const CH_USOS = "vspace.usos";
+export function usosDosApps(): Record<string, number> {
+  try { const v = JSON.parse(localStorage.getItem(CH_USOS) ?? "{}"); if (!v || typeof v !== "object") return {}; const r: Record<string, number> = {}; for (const [k, n] of Object.entries(v as Record<string, unknown>)) if (typeof n === "number" && Number.isFinite(n) && n > 0 && k.length < 200) r[k] = Math.min(100000, Math.floor(n)); return r; } catch { return {}; }
+}
+function contarUso(pacote: string): void {
+  try { const u = usosDosApps(); u[pacote] = (u[pacote] ?? 0) + 1; const top = Object.entries(u).sort((a, b) => b[1] - a[1]).slice(0, 300); localStorage.setItem(CH_USOS, JSON.stringify(Object.fromEntries(top))); } catch { /* sem armazenamento */ }
+}

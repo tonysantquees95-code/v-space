@@ -230,7 +230,7 @@ test("limparTema: papel de parede (desfoque e escurecimento) respeita limites", 
   assert.equal(b.desfoque, 0); assert.equal(b.escuro, 30);
 });
 
-test("widgets: lixo sai, clima sem lugar sai, limite de 4", () => {
+test("widgets: lixo sai, clima sem lugar sai, limite", () => {
   const w = limparWidgets([
     { id: "a", tipo: "bateria" }, { id: "a", tipo: "agenda" }, { tipo: "inexistente" }, null, 5,
     { id: "c", tipo: "clima", cidade: "  <b>Pelotas</b> ", lat: -31.77, lon: -52.34 },
@@ -238,10 +238,11 @@ test("widgets: lixo sai, clima sem lugar sai, limite de 4", () => {
     { id: "e", tipo: "clima", cidade: "Longe", lat: 999, lon: 0 },
     { id: "f", tipo: "relogio-digital" }, { id: "g", tipo: "relogio-analogico" },
   ]);
-  assert.equal(w.length, MAX_WIDGETS);
-  assert.deepEqual(w.map((x) => x.tipo), ["bateria", "agenda", "clima", "relogio-digital"]);
+  assert.deepEqual(w.map((x) => x.tipo), ["bateria", "agenda", "clima", "relogio-digital", "relogio-analogico"]);
+  assert.equal(limparWidgets(Array.from({ length: 30 }, (_, i) => ({ id: `w${i}`, tipo: "bateria" }))).length, MAX_WIDGETS);
   assert.equal(new Set(w.map((x) => x.id)).size, w.length);
   assert.equal(w[2].cidade, "bPelotas/b");
+  assert.equal(w[1].tipo, "agenda");
   assert.deepEqual(limparWidgets("x"), []);
 });
 test("widgets: adicionar respeita o limite e remover tira só um", () => {

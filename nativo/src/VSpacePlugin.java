@@ -14,6 +14,15 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.database.Cursor;
+import android.content.ComponentName;
+import android.media.AudioManager;
+import android.media.MediaMetadata;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
+import android.media.session.PlaybackState;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.BatteryManager;
@@ -95,6 +104,7 @@ public class VSpacePlugin extends Plugin {
                     JSObject a = new JSObject();
                     a.put("pacote", pacote);
                     a.put("nome", String.valueOf(r.loadLabel(pm)));
+                    try { a.put("instalado", pm.getPackageInfo(pacote, 0).firstInstallTime); } catch (Exception ignora) { }
                     String ic = icone(r.loadIcon(pm));
                     if (ic != null) a.put("icone", ic);
                     apps.put(a);
@@ -113,6 +123,15 @@ public class VSpacePlugin extends Plugin {
         if (i == null) { call.reject("Esse app não pode ser aberto."); return; }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try { getContext().startActivity(i); call.resolve(); } catch (Exception e) { call.reject("Não consegui abrir: " + e.getMessage()); }
+    }
+
+    /** Tamanho das barras do sistema (dp), para a tela web ficar entre elas com o fundo aparecendo por trás. */
+    @PluginMethod
+    public void barras(PluginCall call) {
+        float[] b = MainActivity.barrasDp;
+        JSObject r = new JSObject();
+        r.put("topo", b[0]); r.put("base", b[1]); r.put("esq", b[2]); r.put("dir", b[3]); r.put("teclado", b.length > 4 ? b[4] : 0);
+        call.resolve(r);
     }
 
     /** Abre um link da web no navegador do aparelho (só http e https). */
@@ -219,6 +238,139 @@ public class VSpacePlugin extends Plugin {
         }
         o.put("texto", texto == null ? JSObject.NULL : texto);
         call.resolve(o);
+    }
+
+    // ---- música que está tocando (precisa do acesso às notificações; o V-Space só lê a sessão de mídia)
+    private boolean musicaLiberada() {
+        String lista = Settings.Secure.getString(getContext().getContentResolver(), "enabled_notification_listeners");
+        return lista != null && lista.contains(getContext().getPackageName());
+    }
+
+    @PluginMethod
+    public void musicaPermitida(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("permitida", musicaLiberada());
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void pedirMusica(PluginCall call) {
+        try {
+            Intent i = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Exception e) { call.reject("Não consegui abrir os ajustes: " + e.getMessage()); }
+    }
+
+    private MediaController sessaoAtiva() {
+        if (!musicaLiberada()) return null;
+        try {
+            MediaSessionManager m = (MediaSessionManager) getContext().getSystemService(Context.MEDIA_SESSION_SERVICE);
+            List<MediaController> lista = m.getActiveSessions(new ComponentName(getContext(), MusicaListener.class));
+            MediaController escolhida = null;
+            for (MediaController c : lista) {
+                PlaybackState p = c.getPlaybackState();
+                if (c.getMetadata() == null) continue;
+                if (p != null && p.getState() == PlaybackState.STATE_PLAYING) return c;
+                if (escolhida == null && p != null && (p.getState() == PlaybackState.STATE_PAUSED)) escolhida = c;
+            }
+            return escolhida;
+        } catch (Exception e) { return null; }
+    }
+
+    @PluginMethod
+    public void musica(final PluginCall call) {
+        fundo.execute(() -> {
+            JSObject r = new JSObject();
+            MediaController c = sessaoAtiva();
+            if (c == null) { r.put("tem", false); call.resolve(r); return; }
+            MediaMetadata md = c.getMetadata();
+            PlaybackState p = c.getPlaybackState();
+            String pacote = c.getPackageName();
+            String nomeApp = pacote;
+            try { nomeApp = String.valueOf(getContext().getPackageManager().getApplicationLabel(getContext().getPackageManager().getApplicationInfo(pacote, 0))); } catch (Exception ignora) { }
+            r.put("tem", true);
+            r.put("pacote", pacote);
+            r.put("app", nomeApp);
+            r.put("titulo", md.getString(MediaMetadata.METADATA_KEY_TITLE) == null ? "" : md.getString(MediaMetadata.METADATA_KEY_TITLE));
+            String art = md.getString(MediaMetadata.METADATA_KEY_ARTIST);
+            if (art == null) art = md.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST);
+            r.put("artista", art == null ? "" : art);
+            r.put("tocando", p != null && p.getState() == PlaybackState.STATE_PLAYING);
+            Bitmap capa = md.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+            if (capa == null) capa = md.getBitmap(MediaMetadata.METADATA_KEY_ART);
+            if (capa != null) {
+                try {
+                    Bitmap p96 = Bitmap.createScaledBitmap(capa, 96, 96, true);
+                    ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                    p96.compress(Bitmap.CompressFormat.JPEG, 80, bo);
+                    r.put("capa", "data:image/jpeg;base64," + Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP));
+                } catch (Exception ignora) { }
+            }
+            call.resolve(r);
+        });
+    }
+
+    @PluginMethod
+    public void musicaComando(PluginCall call) {
+        String acao = call.getString("acao", "");
+        MediaController c = sessaoAtiva();
+        if (c == null) { call.reject("Nada tocando."); return; }
+        MediaController.TransportControls t = c.getTransportControls();
+        switch (acao) {
+            case "pausar": t.pause(); break;
+            case "tocar": t.play(); break;
+            case "proxima": t.skipToNext(); break;
+            case "anterior": t.skipToPrevious(); break;
+            case "parar": t.stop(); break;
+            default: call.reject("Comando inválido."); return;
+        }
+        call.resolve();
+    }
+
+    // ---- atalhos do sistema: rede, volume e ajustes
+    @PluginMethod
+    public void sistema(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean wifi = false, movel = false;
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            Network n = cm.getActiveNetwork();
+            NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            if (nc != null) { wifi = nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI); movel = nc.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR); }
+        } catch (Exception ignora) { }
+        int volume = 0;
+        try {
+            AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            int max = Math.max(1, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+            volume = Math.round(100f * am.getStreamVolume(AudioManager.STREAM_MUSIC) / max);
+        } catch (Exception ignora) { }
+        r.put("wifi", wifi); r.put("movel", movel); r.put("volume", volume);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void mostrarVolume(PluginCall call) {
+        try {
+            AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
+            call.resolve();
+        } catch (Exception e) { call.reject("Não consegui abrir o volume."); }
+    }
+
+    /** Abre uma tela de ajustes do sistema (só estas): wifi, rede móvel ou bateria. */
+    @PluginMethod
+    public void abrirAjuste(PluginCall call) {
+        String tela = call.getString("tela", "");
+        String acao;
+        switch (tela) {
+            case "wifi": acao = Settings.ACTION_WIFI_SETTINGS; break;
+            case "rede": acao = Settings.ACTION_WIRELESS_SETTINGS; break;
+            case "bateria": acao = Intent.ACTION_POWER_USAGE_SUMMARY; break;
+            default: call.reject("Ajuste inválido."); return;
+        }
+        try { getContext().startActivity(new Intent(acao).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); call.resolve(); }
+        catch (Exception e) { call.reject("Não consegui abrir os ajustes."); }
     }
 
     // ---- widgets: bateria e agenda

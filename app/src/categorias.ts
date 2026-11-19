@@ -1,8 +1,8 @@
 // Categorias inteligentes: separa os apps em categorias (no aparelho, por palavras; a IA do servidor só refina).
 // Lógica pura, sem tela. Imports levam .ts para o teste do Node rodar.
 import {
-  CATEGORIA_RESERVA, MAX_CATEGORIAS, MAX_FAVORITOS, ehDaSuite, ehPacote, nomeLimpo, normalizar,
-  type AppInfo, type Banco, type Categoria, type IconeCategoria,
+  CATEGORIA_RESERVA, MAX_CATEGORIAS, MAX_FAVORITOS, ehDaSuite, ehDinamica, ehPacote, limparCategorias, nomeLimpo, normalizar,
+  type AppInfo, type Banco, type Categoria, type ConteudoCategoria, type IconeCategoria,
 } from "./dados.ts";
 
 /** Termos por categoria, na ordem em que valem. Termo curto (até 3 letras) precisa ser a palavra inteira; os outros valem como começo de palavra. */
@@ -36,7 +36,7 @@ export function classificarLocal(app: AppInfo): string {
   return CATEGORIA_RESERVA;
 }
 
-const existe = (b: Banco, id: string | undefined): id is string => !!id && b.categorias.some((c) => c.id === id);
+const existe = (b: Banco, id: string | undefined): id is string => !!id && b.categorias.some((c) => c.id === id && !ehDinamica(c));
 
 /** Categoria do app agora: a escolhida (por você ou pela IA) vale; senão a do aparelho; se a categoria foi apagada, a reserva. */
 export function categoriaDe(b: Banco, app: AppInfo): string {
@@ -47,13 +47,20 @@ export function categoriaDe(b: Banco, app: AppInfo): string {
 }
 
 /** Apps de uma categoria (sem os ocultos), em ordem alfabética. */
-export function appsDaCategoria(b: Banco, apps: AppInfo[], id: string): AppInfo[] {
+export function appsDaCategoria(b: Banco, apps: AppInfo[], id: string, usos: Record<string, number> = {}): AppInfo[] {
+  const cat = b.categorias.find((c) => c.id === id);
+  if (cat && ehDinamica(cat)) {
+    const visiveis = apps.filter((a) => !b.ocultos.includes(a.pacote));
+    if (cat.conteudo === "recentes") return visiveis.filter((a) => typeof a.instalado === "number" && a.instalado > 0).sort((x, y) => (y.instalado ?? 0) - (x.instalado ?? 0) || x.pacote.localeCompare(y.pacote)).slice(0, LIMITE_DINAMICA);
+    return visiveis.filter((a) => (usos[a.pacote] ?? 0) > 0).sort((x, y) => (usos[y.pacote] ?? 0) - (usos[x.pacote] ?? 0) || normalizar(x.nome).localeCompare(normalizar(y.nome), "pt-BR")).slice(0, LIMITE_DINAMICA);
+  }
   return apps.filter((a) => !b.ocultos.includes(a.pacote) && categoriaDe(b, a) === id).sort((x, y) => normalizar(x.nome).localeCompare(normalizar(y.nome), "pt-BR") || x.pacote.localeCompare(y.pacote));
 }
 
-export const contagens = (b: Banco, apps: AppInfo[]): Record<string, number> => {
+export const LIMITE_DINAMICA = 24;
+export const contagens = (b: Banco, apps: AppInfo[], usos: Record<string, number> = {}): Record<string, number> => {
   const r: Record<string, number> = {};
-  for (const c of b.categorias) r[c.id] = 0;
+  for (const c of b.categorias) r[c.id] = ehDinamica(c) ? appsDaCategoria(b, apps, c.id, usos).length : 0;
   for (const a of apps) if (!b.ocultos.includes(a.pacote)) { const c = categoriaDe(b, a); r[c] = (r[c] ?? 0) + 1; }
   return r;
 };
@@ -74,15 +81,16 @@ export const desfavoritar = (b: Banco, pacote: string): Banco => ({ ...b, favori
 
 const slug = (nome: string): string => normalizar(nome).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20) || "categoria";
 
-export function criarCategoria(b: Banco, nome: string, icone: IconeCategoria = "pasta"): { banco: Banco; ok: boolean; id: string } {
+export interface DadosCategoria { cor?: string; conteudo?: ConteudoCategoria }
+export function criarCategoria(b: Banco, nome: string, icone: IconeCategoria = "pasta", extra: DadosCategoria = {}): { banco: Banco; ok: boolean; id: string } {
   const limpo = nomeLimpo(nome);
   if (!limpo || b.categorias.length >= MAX_CATEGORIAS) return { banco: b, ok: false, id: "" };
   let id = slug(limpo), n = 2;
   while (b.categorias.some((c) => c.id === id)) id = `${slug(limpo).slice(0, 16)}-${n++}`;
-  return { banco: { ...b, categorias: [...b.categorias, { id, nome: limpo, icone }] }, ok: true, id };
+  return { banco: { ...b, categorias: limparCategorias([...b.categorias, { id, nome: limpo, icone, ...extra }]) }, ok: true, id };
 }
-export function editarCategoria(b: Banco, id: string, mudanca: Partial<Pick<Categoria, "nome" | "icone">>): Banco {
-  return { ...b, categorias: b.categorias.map((c) => (c.id === id ? { ...c, nome: nomeLimpo(mudanca.nome, c.nome), icone: mudanca.icone ?? c.icone } : c)) };
+export function editarCategoria(b: Banco, id: string, mudanca: Partial<Pick<Categoria, "nome" | "icone">> & { cor?: string | null; conteudo?: ConteudoCategoria }): Banco {
+  return { ...b, categorias: limparCategorias(b.categorias.map((c) => { if (c.id !== id) return c; const n: Record<string, unknown> = { ...c, nome: nomeLimpo(mudanca.nome, c.nome), icone: mudanca.icone ?? c.icone }; if ("cor" in mudanca) { if (mudanca.cor) n.cor = mudanca.cor; else delete n.cor; } if (mudanca.conteudo) n.conteudo = mudanca.conteudo; return n as unknown as Categoria; })) };
 }
 /** Apagar não perde app: quem estava nela volta a ser classificado (reserva se preciso). A reserva não se apaga. */
 export function apagarCategoria(b: Banco, id: string): Banco {

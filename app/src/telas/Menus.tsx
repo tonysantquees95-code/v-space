@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ICONES_CATEGORIA, type AppInfo, type Categoria, type IconeCategoria, type Pasta } from "../dados.ts";
+import { CATEGORIA_RESERVA, CONTEUDOS, CORES_CATEGORIA, GRUPOS_ICONES, NOMES_CONTEUDO, type AppInfo, type Categoria, type ConteudoCategoria, type IconeCategoria, type Pasta } from "../dados.ts";
 import { PRONTOS } from "../papel";
 import { Icone, type NomeIcone } from "../icones";
 import { Aviso, Botao, Folha } from "../ui";
@@ -174,19 +174,42 @@ export function EscolherApps({ titulo, texto, botao, candidatos, jaMarcados = []
 }
 
 /** Nome e ícone de uma categoria nova (ou editada). */
-export function NovaCategoria({ inicial, aoFechar, aoSalvar }: { inicial?: Categoria; aoFechar: () => void; aoSalvar: (nome: string, icone: IconeCategoria) => void }) {
+export interface DadosNovaCategoria { nome: string; icone: IconeCategoria; cor?: string; conteudo: ConteudoCategoria }
+export function NovaCategoria({ inicial, aoFechar, aoSalvar }: { inicial?: Categoria; aoFechar: () => void; aoSalvar: (d: DadosNovaCategoria) => void }) {
   const [nome, setNome] = useState(inicial?.nome ?? "");
   const [icone, setIcone] = useState<IconeCategoria>(inicial?.icone ?? "pasta");
+  const [cor, setCor] = useState<string | undefined>(inicial?.cor);
+  const [conteudo, setConteudo] = useState<ConteudoCategoria>(inicial?.conteudo ?? "escolhe");
+  const reserva = inicial?.id === CATEGORIA_RESERVA;
   return (
     <Folha titulo={inicial ? "Editar categoria" : "Nova categoria"} aoFechar={aoFechar}>
       <label className="mb-3 block text-sm text-suave">Nome
         <input value={nome} maxLength={24} autoFocus onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Trabalho" className="mt-1 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
       </label>
-      <p className="mb-2 text-sm text-suave">Ícone</p>
-      <div className="mb-4 grid grid-cols-5 gap-2">
-        {ICONES_CATEGORIA.map((i) => <button key={i} type="button" aria-pressed={icone === i} aria-label={i} onClick={() => setIcone(i)} className={`grid min-h-12 place-items-center rounded-2xl border ${icone === i ? "border-neon bg-neon/15 text-neon" : "border-borda"}`}><Icone nome={i} /></button>)}
+      {!reserva && (
+        <>
+          <p className="mb-2 text-sm text-suave">O que contém</p>
+          <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="O que a categoria contém">
+            {CONTEUDOS.map((c) => <button key={c} type="button" className="busca-chip" aria-pressed={conteudo === c} onClick={() => setConteudo(c)}>{NOMES_CONTEUDO[c]}</button>)}
+          </div>
+          {conteudo !== "escolhe" && <p className="mb-3 text-xs text-suave">{conteudo === "recentes" ? "Mostra sozinha os apps que você instalou há pouco; os apps continuam também nas outras categorias." : "Mostra sozinha os apps que você mais abre pelo V-Space (a contagem fica só no aparelho)."}</p>}
+        </>
+      )}
+      <p className="mb-2 text-sm text-suave">Cor</p>
+      <div className="mb-3 flex flex-wrap gap-3" role="group" aria-label="Cor da categoria">
+        <button type="button" aria-label="Cor do tema" aria-pressed={cor === undefined} onClick={() => setCor(undefined)} className={`cor-bolinha cor-tema ${cor === undefined ? "ativa" : ""}`} />
+        {CORES_CATEGORIA.map((c) => <button key={c} type="button" aria-label={`Cor ${c}`} aria-pressed={cor === c} onClick={() => setCor(c)} className={`cor-bolinha ${cor === c ? "ativa" : ""}`} style={{ background: c }} />)}
       </div>
-      <Botao variante="primario" className="w-full" disabled={!nome.trim()} onClick={() => { aoSalvar(nome, icone); aoFechar(); }}>Salvar</Botao>
+      <p className="mb-1 text-sm text-suave">Ícone</p>
+      {GRUPOS_ICONES.map((g) => (
+        <section key={g.nome} className="mb-2" aria-label={g.nome}>
+          <h3 className="mb-1 mt-2 text-xs font-bold uppercase tracking-wide text-suave">{g.nome}</h3>
+          <div className="grid grid-cols-5 gap-1.5">
+            {g.itens.map(([i, rotulo]) => <button key={i} type="button" aria-pressed={icone === i} aria-label={rotulo} title={rotulo} onClick={() => setIcone(i)} className={`grid min-h-12 place-items-center rounded-2xl border ${icone === i ? "border-neon bg-neon/20" : "border-borda bg-white/5"}`} style={cor ? { color: cor } : undefined}><Icone nome={i} tam={24} /></button>)}
+          </div>
+        </section>
+      ))}
+      <Botao variante="primario" className="mt-3 w-full" disabled={!nome.trim()} onClick={() => { aoSalvar({ nome, icone, cor, conteudo: reserva ? "escolhe" : conteudo }); aoFechar(); }}>Salvar</Botao>
     </Folha>
   );
 }

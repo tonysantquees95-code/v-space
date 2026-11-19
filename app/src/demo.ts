@@ -20,10 +20,11 @@ const NOMES: [string, string][] = [
   ["demo.arquivos", "Arquivos"], ["demo.jogo1", "Corrida Neon"], ["demo.jogo2", "Quebra-Blocos"], ["demo.leitor", "Leitor de PDF"], ["demo.tradutor", "Tradutor"], ["demo.ações", "Ações e Cripto"],
 ];
 
-let instalados: AppInfo[] = NOMES.map(([pacote, nome], i) => ({ pacote: pacote.replace(/[^A-Za-z0-9_.]/g, "_"), nome, icone: icone(nome, i) }));
+let instalados: AppInfo[] = NOMES.map(([pacote, nome], i) => ({ pacote: pacote.replace(/[^A-Za-z0-9_.]/g, "_"), nome, icone: icone(nome, i), instalado: 1_700_000_000_000 + ((i * 37) % 50) * 86_400_000 }));
 const ouvintes = new Set<() => void>();
 const avisar = (msg: string) => { try { window.dispatchEvent(new CustomEvent("demo-aviso", { detail: msg })); } catch { /* sem janela */ } };
 
+let demoTocando = true;
 export const motorDemo: Motor = {
   nome: "demo",
   apps: async () => instalados.map((a) => ({ ...a })),
@@ -38,6 +39,14 @@ export const motorDemo: Motor = {
   salvarArquivo: async (nome) => { avisar(`(demonstração) salvaria ${nome}`); return true; },
   lerArquivo: async () => null,
   bateria: async () => ({ nivel: 76, carregando: false }),
+  barras: async () => ({ topo: 0, base: 0, esq: 0, dir: 0, teclado: 0 }),
+  musicaPermitida: async () => true,
+  pedirMusica: async () => avisar("(demonstração) abriria o acesso às notificações"),
+  musica: async () => ({ tem: true, pacote: "com.deezer.android", app: "Deezer", titulo: "From Now On", artista: "The Features", tocando: demoTocando }),
+  musicaComando: async (a) => { if (a === "pausar" || a === "parar") demoTocando = false; else if (a === "tocar") demoTocando = true; else avisar(`(demonstração) ${a}`); },
+  sistema: async () => ({ wifi: true, movel: true, volume: 40 }),
+  mostrarVolume: async () => avisar("(demonstração) mostraria o volume"),
+  abrirAjuste: async (t) => avisar(`(demonstração) abriria os ajustes de ${t}`),
   agendaPermitida: async () => true,
   pedirAgenda: async () => true,
   eventos: async () => {

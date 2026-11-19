@@ -44,6 +44,7 @@ export default {
     completo: { ...base, "vhome.banco": banco() },
     grande: { ...base, "vhome.banco": grande },
     widgets: { ...base, "vhome.banco": comWidgets },
+    widgetsLivres: { ...base, "vhome.banco": cats({ widgets: [{ id: "w1", tipo: "relogio-analogico", x: 0, y: 0, w: 2, h: 2, estilo: "fosco" }, { id: "w2", tipo: "bateria", x: 2, y: 0, w: 2, h: 2, estilo: "transparente" }, { id: "w3", tipo: "agenda", x: 0, y: 2, w: 4, h: 2, estilo: "solido" }] }) },
     redondo: { ...base, "vhome.banco": redondo },
     semConta: { "vhome.tour": "1", "vhome.termos": TERMOS, "vhome.novidades.vistas": "9999" },
     categorias: { ...base, "vhome.banco": cats() },
@@ -53,8 +54,8 @@ export default {
   respostas: {},
   cenarios: [
     ["primeira-abertura", "primeira", async (p) => { await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
-    ["apresentacao-permissoes", "primeira", async (p) => { for (let i = 0; i < 7; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByText("Lista de apps instalados").waitFor(); }],
-    ["apresentacao-termos", "primeira", async (p) => { for (let i = 0; i < 7; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByRole("button", { name: "Continuar" }).click(); await p.getByRole("heading", { name: "Termos de uso" }).waitFor(); }],
+    ["apresentacao-permissoes", "primeira", async (p) => { for (let i = 0; i < 8; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByText("Lista de apps instalados").waitFor(); }],
+    ["apresentacao-termos", "primeira", async (p) => { for (let i = 0; i < 8; i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByRole("button", { name: "Continuar" }).click(); await p.getByRole("heading", { name: "Termos de uso" }).waitFor(); }],
     ["o-que-ha-de-novo", "atualizou", async (p) => { await p.getByText("O que há de novo").first().waitFor(); }],
     ["inicio-primeira-vez", "normal", livre],
     ["inicio", "completo", livre],
@@ -102,8 +103,16 @@ export default {
       await p.getByRole("slider", { name: "Desfoque" }).fill("8"); await p.waitForTimeout(250);
     }],
     ["inicio-widgets", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); if (!(await f.isVisible().catch(() => false))) { await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); } await p.waitForTimeout(400); }],
-    ["widgets-agenda", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); await f.evaluate((e) => { e.scrollLeft = e.scrollWidth; }); await p.getByText("Reunião de equipe").waitFor(); }],
-    ["estudio-widgets", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Widgets"); }],
+    ["widgets-agenda", "widgets", async (p) => { await p.waitForTimeout(300); if (!(await p.getByText("Reunião de equipe").isVisible().catch(() => false))) throw new Error("PULAR"); }],
+    ["widgets-livres", "widgetsLivres", async (p) => { await p.getByRole("region", { name: "Widgets" }).waitFor(); await p.waitForTimeout(400); }],
+    ["player-tocando", "widgetsLivres", async (p) => { await p.getByRole("region", { name: "Tocando agora" }).waitFor(); await p.getByText("From Now On").waitFor(); await p.getByRole("button", { name: "Pausar" }).click(); await p.getByRole("button", { name: "Tocar" }).waitFor({ timeout: 6000 }); }],
+    ["atalhos-wifi", "widgetsLivres", async (p) => { if (p.viewportSize().height <= 560) throw new Error("PULAR"); await p.getByRole("button", { name: /Wi-Fi conectado/ }).click(); await p.getByText(/ajustes de wifi/).waitFor(); }],
+    ["estudio-atalhos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Atalhos"); await p.getByRole("switch", { name: "Mostrar o player de música" }).waitFor(); }],
+    ["estudio-previa-volta", "completo", async (p) => { await abrirEstudio(p); if (!(await p.getByRole("button", { name: "Voltar para a tela inicial" }).isVisible())) throw new Error("PULAR"); await p.getByRole("button", { name: "Voltar para a tela inicial" }).click(); await p.getByRole("dialog", { name: "Estúdio" }).waitFor({ state: "detached" }); }],
+    ["widgets-editar", "widgetsLivres", async (p) => { const a = p.getByRole("article", { name: "Bateria" }); const b = await a.boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.waitForTimeout(700); await p.mouse.up(); await p.getByRole("dialog", { name: "Editar Bateria" }).waitFor(); }],
+    ["widgets-editar-estilo", "widgetsLivres", async (p) => { const a = p.getByRole("article", { name: "Bateria" }); const b = await a.boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.waitForTimeout(700); await p.mouse.up(); const d = p.getByRole("dialog", { name: "Editar Bateria" }); await d.getByRole("button", { name: "Sólido" }).click(); await d.getByRole("button", { name: "Mais baixo" }).click(); await d.getByText("2×1").waitFor(); }],
+    ["widgets-mover", "widgetsLivres", async (p) => { if (p.viewportSize().height < 560) throw new Error("PULAR"); const a = p.getByRole("article", { name: "Relógio analógico" }); const b = await a.boundingBox(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.waitForTimeout(700); await p.mouse.up(); const dest = p.getByRole("dialog", { name: "Editar Relógio analógico" }); await dest.waitFor(); await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await p.mouse.move(b.x + b.width / 2 + 40, b.y + b.height / 2 + 150, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(200); const n = await a.boundingBox(); if (Math.abs(n.y - b.y) < 20) throw new Error("o widget não se moveu"); }],
+    ["estudio-widgets", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Widgets"); await p.getByRole("img", { name: /Prévia de Agenda/ }).waitFor(); }],
     ["menu-criar-pasta", "completo", async (p) => { await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("button", { name: "Criar pasta" }).click(); await p.getByRole("dialog", { name: "Criar pasta" }).waitFor(); }],
     ["criar-pasta-feita", "completo", async (p) => {
       await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("button", { name: "Criar pasta" }).click();
@@ -112,7 +121,7 @@ export default {
     }],
     ["estudio-widgets-adicionar", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Widgets");
-      await p.getByRole("button", { name: "Bateria" }).click(); await p.getByRole("button", { name: "Relógio analógico" }).click(); await aba(p, "Gerenciar");
+      await p.getByRole("button", { name: "Adicionar bateria" }).click(); await p.getByRole("button", { name: "Adicionar relógio analógico" }).click(); await aba(p, "Gerenciar");
       if ((await p.getByRole("button", { name: /^Remover/ }).count()) !== 2) throw new Error("os widgets não foram adicionados");
     }],
     ["estudio-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Ícones"); }],
@@ -148,6 +157,8 @@ export default {
     }],
     ["categorias-adiciona", "categorias", async (p) => { await entrar(p, "Jogos"); await p.getByRole("button", { name: /^Adicionar apps a/ }).click(); await p.getByRole("dialog", { name: /Adicionar a Jogos/ }).waitFor(); }],
     ["categorias-favoritos", "categorias", async (p) => { await p.getByRole("button", { name: "Adicionar favoritos" }).click(); await p.getByRole("dialog", { name: "Favoritos" }).waitFor(); }],
+    ["categorias-nova-teclado", "categorias", async (p) => { if (p.viewportSize().height < 560) throw new Error("PULAR"); await p.getByRole("button", { name: "Nova categoria" }).click(); await p.getByRole("dialog", { name: "Nova categoria" }).waitFor(); await p.evaluate(() => document.documentElement.style.setProperty("--teclado", "280px")); await p.getByPlaceholder("Ex.: Trabalho").fill("Trabalho"); await p.waitForTimeout(200); const campo = await p.getByPlaceholder("Ex.: Trabalho").boundingBox(); const vh = p.viewportSize().height; if (!campo || campo.y + campo.height > vh - 280) throw new Error("o campo ficou embaixo do teclado"); const icones = p.getByRole("dialog", { name: "Nova categoria" }).getByRole("button", { name: "Animais" }); await icones.scrollIntoViewIfNeeded(); await icones.click(); await p.getByRole("button", { name: "Salvar" }).scrollIntoViewIfNeeded(); const s = await p.getByRole("button", { name: "Salvar" }).boundingBox(); if (s.y + s.height > vh - 280 + 1) throw new Error("o botão Salvar ficou embaixo do teclado"); }],
+    ["categorias-nova-recentes", "categorias", async (p) => { await p.getByRole("button", { name: "Nova categoria" }).click(); const d = p.getByRole("dialog", { name: "Nova categoria" }); await d.waitFor(); await p.getByPlaceholder("Ex.: Trabalho").fill("Novos"); await d.getByRole("button", { name: "Instalados recentemente" }).click(); await d.getByRole("button", { name: "Cor #ffd166" }).click(); await d.getByRole("button", { name: "Esportes" }).scrollIntoViewIfNeeded(); await d.getByRole("button", { name: "Sino" }).click(); await d.getByRole("button", { name: "Salvar" }).click(); await p.getByRole("button", { name: /^Novos, \d+ apps/ }).click(); await p.getByRole("heading", { name: "Novos" }).waitFor(); }],
     ["categorias-nova", "categorias", async (p) => { await p.getByRole("button", { name: "Nova categoria" }).click(); await p.getByRole("dialog", { name: "Nova categoria" }).waitFor(); await p.getByPlaceholder("Ex.: Trabalho").fill("Trabalho"); await p.waitForTimeout(150); }],
     ["categorias-nova-criada", "categorias", async (p) => { await p.getByRole("button", { name: "Nova categoria" }).click(); await p.getByPlaceholder("Ex.: Trabalho").fill("Trabalho"); await p.getByRole("button", { name: "Salvar" }).click(); await p.waitForTimeout(250); await p.getByRole("button", { name: /^Trabalho, 0 apps/ }).waitFor(); }],
     ["organizar-inicio", "categorias", async (p) => { await p.getByRole("button", { name: "Organizar com IA" }).click(); await p.getByRole("dialog", { name: "Organizar com IA" }).waitFor(); }],
