@@ -1,4 +1,5 @@
 import { definirSelos } from "./selos";
+import { EspacoSeguro } from "./telas/EspacoSeguro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as AppNativo } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
@@ -122,7 +123,33 @@ export default function App() {
   }, [falar, porPacote]);
 
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
-  const temCamada = !!(busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
+  // Espaço seguro (banco/governo): pede o desbloqueio do aparelho; sai sozinho ao deixar o V-Space
+  const [seguro, setSeguro] = useState(false);
+  const [notifLigado, setNotifLigado] = useState<boolean | null>(null);
+  const abrirSeguro = useCallback(async () => {
+    const ok = await motor.autenticar();
+    if (!ok) { falar("Não consegui confirmar que é você."); return; }
+    setEstudio(false); setGaveta(null); setBusca(false); setMenu(null); setPastaAberta(null);
+    void motor.musicaPermitida().then(setNotifLigado);
+    setSeguro(true);
+  }, [falar]);
+  useEffect(() => { const f = () => { if (document.hidden) setSeguro(false); }; document.addEventListener("visibilitychange", f); return () => document.removeEventListener("visibilitychange", f); }, []);
+  // dois dedos deslizando para baixo na tela inicial abrem o Espaço seguro
+  useEffect(() => {
+    let y0 = -1;
+    const ini = (e: TouchEvent) => { y0 = e.touches.length === 2 ? (e.touches[0]!.clientY + e.touches[1]!.clientY) / 2 : -1; };
+    const fim = (e: TouchEvent) => {
+      if (y0 < 0 || e.touches.length > 1) return;
+      const t = e.changedTouches;
+      if (t.length >= 1) { const dy = t[0]!.clientY - y0; if (dy > 120) void abrirSeguroRef.current(); }
+      y0 = -1;
+    };
+    window.addEventListener("touchstart", ini, { passive: true }); window.addEventListener("touchend", fim, { passive: true });
+    return () => { window.removeEventListener("touchstart", ini); window.removeEventListener("touchend", fim); };
+  }, []);
+  const abrirSeguroRef = useRef(abrirSeguro);
+  abrirSeguroRef.current = abrirSeguro;
+  const temCamada = !!(seguro || busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
   useEffect(() => { ocultarExternos(temCamada); }, [temCamada]);
   // widget real que saiu do banco (remover, restaurar, importar): devolve o número ao Android
   const idsExternos = useRef<Set<number>>(new Set());
@@ -132,8 +159,8 @@ export default function App() {
     idsExternos.current = agora;
   }, [banco.widgets]);
   const fecharTopo = useCallback(() => {
-    if (busca) setBusca(false); else if (pedirConta) setPedirConta(false); else if (organizar) setOrganizar(false); else if (novaCat) setNovaCat(false); else if (mover) setMover(null); else if (addCat) setAddCat(null); else if (favoritosAberto) setFavoritosAberto(false); else if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
-  }, [menu, agrupar, rever, pastaAberta, estudio, gaveta, organizar, novaCat, mover, addCat, favoritosAberto, criarPastaAberto, nova, menuVazio]);
+    if (seguro) setSeguro(false); else if (busca) setBusca(false); else if (pedirConta) setPedirConta(false); else if (organizar) setOrganizar(false); else if (novaCat) setNovaCat(false); else if (mover) setMover(null); else if (addCat) setAddCat(null); else if (favoritosAberto) setFavoritosAberto(false); else if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
+  }, [seguro, menu, agrupar, rever, pastaAberta, estudio, gaveta, organizar, novaCat, mover, addCat, favoritosAberto, criarPastaAberto, nova, menuVazio]);
   const topo = useRef(fecharTopo); topo.current = fecharTopo;
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -181,12 +208,12 @@ export default function App() {
   // selos de notificação: atualiza a cada 5 s com o app aberto (precisa do acesso às notificações)
   useEffect(() => {
     let vivo = true;
-    const ler = () => { if (!document.hidden) void motor.selos().then((r) => { if (vivo) definirSelos(r); }); };
+    const ler = () => { if (seguro) { definirSelos({}); return; } if (!document.hidden) void motor.selos().then((r) => { if (vivo) definirSelos(r); }); };
     ler();
     const t = window.setInterval(ler, 5000);
     document.addEventListener("visibilitychange", ler);
     return () => { vivo = false; window.clearInterval(t); document.removeEventListener("visibilitychange", ler); };
-  }, []);
+  }, [seguro]);
 
   return (
     <>
@@ -218,8 +245,10 @@ export default function App() {
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}
 
 
-      {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
-        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+      {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} aoAbrirSeguro={() => void abrirSeguro()} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
+        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, seguro: b.seguro, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+      {seguro && <EspacoSeguro apps={apps.filter((a) => banco.seguro.includes(a.pacote))} acessoNotificacoes={notifLigado}
+        aoAbrir={(p) => { void motor.abrir(p).catch(() => falar("Não consegui abrir o app.")); }} aoSair={() => setSeguro(false)} aoEscolher={() => { setSeguro(false); setEstudio("config/seguro" as AbaEstudio); }} />}
       {nova && <div className="atualizacao-frente"><Atualizacao nova={nova} aoFechar={() => setNova(null)} /></div>}
 
       {menu && appDoMenu && (

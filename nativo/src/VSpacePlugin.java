@@ -183,6 +183,26 @@ public class VSpacePlugin extends Plugin {
     @ActivityCallback
     private void fimPedirPadrao(PluginCall call, ActivityResult r) { if (call != null) call.resolve(); }
 
+    /** Pede o desbloqueio do aparelho (digital, PIN, padrão ou senha) antes de abrir o Espaço seguro. Sem bloqueio de tela no aparelho, deixa passar. */
+    @PluginMethod
+    public void autenticar(PluginCall call) {
+        try {
+            android.app.KeyguardManager km = (android.app.KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
+            if (km == null || !km.isDeviceSecure()) { JSObject o = new JSObject(); o.put("ok", true); o.put("semBloqueio", true); call.resolve(o); return; }
+            Intent i = km.createConfirmDeviceCredentialIntent("Espaço seguro", "Confirme que é você para abrir o Espaço seguro.");
+            if (i == null) { JSObject o = new JSObject(); o.put("ok", true); call.resolve(o); return; }
+            startActivityForResult(call, i, "fimAutenticar");
+        } catch (Throwable e) { call.reject("Não consegui pedir o desbloqueio."); }
+    }
+
+    @ActivityCallback
+    private void fimAutenticar(PluginCall call, ActivityResult r) {
+        if (call == null) return;
+        JSObject o = new JSObject();
+        o.put("ok", r != null && r.getResultCode() == android.app.Activity.RESULT_OK);
+        call.resolve(o);
+    }
+
     @PluginMethod
     public void abrirAjustesInicio(PluginCall call) {
         try { getContext().startActivity(new Intent(Settings.ACTION_HOME_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); call.resolve(); }

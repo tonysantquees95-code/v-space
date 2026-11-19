@@ -46,6 +46,7 @@ export interface Motor {
   mostrarExternos(itens: ItemExterno[]): Promise<Record<string, string>>;
   aoEventoExterno(ev: EventosExternos): () => void;
   selos(): Promise<Record<string, number>>;
+  autenticar(): Promise<boolean>;
   contatosPermitidos(): Promise<boolean>;
   pedirContatos(): Promise<boolean>;
   buscarContatos(texto: string): Promise<Contato[]>;
@@ -85,6 +86,7 @@ interface PluginNativo {
   mostrarVolume(): Promise<void>;
   abrirAjuste(o: { tela: string }): Promise<void>;
   selos(): Promise<{ contagem: Record<string, number> }>;
+  autenticar(): Promise<{ ok: boolean }>;
   contatosPermitidos(): Promise<{ permitida: boolean }>;
   pedirContatos(): Promise<{ permitida: boolean }>;
   buscarContatos(o: { texto: string }): Promise<{ contatos: { nome: string; numero: string }[] }>;
@@ -131,6 +133,7 @@ function criarAndroid(): Motor {
     sistema: async () => { try { const s = await n.sistema(); return { wifi: !!s.wifi, movel: !!s.movel, volume: Number.isFinite(s.volume) ? Math.max(0, Math.min(100, Math.round(s.volume))) : 0 }; } catch { return { wifi: false, movel: false, volume: 0 }; } },
     mostrarVolume: () => n.mostrarVolume(),
     abrirAjuste: (tela) => n.abrirAjuste({ tela }),
+    autenticar: async () => { try { return (await n.autenticar()).ok === true; } catch { return false; } },
     selos: async () => {
       try {
         const r: Record<string, number> = {};

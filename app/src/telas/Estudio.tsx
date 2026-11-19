@@ -51,7 +51,7 @@ const SECOES: DefSecao[] = [
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
-  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
 const ENTRADA: Record<string, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
@@ -103,11 +103,11 @@ function Previa({ banco, porPacote, papel, aoVoltar }: { banco: Banco; porPacote
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
-  email: string; aoEntrarConta: () => void; aoSairDaConta: () => void; aoOrganizar: () => void; aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
+  email: string; aoEntrarConta: () => void; aoSairDaConta: () => void; aoOrganizar: () => void; aoProcurar: () => Promise<void>; aoAbrirSeguro: () => void; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
-export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
+export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoAbrirSeguro, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
   const [editCat, setEditCat] = useState<Categoria | "nova" | null>(null);
   const [entrada] = useState<[Secao, string]>(() => { const e = ENTRADA[abaInicial]; if (e) return e; const [s, p] = abaInicial.split("/"); const sec = SECOES.find((x) => x.id === s); return sec && sec.partes.some((x) => x.id === p) ? [sec.id, p!] : ["temas", "escolha"]; });
   const [secao, setSecao] = useState<Secao>(entrada[0]);
@@ -389,6 +389,23 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <div className="space-y-4">
           <Cartao titulo="Deslizar para cima na tela inicial"><Seletor<Gesto> rotulo="Deslizar para cima" valor={banco.gesto} opcoes={GESTOS} aoMudar={(v) => aoMudar((b) => ({ ...b, gesto: v }))} /></Cartao>
           <Cartao><Linha titulo="Bloquear layout" texto="Impede tirar, mover ou agrupar apps da tela inicial sem querer."><Interruptor rotulo="Bloquear layout" ligado={banco.bloqueado} aoMudar={(v) => aoMudar((b) => ({ ...b, bloqueado: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "config/seguro": return (
+        <div className="space-y-4">
+          <Cartao titulo="Espaço seguro">
+            <p className="text-sm text-suave">Uma tela só com os apps que você escolher (banco, governo). Nela o V-Space não mostra widgets, números de notificação nem música. Abre com o desbloqueio do aparelho (digital, PIN ou padrão) e fecha sozinha quando você sai do V-Space.</p>
+            <div className="mt-3"><Botao variante="primario" onClick={aoAbrirSeguro}><Icone nome="escudo" tam={18} />Abrir o Espaço seguro</Botao></div>
+            <p className="mt-3 text-sm text-suave">Atalho: deslize com dois dedos para baixo na tela inicial.</p>
+          </Cartao>
+          <Cartao titulo={`Apps do Espaço seguro (${banco.seguro.length})`}>
+            <ul className="space-y-1">
+              {[...apps].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((a) => (
+                <li key={a.pacote} className="flex min-h-11 items-center justify-between gap-3"><span className="min-w-0 truncate">{a.nome}</span>
+                  <Interruptor rotulo={`${a.nome} no Espaço seguro`} ligado={banco.seguro.includes(a.pacote)} aoMudar={(v) => aoMudar((b) => ({ ...b, seguro: v ? [...b.seguro.filter((x) => x !== a.pacote), a.pacote].slice(0, 60) : b.seguro.filter((x) => x !== a.pacote) }))} /></li>
+              ))}
+            </ul>
+          </Cartao>
         </div>
       );
       case "config/atalhos": return (

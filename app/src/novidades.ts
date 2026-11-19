@@ -26,6 +26,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 19, data: "2026-11-19", tipo: "melhoria", titulo: "Cadeado animado", texto: "Ao bloquear ou liberar o layout, um cadeado aparece na tela e fecha ou abre, para você saber que deu certo.", },
   { id: 20, data: "2026-11-19", tipo: "correcao", titulo: "Atualizar por dentro funciona no Estúdio", texto: "Ao tocar em Procurar atualização (Estúdio › Configurações › Sobre), a janela de atualização agora aparece na frente. Antes ela abria escondida e parecia que o botão não fazia nada.", },
   { id: 21, data: "2026-11-19", tipo: "melhoria", titulo: "Widgets dos apps explicam o problema", texto: "Se um widget de outro app não aparecer, o espaço dele agora diz o motivo em vez de ficar só em Carregando o widget.", },
+  { id: 22, data: "2026-11-19", tipo: "novo", titulo: "Espaço seguro para banco e governo", texto: "Uma tela separada só com os apps que você escolher (Estúdio › Configurações › Espaço seguro). Nela não aparecem widgets, números de notificação nem música. Abre com o desbloqueio do aparelho e também com dois dedos deslizando para baixo na tela inicial. Fecha sozinha quando você sai do V-Space.", },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

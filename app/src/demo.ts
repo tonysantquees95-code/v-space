@@ -48,6 +48,7 @@ export const motorDemo: Motor = {
   sistema: async () => ({ wifi: true, movel: true, volume: 40 }),
   mostrarVolume: async () => avisar("(demonstração) mostraria o volume"),
   abrirAjuste: async (t) => avisar(`(demonstração) abriria os ajustes de ${t}`),
+  autenticar: async () => true,
   selos: async () => ({ "demo.musica": 3, "demo.gov": 1 }),
   contatosPermitidos: async () => demoContatos,
   pedirContatos: async () => { demoContatos = true; return true; },

@@ -485,3 +485,10 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 @keyframes cadeado-abre { 0% { transform: rotate(0); } 40% { transform: rotate(-14deg) scale(1.15); } 100% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .cadeado-anim, .cadeado-anim svg { animation-duration: .01s !important; } }
 .atualizacao-frente .folha-fundo { z-index: 65; }
+.seguro { position: fixed; inset: 0; z-index: 45; display: flex; flex-direction: column; gap: 12px; padding: calc(var(--barra-topo, 0px) + 16px) 16px calc(var(--barra-base, 0px) + 16px); background: #070a12; overflow-y: auto; }
+.seguro-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.seguro-selo { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; background: rgba(60,220,140,.14); color: #6fe3a8; font-weight: 700; }
+.seguro-aviso { font-size: 14px; color: var(--color-suave, #9aa4b8); }
+.seguro-alerta { padding: 10px 12px; border-radius: 14px; background: rgba(255,170,60,.12); color: #ffc477; }
+.seguro-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 8px; align-content: start; flex: 1; }
+.seguro-rodape { display: flex; justify-content: center; }
