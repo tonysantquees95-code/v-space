@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
 } from "../dados.ts";
 import { CENAS, aplicarCena } from "../cenas";
+import { codigoDoTema, gravarSalvos, juntarSalvo, lerSalvos, temaDoCodigo, tirarSalvo, MAX_SALVOS, type TemaSalvo } from "../temasSalvos";
 import { definirIconeApp, escolherIcone, useIconeApp } from "../iconesApp";
 import { Glifo } from "./IconeApp";
 import { fundoCss } from "../tema";
@@ -47,7 +48,7 @@ interface Parte { id: string; nome: string; icone: NomeIcone }
 interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] }
 
 const SECOES: DefSecao[] = [
-  { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }] },
+  { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }, { id: "salvos", nome: "Salvos", icone: "estrela" }, { id: "compartilhar", nome: "Compartilhar", icone: "compartilhar" }] },
   { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
   { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
@@ -110,6 +111,15 @@ interface Props {
 
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
 export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoAbrirSeguro, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
+  const [salvos, setSalvos] = useState<TemaSalvo[]>(() => lerSalvos());
+  const [nomeSalvo, setNomeSalvo] = useState("");
+  const [codigoImp, setCodigoImp] = useState("");
+  const guardarTema = () => {
+    const l = juntarSalvo(salvos, nomeSalvo, banco.tema);
+    if (!l) { aviso(nomeSalvo.trim() ? `Já são ${MAX_SALVOS} temas guardados. Apague um.` : "Dê um nome ao tema."); return; }
+    if (!gravarSalvos(l)) { aviso("Não há espaço para guardar o tema."); return; }
+    setSalvos(l); setNomeSalvo(""); aviso("Tema guardado.");
+  };
   const [editCat, setEditCat] = useState<Categoria | "nova" | null>(null);
   const [entrada] = useState<[Secao, string]>(() => { const e = ENTRADA[abaInicial]; if (e) return e; const [s, p] = abaInicial.split("/"); const sec = SECOES.find((x) => x.id === s); return sec && sec.partes.some((x) => x.id === p) ? [sec.id, p!] : ["temas", "escolha"]; });
   const [secao, setSecao] = useState<Secao>(entrada[0]);
@@ -228,6 +238,35 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           </div>
         </div>
       );
+      case "temas/salvos": return (
+        <div className="space-y-4">
+          <Cartao titulo="Guardar o tema de agora">
+            <label className="block text-sm text-suave">Nome
+              <input value={nomeSalvo} maxLength={24} onChange={(e) => setNomeSalvo(e.target.value)} className="mt-1 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+            </label>
+            <Botao variante="primario" className="mt-3" onClick={guardarTema}>Guardar tema</Botao>
+          </Cartao>
+          <Cartao titulo={`Meus temas (${salvos.length}/${MAX_SALVOS})`}>
+            {salvos.length === 0 ? <p className="text-sm text-suave">Nenhum tema guardado ainda.</p>
+              : <ul className="space-y-1">{salvos.map((s) => <li key={s.id} className="flex min-h-12 items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><i className="size-5 flex-none rounded-full" style={{ background: s.tema.cor }} /><span className="min-w-0 truncate">{s.nome}</span></span><span className="flex shrink-0 gap-2"><Botao onClick={() => { aoMudar((b) => ({ ...b, tema: { ...s.tema } })); aviso(`Tema ${s.nome} aplicado.`); }} aria-label={`Usar tema ${s.nome}`}>Usar</Botao><Botao variante="perigo" onClick={() => { const l = tirarSalvo(salvos, s.id); gravarSalvos(l); setSalvos(l); }} aria-label={`Apagar tema ${s.nome}`}>Apagar</Botao></span></li>)}</ul>}
+          </Cartao>
+        </div>
+      );
+      case "temas/compartilhar": return (
+        <div className="space-y-4">
+          <Cartao titulo="Compartilhar meu tema">
+            <p className="mb-3 text-sm text-suave">Copie o código e mande para um amigo. Ele cola em “Importar”.</p>
+            <Botao variante="primario" onClick={() => { void navigator.clipboard?.writeText(codigoDoTema(t)).then(() => aviso("Código copiado."), () => aviso("Não deu para copiar.")); }}>Copiar código do tema</Botao>
+          </Cartao>
+          <Cartao titulo="Importar tema">
+            <textarea aria-label="Código do tema" value={codigoImp} onChange={(e) => setCodigoImp(e.target.value)} rows={3} className="w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 p-3 text-sm text-texto outline-none focus:border-neon" placeholder="Cole aqui o código (VSPACE1:…)" />
+            <Botao variante="primario" className="mt-3" onClick={() => { const x = temaDoCodigo(codigoImp); if (!x) { aviso("Esse código não é válido."); return; } aoMudar((b) => ({ ...b, tema: x })); setCodigoImp(""); aviso("Tema importado."); }}>Importar</Botao>
+          </Cartao>
+          <Cartao titulo="Animação de bloqueio">
+            <Seletor<AnimBloqueio> rotulo="Animação ao travar o layout" valor={t.animBloqueio} opcoes={[{ id: "cadeado", nome: "Cadeado" }, { id: "pulso", nome: "Pulso" }, { id: "brilho", nome: "Brilho" }, { id: "nenhuma", nome: "Nenhuma" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { animBloqueio: v }))} />
+          </Cartao>
+        </div>
+      );
       case "temas/cores": return (
         <div className="space-y-4">
           <Cartao titulo="Cor principal"><Paleta rotulo="Cor principal" valor={t.cor} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor: c }))} /></Cartao>
@@ -292,6 +331,11 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       );
       case "inicio/superficie": return (
         <div className="space-y-4">
+          <Cartao titulo="Material">
+            <Seletor<Superficie> rotulo="Material do dock e dos widgets" valor={t.superficie} opcoes={[{ id: "vidro", nome: "Vidro" }, { id: "acrilico", nome: "Acrílico" }, { id: "cor", nome: "Cor do tema" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { superficie: v }))} />
+            <p className="mb-2 mt-3 text-sm text-suave">Intensidade</p>
+            <div className="flex items-center gap-3"><input type="range" aria-label="Intensidade da superfície" className="w-full" min={0} max={100} value={t.intensidade} onChange={(e) => aoMudar((b) => ajustarTema(b, { intensidade: Number(e.target.value) }))} /><span className="num w-10 text-right text-sm">{t.intensidade}</span></div>
+          </Cartao>
           <Cartao titulo="Cantos">
             <p className="mb-2 text-sm text-suave">Arredondamento dos widgets, do dock e das janelas.</p>
             <div className="flex items-center gap-3"><input type="range" aria-label="Cantos" className="w-full" min={CANTOS.min} max={CANTOS.max} value={t.cantos} onChange={(e) => aoMudar((b) => ajustarTema(b, { cantos: Number(e.target.value) }))} /><span className="num w-10 text-right text-sm">{t.cantos}</span></div>
@@ -303,6 +347,7 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       case "inicio/pastas": return (
         <div className="space-y-4">
           <Cartao titulo="Estilo das pastas"><Seletor<EstiloPasta> rotulo="Estilo das pastas" valor={t.pasta} opcoes={PASTAS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pasta: v }))} /></Cartao>
+          <Cartao titulo="Abrir pasta como"><Seletor<PastaAbre> rotulo="Abrir pasta como" valor={t.pastaAbre} opcoes={[{ id: "folha", nome: "Folha (de baixo)" }, { id: "janela", nome: "Janela (no meio)" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pastaAbre: v }))} /></Cartao>
           <p className="text-sm text-suave">Para criar uma pasta, segure um espaço vazio da tela inicial e toque em Criar pasta.</p>
         </div>
       );

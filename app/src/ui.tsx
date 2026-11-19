@@ -64,7 +64,7 @@ export function Passo({ valor, min, max, aoMudar, rotulo }: { valor: number; min
 }
 
 /** Folha que sobe de baixo (no lugar de caixas cinza do sistema): segue o visual do app. */
-export function Folha({ titulo, aoFechar, children, alta = false }: { titulo: string; aoFechar: () => void; children: ReactNode; alta?: boolean }) {
+export function Folha({ titulo, aoFechar, children, alta = false, classe = "" }: { titulo: string; aoFechar: () => void; children: ReactNode; alta?: boolean; classe?: string }) {
   const fechar = useRef(aoFechar);
   fechar.current = aoFechar;
   useEffect(() => {
@@ -73,7 +73,7 @@ export function Folha({ titulo, aoFechar, children, alta = false }: { titulo: st
     return () => window.removeEventListener("keydown", tecla);
   }, []);
   return (
-    <div className="folha-fundo fixed inset-0 z-40 flex items-end justify-center bg-black/60" onClick={aoFechar}>
+    <div className={`folha-fundo ${classe} fixed inset-0 z-40 flex items-end justify-center bg-black/60`} onClick={aoFechar}>
       <div role="dialog" aria-modal="true" aria-label={titulo} onClick={(e) => e.stopPropagation()}
         className={`folha flex w-full max-w-lg flex-col rounded-t-3xl border border-b-0 border-borda bg-painel ${alta ? "folha-alta" : "folha-baixa"}`}>
         <header className="flex flex-none items-center justify-between gap-2 px-5 pb-1 pt-4">

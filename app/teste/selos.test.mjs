@@ -50,3 +50,20 @@ test2("ícones por app e app novo", () => {
   const t = limparTema({ ...TEMAS[0], ordem: "xx", selos: false, pontoNovo: true });
   assert2.equal(t.ordem, "az"); assert2.equal(t.selos, false); assert2.equal(t.pontoNovo, true);
 });
+
+import { juntarSalvo, tirarSalvo, codigoDoTema, temaDoCodigo, limparSalvos, MAX_SALVOS } from "../src/temasSalvos.ts";
+test2("temas salvos e código", () => {
+  const t = limparTema({ ...TEMAS[0], cor: "#112233", superficie: "acrilico", intensidade: 140, pastaAbre: "janela", animBloqueio: "pulso" });
+  assert2.equal(t.intensidade, 100);
+  let l = juntarSalvo([], "  Meu  ", t, "a1");
+  assert2.equal(l.length, 1); assert2.equal(l[0].nome, "Meu");
+  assert2.equal(juntarSalvo(l, "   ", t), null);
+  assert2.equal(tirarSalvo(l, "a1").length, 0);
+  const cheio = Array.from({ length: MAX_SALVOS }, (_, i) => ({ id: `x${i}`, nome: `n${i}`, tema: t }));
+  assert2.equal(juntarSalvo(cheio, "mais", t), null);
+  assert2.equal(limparSalvos([{ id: "ruim!", nome: "x", tema: t }, { id: "ok", nome: "ok", tema: { superficie: "zz" } }]).length, 1);
+  const volta = temaDoCodigo(codigoDoTema(t));
+  assert2.equal(volta.superficie, "acrilico"); assert2.equal(volta.pastaAbre, "janela"); assert2.equal(volta.animBloqueio, "pulso"); assert2.equal(volta.id, "personalizado");
+  assert2.equal(temaDoCodigo("lixo"), null);
+  assert2.equal(temaDoCodigo("VSPACE1:@@@"), null);
+});

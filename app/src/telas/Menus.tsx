@@ -54,7 +54,7 @@ export function MenuApp({ app, origem, noDock, naTela, podeAgrupar, bloqueado = 
 export function FolhaPasta({ pasta, apps, rotulo, aoFechar, aoRenomear, aoAbrir, aoMenu }: { pasta: Pasta; apps: AppInfo[]; rotulo: boolean; aoFechar: () => void; aoRenomear: (nome: string) => void; aoAbrir: (p: string) => void; aoMenu: (p: string) => void }) {
   const [nome, setNome] = useState(pasta.nome);
   return (
-    <Folha titulo={`Pasta ${pasta.nome}`} aoFechar={() => { if (nome.trim() && nome !== pasta.nome) aoRenomear(nome); aoFechar(); }}>
+    <Folha classe="folha-pasta" titulo={`Pasta ${pasta.nome}`} aoFechar={() => { if (nome.trim() && nome !== pasta.nome) aoRenomear(nome); aoFechar(); }}>
       <label className="mb-3 block text-sm text-suave">Nome da pasta
         <input value={nome} maxLength={24} onChange={(e) => setNome(e.target.value)} className="mt-1 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
       </label>

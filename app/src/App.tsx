@@ -67,6 +67,7 @@ export default function App() {
   useEffect(() => {
     if (bloqAntes.current === banco.bloqueado) return;
     bloqAntes.current = banco.bloqueado;
+    if (banco.tema.animBloqueio === "nenhuma") return;
     setCadeado(banco.bloqueado);
     const t = window.setTimeout(() => setCadeado(null), 1100);
     return () => window.clearTimeout(t);
@@ -286,7 +287,7 @@ export default function App() {
       {rever === "tour" && <div className="fixed inset-0 z-50 flex flex-col bg-fundo"><div className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col px-5 pb-4 pt-[max(1.5rem,env(safe-area-inset-top))]"><Tour rotuloFinal="Fechar" aoTerminar={() => setRever(null)} aoFechar={() => setRever(null)} /></div></div>}
       {rever === "termos" && <Termos aoFechar={() => setRever(null)} />}
 
-      {cadeado !== null && <div className={`cadeado-anim ${cadeado ? "fecha" : "abre"}`} role="status" aria-label={cadeado ? "Layout bloqueado" : "Layout liberado"}><Icone nome="cadeado" tam={40} /><span>{cadeado ? "Layout bloqueado" : "Layout liberado"}</span></div>}
+      {cadeado !== null && <div className={`cadeado-anim ${banco.tema.animBloqueio === "cadeado" ? (cadeado ? "fecha" : "abre") : banco.tema.animBloqueio}`} role="status" aria-label={cadeado ? "Layout bloqueado" : "Layout liberado"}><Icone nome="cadeado" tam={40} /><span>{cadeado ? "Layout bloqueado" : "Layout liberado"}</span></div>}
 
       {aviso && <div className="aviso-toast" role="status">{aviso}</div>}
     </>
