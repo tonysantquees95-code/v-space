@@ -484,3 +484,4 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 @keyframes cadeado-fecha { 0% { transform: translateY(-6px) scale(1.25); } 60% { transform: translateY(1px) scale(.92); } 100% { transform: none; } }
 @keyframes cadeado-abre { 0% { transform: rotate(0); } 40% { transform: rotate(-14deg) scale(1.15); } 100% { transform: rotate(0); } }
 @media (prefers-reduced-motion: reduce) { .cadeado-anim, .cadeado-anim svg { animation-duration: .01s !important; } }
+.atualizacao-frente .folha-fundo { z-index: 65; }

@@ -217,10 +217,10 @@ export default function App() {
       {pasta && !menu && <FolhaPasta pasta={pasta} rotulo={banco.tema.rotulos} apps={pasta.apps.map((a) => porPacote.get(a)).filter((a): a is AppInfo => !!a)}
         aoFechar={() => setPastaAberta(null)} aoRenomear={(n) => mudar((b) => renomearPasta(b, pasta.id, n))} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "pasta", pastaId: pasta.id })} />}
 
-      {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
 
       {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
         aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+      {nova && <div className="atualizacao-frente"><Atualizacao nova={nova} aoFechar={() => setNova(null)} /></div>}
 
       {menu && appDoMenu && (
         <MenuApp app={appDoMenu} origem={menu.origem} noDock={banco.layout.dock.includes(menu.pacote)} naTela={naTela(banco).has(menu.pacote)} bloqueado={banco.bloqueado} podeAgrupar={naTela(banco).size >= 2} favorito={banco.favoritos.includes(menu.pacote)}
