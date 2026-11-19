@@ -33,7 +33,7 @@ export function Inicio({ banco, porPacote, aoAbrirApp, aoMenuApp, aoAbrirPasta, 
 
   return (
     <div className="inicio" onTouchStart={(e) => { const c = e.touches[0]!; toque.current = { x: c.clientX, y: c.clientY }; }}
-      onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60) aoGaveta(false); }}>
+      onTouchEnd={(e) => { const i = toque.current; toque.current = null; if (!i) return; const c = e.changedTouches[0]!; const dx = c.clientX - i.x, dy = c.clientY - i.y; if (dy < -70 && Math.abs(dx) < 60 && banco.gesto !== "nada") aoGaveta(banco.gesto === "pesquisa"); }}>
       {t.fundo === "foto" && papel && <><div className="papel" aria-hidden style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px)` }} /><div className="papel-escuro" aria-hidden style={{ opacity: t.escuro / 100 }} /></>}
       <header className="inicio-topo">
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}

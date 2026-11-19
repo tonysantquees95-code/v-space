@@ -1,23 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, removerWidget, MAX_WIDGETS, NOMES_WIDGET, TIPOS_WIDGET, type TipoWidget,
-  ajustarTema, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, mostrar, mudarGrade, NOMES_DOS_TEMAS, ordenar, reconciliar, TAMANHO_ICONE, TEMAS,
-  type AppInfo, type Banco, type EstiloBotao, type EstiloGaveta, type Forma, type Fundo,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
+  type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
 } from "../dados.ts";
+import { CENAS, aplicarCena } from "../cenas";
 import { fundoCss } from "../tema";
 import { motor } from "../motor";
-import { buscarLugares, type Lugar } from "../widgets";
+import { Icone, type NomeIcone } from "../icones";
 import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from "../papel";
-import { Icone } from "../icones";
-import { Aviso, Botao, Cartao, Folha, Interruptor, Linha, Passo, Seletor } from "../ui";
+import { buscarLugares, type Lugar } from "../widgets";
+import { Aviso, Botao, Cartao, Interruptor, Linha, Passo, Seletor } from "../ui";
+import { Inicio } from "./Inicio";
 
-export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "gaveta" | "backup" | "sobre";
-type Aba = AbaEstudio;
-const ABAS: { id: Aba; nome: string }[] = [{ id: "temas", nome: "Temas" }, { id: "widgets", nome: "Widgets" }, { id: "papel", nome: "Papel de parede" }, { id: "icones", nome: "Ícones" }, { id: "inicio", nome: "Início" }, { id: "gaveta", nome: "Gaveta" }, { id: "backup", nome: "Backup" }, { id: "sobre", nome: "Sobre" }];
+/** Atalhos de entrada (menus e botões abrem o editor já na parte certa). */
+export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio";
+type Secao = "temas" | "inicio" | "apps" | "papel" | "widgets" | "config";
+interface Parte { id: string; nome: string; icone: NomeIcone }
+interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] }
+
+const SECOES: DefSecao[] = [
+  { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }] },
+  { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
+  { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
+  { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
+  { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+];
+const ENTRADA: Record<AbaEstudio, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"] };
+
 const CORES = ["#22d3ee", "#38bdf8", "#8ab4ff", "#a78bfa", "#e879f9", "#f472b6", "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#ffffff"];
 const FUNDOS_ESCUROS = ["#000000", "#05070d", "#0b1020", "#12081a", "#14080a", "#04100b", "#101010", "#1a1033"];
 const FORMAS: { id: Forma; nome: string }[] = [{ id: "original", nome: "Original" }, { id: "circulo", nome: "Círculo" }, { id: "squircle", nome: "Arredondado" }, { id: "quadrado", nome: "Quadrado" }];
 const FUNDOS: { id: Fundo; nome: string }[] = [{ id: "aurora", nome: "Aurora" }, { id: "neon", nome: "Neon" }, { id: "noite", nome: "Noite" }, { id: "cor", nome: "Cor lisa" }];
+const PACOTES: { id: PacoteIcones; nome: string }[] = [{ id: "original", nome: "Original" }, { id: "mono", nome: "Monocromático" }, { id: "tingido", nome: "Tingido" }, { id: "vivo", nome: "Vivo" }];
+const DOCKS: { id: EstiloDock; nome: string }[] = [{ id: "vidro", nome: "Vidro" }, { id: "solido", nome: "Sólido" }, { id: "transparente", nome: "Transparente" }];
+const PASTAS: { id: EstiloPasta; nome: string }[] = [{ id: "vidro", nome: "Vidro" }, { id: "solida", nome: "Sólida" }, { id: "contorno", nome: "Contorno" }];
+const GESTOS: { id: Gesto; nome: string }[] = [{ id: "gaveta", nome: "Gaveta de apps" }, { id: "pesquisa", nome: "Pesquisar" }, { id: "nada", nome: "Nada" }];
 
 function Paleta({ valor, cores, aoEscolher, rotulo }: { valor: string; cores: string[]; aoEscolher: (c: string) => void; rotulo: string }) {
   return (
@@ -30,28 +49,77 @@ function Paleta({ valor, cores, aoEscolher, rotulo }: { valor: string; cores: st
   );
 }
 
+/** A tela inicial de verdade, em miniatura: muda ao vivo enquanto você mexe. Só para olhar (não aceita toque). */
+function Previa({ banco, porPacote, papel }: { banco: Banco; porPacote: Map<string, AppInfo>; papel: string | null }) {
+  const caixa = useRef<HTMLDivElement>(null);
+  const [k, setK] = useState(0.4);
+  const proporcao = Math.min(2.2, Math.max(1.6, (typeof window === "undefined" ? 2 : window.innerHeight / Math.max(1, window.innerWidth))));
+  const L = 360, A = Math.round(L * proporcao);
+  useLayoutEffect(() => {
+    const el = caixa.current; if (!el) return;
+    const medir = () => { const h = el.clientHeight, l = el.clientWidth; if (h > 0 && l > 0) setK(Math.min(h / A, l / L)); };
+    medir();
+    const o = new ResizeObserver(medir); o.observe(el);
+    return () => o.disconnect();
+  }, [A]);
+  const nada = () => undefined;
+  return (
+    <div className="editor-previa" ref={caixa} aria-hidden>
+      <div className="previa-moldura" style={{ width: L * k, height: A * k }} {...{ inert: true }}>
+        <div className="previa-tela" style={{ width: L, height: A, transform: `scale(${k})` }}>
+          <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={nada} aoMenuApp={nada} aoAbrirPasta={nada} aoGaveta={nada} aoEstudio={nada} aoMenuVazio={nada} papel={papel} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
   aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
+/** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
 export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar }: Props) {
-  const [aba, setAba] = useState<Aba>(abaInicial);
+  const [entrada] = useState(() => ENTRADA[abaInicial]);
+  const [secao, setSecao] = useState<Secao>(entrada[0]);
+  const [parte, setParte] = useState<string>(entrada[1]);
   const [padrao, setPadrao] = useState<boolean | null>(null);
   const [confirmaZero, setConfirmaZero] = useState(false);
   const [erro, setErro] = useState("");
-  useEffect(() => { void motor.ehPadrao().then(setPadrao).catch(() => setPadrao(null)); }, []);
-  const t = banco.tema;
-  const ocultos = ordenar(apps.filter((a) => banco.ocultos.includes(a.pacote)));
-
   const [cidade, setCidade] = useState("");
   const [lugares, setLugares] = useState<Lugar[] | null>(null);
   const [procurando, setProcurando] = useState(false);
+  useEffect(() => { void motor.ehPadrao().then(setPadrao).catch(() => setPadrao(null)); }, []);
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") aoFechar(); };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [aoFechar]);
+  const porPacote = useMemo(() => new Map(apps.map((a) => [a.pacote, a])), [apps]);
+  const t = banco.tema;
+  const def = SECOES.find((s) => s.id === secao)!;
+  const ocultos = ordenar(apps.filter((a) => banco.ocultos.includes(a.pacote)));
   const cheio = banco.widgets.length >= MAX_WIDGETS;
+  const ir = (s: Secao) => { setSecao(s); setParte(SECOES.find((x) => x.id === s)!.partes[0]!.id); setErro(""); };
+  const nomeDaParte = def.partes.find((p) => p.id === parte)?.nome ?? "";
+
+  const usarPapel = (url: string | null) => {
+    if (!url) { setErro("Não consegui abrir essa imagem."); return false; }
+    if (!guardarPapel(url)) { setErro("Não há espaço para guardar esse papel de parede."); return false; }
+    setErro(""); aoPapel(url); return true;
+  };
+  const daGaleria = async () => { const u = await escolherFoto(); if (u && usarPapel(u)) aoMudar((b) => ajustarTema(b, { fundo: "foto" })); };
+  const semPapel = () => { apagarPapel(); aoPapel(null); aoMudar((b) => ajustarTema(b, { fundo: "aurora" })); aviso("Papel de parede removido."); };
+  const comCena = (id: string) => {
+    const c = CENAS.find((x) => x.id === id); if (!c) return;
+    const p = c.papel ? PRONTOS.find((x) => x.id === c.papel) : undefined;
+    const ok = p ? usarPapel(desenharPronto(p)) : false;
+    aoMudar((b) => aplicarCena(b, c, ok)); aviso(`Cena ${c.nome} aplicada.`);
+  };
   const incluir = (tipo: TipoWidget, extra: { cidade?: string; lat?: number; lon?: number } = {}) => {
-    const r = adicionarWidget(banco, { tipo, ...extra });
-    if (!r.ok) { setErro(`Cabem até ${MAX_WIDGETS} widgets. Remova um para colocar outro.`); return; }
+    if (!adicionarWidget(banco, { tipo, ...extra }).ok) { setErro(`Cabem até ${MAX_WIDGETS} widgets. Remova um para colocar outro.`); return; }
     setErro(""); aoMudar((b) => adicionarWidget(b, { tipo, ...extra }).banco); aviso(`${NOMES_WIDGET[tipo]} adicionado.`);
   };
   const procurarCidade = async () => {
@@ -60,14 +128,6 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
     catch { setErro("Não consegui procurar a cidade agora."); setLugares(null); }
     finally { setProcurando(false); }
   };
-  const usar = (url: string | null) => {
-    if (!url) { setErro("Não consegui abrir essa imagem."); return; }
-    if (!guardarPapel(url)) { setErro("Não há espaço para guardar esse papel de parede."); return; }
-    setErro(""); aoPapel(url); aoMudar((b) => ajustarTema(b, { fundo: "foto" }));
-  };
-  const daGaleria = async () => { const u = await escolherFoto(); if (u) usar(u); };
-  const semPapel = () => { apagarPapel(); aoPapel(null); aoMudar((b) => ajustarTema(b, { fundo: "aurora" })); aviso("Papel de parede removido."); };
-
   const salvar = async () => {
     setErro("");
     const dia = new Date().toISOString().slice(0, 10);
@@ -85,36 +145,108 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
     } catch { setErro("Não consegui ler o arquivo."); }
   };
 
-  return (
-    <Folha titulo="Estúdio" aoFechar={aoFechar} alta>
-      <div role="tablist" aria-label="Seções do Estúdio" className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
-        {ABAS.map((a) => <button key={a.id} role="tab" aria-selected={aba === a.id} type="button" onClick={() => setAba(a.id)} className={`min-h-11 flex-none rounded-full border px-4 text-sm font-medium ${aba === a.id ? "border-neon bg-neon/15 text-neon" : "border-borda text-suave"}`}>{a.nome}</button>)}
-      </div>
-
-      {aba === "temas" && (
-        <div className="space-y-4">
+  const painel = (() => {
+    const id = `${secao}/${parte}`;
+    switch (id) {
+      case "temas/escolha": return (
+        <div className="grid grid-cols-2 gap-3">
+          {TEMAS.map((x) => (
+            <button key={x.id} type="button" aria-pressed={t.id === x.id} onClick={() => aoMudar((b) => escolherTema(b, x.id))} className={`overflow-hidden rounded-2xl border-2 text-left ${t.id === x.id ? "border-neon" : "border-borda"}`}>
+              <span className="block h-16" style={{ background: fundoCss(x) }}><span className="flex h-full items-end gap-1 p-2"><i className="size-4 rounded-full" style={{ background: x.cor }} /><i className="size-4 rounded-full" style={{ background: x.cor2 }} /></span></span>
+              <span className="block px-3 py-2 text-sm font-medium">{NOMES_DOS_TEMAS[x.id]}</span>
+            </button>
+          ))}
+        </div>
+      );
+      case "temas/cenas": return (
+        <div className="space-y-3">
+          <p className="text-sm text-suave">Um toque muda o tema, o papel de parede e o estilo dos ícones de uma vez. Dá para ajustar depois.</p>
           <div className="grid grid-cols-2 gap-3">
-            {TEMAS.map((x) => (
-              <button key={x.id} type="button" aria-pressed={t.id === x.id} onClick={() => aoMudar((b) => escolherTema(b, x.id))} className={`overflow-hidden rounded-2xl border-2 text-left ${t.id === x.id ? "border-neon" : "border-borda"}`}>
-                <span className="block h-16" style={{ background: fundoCss(x) }}><span className="flex h-full items-end gap-1 p-2"><i className="size-4 rounded-full" style={{ background: x.cor }} /><i className="size-4 rounded-full" style={{ background: x.cor2 }} /></span></span>
-                <span className="block px-3 py-2 text-sm font-medium">{NOMES_DOS_TEMAS[x.id]}</span>
+            {CENAS.map((c) => { const p = PRONTOS.find((x) => x.id === c.papel); return (
+              <button key={c.id} type="button" aria-label={`Cena ${c.nome}`} onClick={() => comCena(c.id)} className="overflow-hidden rounded-2xl border-2 border-borda text-left">
+                <span className="block h-20" style={{ background: p ? `linear-gradient(160deg, ${p.cores[1]}aa, ${p.cores[0]} 55%, ${p.cores[2]}99)` : "#0b1020" }} />
+                <span className="block px-3 py-2 text-sm font-medium">{c.nome}</span>
               </button>
-            ))}
+            ); })}
           </div>
+        </div>
+      );
+      case "temas/cores": return (
+        <div className="space-y-4">
           <Cartao titulo="Cor principal"><Paleta rotulo="Cor principal" valor={t.cor} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor: c }))} /></Cartao>
           <Cartao titulo="Cor de apoio"><Paleta rotulo="Cor de apoio" valor={t.cor2} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor2: c }))} /></Cartao>
+          <Cartao titulo="Fundo (sem foto)">
+            <Seletor<Fundo> rotulo="Estilo do fundo" valor={t.fundo} opcoes={FUNDOS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { fundo: v }))} />
+            <div className="mt-3"><Paleta rotulo="Cor do fundo" valor={t.fundoCor} cores={FUNDOS_ESCUROS} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { fundoCor: c }))} /></div>
+          </Cartao>
+        </div>
+      );
+      case "inicio/grade": return (
+        <div className="space-y-4">
+          <Cartao titulo="Grade">
+            <Linha titulo="Colunas"><Passo rotulo="colunas" valor={banco.layout.colunas} min={COLUNAS.min} max={COLUNAS.max} aoMudar={(v) => aoMudar((b) => mudarGrade(b, v, b.layout.linhas))} /></Linha>
+            <Linha titulo="Linhas"><Passo rotulo="linhas" valor={banco.layout.linhas} min={LINHAS.min} max={LINHAS.max} aoMudar={(v) => aoMudar((b) => mudarGrade(b, b.layout.colunas, v))} /></Linha>
+          </Cartao>
+          <Cartao><Linha titulo="Relógio" texto="Hora e data no alto da tela inicial."><Interruptor rotulo="Relógio" ligado={banco.relogio} aoMudar={(v) => aoMudar((b) => ({ ...b, relogio: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "inicio/icones": return (
+        <div className="space-y-4">
+          <Cartao titulo="Forma"><Seletor<Forma> rotulo="Forma dos ícones" valor={t.forma} opcoes={FORMAS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { forma: v }))} /></Cartao>
+          <Cartao titulo="Pacote de ícones"><Seletor<PacoteIcones> rotulo="Pacote de ícones" valor={t.pacote} opcoes={PACOTES} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pacote: v }))} /></Cartao>
+          <Cartao titulo="Tamanho"><div className="flex items-center gap-3"><input type="range" aria-label="Tamanho dos ícones" className="w-full" min={TAMANHO_ICONE.min} max={TAMANHO_ICONE.max} step={2} value={t.tamanho} onChange={(e) => aoMudar((b) => ajustarTema(b, { tamanho: Number(e.target.value) }))} /><span className="num w-10 text-right text-sm">{t.tamanho}</span></div></Cartao>
+          <Cartao><Linha titulo="Nomes dos apps" texto="Mostra o nome embaixo de cada ícone."><Interruptor rotulo="Nomes dos apps" ligado={t.rotulos} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { rotulos: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "inicio/superficie": return (
+        <div className="space-y-4">
+          <Cartao titulo="Cantos">
+            <p className="mb-2 text-sm text-suave">Arredondamento dos widgets, do dock e das janelas.</p>
+            <div className="flex items-center gap-3"><input type="range" aria-label="Cantos" className="w-full" min={CANTOS.min} max={CANTOS.max} value={t.cantos} onChange={(e) => aoMudar((b) => ajustarTema(b, { cantos: Number(e.target.value) }))} /><span className="num w-10 text-right text-sm">{t.cantos}</span></div>
+          </Cartao>
           <Cartao titulo="Botões"><Seletor<EstiloBotao> rotulo="Estilo dos botões" valor={t.botoes} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { botoes: v }))} opcoes={[{ id: "degrade", nome: "Degradê" }, { id: "contorno", nome: "Contorno" }, { id: "solido", nome: "Sólido" }]} /></Cartao>
         </div>
-      )}
-
-      {aba === "widgets" && (
+      );
+      case "inicio/dock": return <Cartao titulo="Estilo do dock"><Seletor<EstiloDock> rotulo="Estilo do dock" valor={t.dock} opcoes={DOCKS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { dock: v }))} /></Cartao>;
+      case "inicio/pastas": return (
         <div className="space-y-4">
-          {erro && <Aviso tom="erro">{erro}</Aviso>}
-          <Cartao titulo={`No seu início (${banco.widgets.length} de ${MAX_WIDGETS})`}>
-            {banco.widgets.length === 0 ? <p className="text-sm text-suave">Nenhum widget ainda. Escolha um abaixo.</p>
-              : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
+          <Cartao titulo="Estilo das pastas"><Seletor<EstiloPasta> rotulo="Estilo das pastas" valor={t.pasta} opcoes={PASTAS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pasta: v }))} /></Cartao>
+          <p className="text-sm text-suave">Para criar uma pasta, segure um espaço vazio da tela inicial e toque em Criar pasta.</p>
+        </div>
+      );
+      case "apps/gaveta": return <Cartao titulo="Estilo da gaveta"><Seletor<EstiloGaveta> rotulo="Estilo da gaveta" valor={t.gaveta} opcoes={[{ id: "lista", nome: "Lista com letras" }, { id: "grade", nome: "Grade" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { gaveta: v }))} /></Cartao>;
+      case "apps/ocultos": return (
+        <Cartao titulo={`Apps ocultos (${ocultos.length})`}>
+          {ocultos.length === 0 ? <p className="text-sm text-suave">Nenhum app oculto. Segure um app e escolha “Ocultar da gaveta”.</p>
+            : <ul className="space-y-1">{ocultos.map((a) => <li key={a.pacote} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{a.nome}</span><Botao onClick={() => aoMudar((b) => mostrar(b, a.pacote))}><Icone nome="mostrar" tam={18} />Mostrar</Botao></li>)}</ul>}
+        </Cartao>
+      );
+      case "papel/escolha": return (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            <Botao variante="primario" onClick={() => void daGaleria()}><Icone nome="papel" tam={18} />Escolher da galeria</Botao>
+            {t.fundo === "foto" && <Botao onClick={semPapel}>Remover papel</Botao>}
+          </div>
+          <Cartao titulo="Papéis da Vetorial">
+            <div className="grid grid-cols-3 gap-2">
+              {PRONTOS.map((p) => <button key={p.id} type="button" aria-label={`Papel ${p.nome}`} className="papel-pronto" style={{ background: `linear-gradient(160deg, ${p.cores[1]}99, ${p.cores[0]} 55%, ${p.cores[2]}88)` }} onClick={() => { if (usarPapel(desenharPronto(p))) aoMudar((b) => ajustarTema(b, { fundo: "foto" })); }}><span>{p.nome}</span></button>)}
+            </div>
           </Cartao>
-          <Cartao titulo="Adicionar">
+        </div>
+      );
+      case "papel/ajustes": return t.fundo === "foto" && papel ? (
+        <Cartao titulo="Ajustes">
+          <label className="mb-3 block text-sm text-suave">Desfoque
+            <input type="range" aria-label="Desfoque" className="mt-1 w-full" min={DESFOQUE.min} max={DESFOQUE.max} value={t.desfoque} onChange={(ev) => aoMudar((b) => ajustarTema(b, { desfoque: Number(ev.target.value) }))} />
+          </label>
+          <label className="block text-sm text-suave">Escurecimento
+            <input type="range" aria-label="Escurecimento" className="mt-1 w-full" min={ESCURO.min} max={ESCURO.max} value={t.escuro} onChange={(ev) => aoMudar((b) => ajustarTema(b, { escuro: Number(ev.target.value) }))} />
+          </label>
+        </Cartao>
+      ) : <p className="text-sm text-suave">Escolha um papel de parede primeiro (parte “Escolha”) para ajustar o desfoque e o escurecimento.</p>;
+      case "widgets/adicionar": return (
+        <div className="space-y-4">
+          <Cartao titulo={`Widgets (${banco.widgets.length} de ${MAX_WIDGETS})`}>
             <div className="flex flex-wrap gap-2">
               {TIPOS_WIDGET.filter((x) => x !== "clima").map((x) => <Botao key={x} disabled={cheio} onClick={() => incluir(x)}><Icone nome="mais" tam={18} />{NOMES_WIDGET[x]}</Botao>)}
             </div>
@@ -130,85 +262,24 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
             {lugares && lugares.length > 0 && <ul className="mt-3 space-y-1">{lugares.map((l) => <li key={`${l.lat},${l.lon}`}><button type="button" disabled={cheio} onClick={() => { incluir("clima", { cidade: l.nome, lat: l.lat, lon: l.lon }); setLugares(null); setCidade(""); }} className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-white/5 disabled:opacity-40"><Icone nome="mais" tam={18} /><span className="min-w-0 truncate">{l.nome}</span></button></li>)}</ul>}
           </Cartao>
         </div>
-      )}
-
-      {aba === "papel" && (
+      );
+      case "widgets/gerenciar": return (
+        <Cartao titulo={`No seu início (${banco.widgets.length} de ${MAX_WIDGETS})`}>
+          {banco.widgets.length === 0 ? <p className="text-sm text-suave">Nenhum widget ainda. Vá em “Adicionar”.</p>
+            : <ul className="space-y-1">{banco.widgets.map((x) => <li key={x.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{NOMES_WIDGET[x.tipo]}{x.cidade ? ` · ${x.cidade}` : ""}</span><Botao aria-label={`Remover ${NOMES_WIDGET[x.tipo]}`} onClick={() => aoMudar((b) => removerWidget(b, x.id))}><Icone nome="lixeira" tam={18} />Remover</Botao></li>)}</ul>}
+        </Cartao>
+      );
+      case "config/gestos": return (
         <div className="space-y-4">
-          {erro && <Aviso tom="erro">{erro}</Aviso>}
-          <div className="papel-previa" aria-label="Prévia do papel de parede">
-            {t.fundo === "foto" && papel ? <><div className="papel" style={{ backgroundImage: `url(${papel})`, filter: `blur(${t.desfoque}px)` }} /><div className="papel-escuro" style={{ opacity: t.escuro / 100 }} /></> : <div className="papel" style={{ background: fundoCss(t) }} />}
-            <div className="papel-rotulo num">{new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Botao variante="primario" onClick={() => void daGaleria()}><Icone nome="papel" tam={18} />Escolher da galeria</Botao>
-            {t.fundo === "foto" && <Botao onClick={semPapel}>Remover papel</Botao>}
-          </div>
-          <Cartao titulo="Papéis da Vetorial">
-            <div className="grid grid-cols-3 gap-2">
-              {PRONTOS.map((p) => <button key={p.id} type="button" aria-label={`Papel ${p.nome}`} className="papel-pronto" style={{ background: `linear-gradient(160deg, ${p.cores[1]}99, ${p.cores[0]} 55%, ${p.cores[2]}88)` }} onClick={() => usar(desenharPronto(p))}><span>{p.nome}</span></button>)}
-            </div>
-          </Cartao>
-          {t.fundo === "foto" && (
-            <Cartao titulo="Ajustes">
-              <label className="mb-3 block text-sm text-suave">Desfoque
-                <input type="range" aria-label="Desfoque" className="mt-1 w-full" min={DESFOQUE.min} max={DESFOQUE.max} value={t.desfoque} onChange={(ev) => aoMudar((b) => ajustarTema(b, { desfoque: Number(ev.target.value) }))} />
-              </label>
-              <label className="block text-sm text-suave">Escurecimento
-                <input type="range" aria-label="Escurecimento" className="mt-1 w-full" min={ESCURO.min} max={ESCURO.max} value={t.escuro} onChange={(ev) => aoMudar((b) => ajustarTema(b, { escuro: Number(ev.target.value) }))} />
-              </label>
-            </Cartao>
-          )}
+          <Cartao titulo="Deslizar para cima na tela inicial"><Seletor<Gesto> rotulo="Deslizar para cima" valor={banco.gesto} opcoes={GESTOS} aoMudar={(v) => aoMudar((b) => ({ ...b, gesto: v }))} /></Cartao>
+          <Cartao><Linha titulo="Bloquear layout" texto="Impede tirar, mover ou agrupar apps da tela inicial sem querer."><Interruptor rotulo="Bloquear layout" ligado={banco.bloqueado} aoMudar={(v) => aoMudar((b) => ({ ...b, bloqueado: v }))} /></Linha></Cartao>
         </div>
-      )}
-
-      {aba === "icones" && (
+      );
+      case "config/backup": return (
         <div className="space-y-4">
-          <Cartao titulo="Forma"><Seletor<Forma> rotulo="Forma dos ícones" valor={t.forma} opcoes={FORMAS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { forma: v }))} /></Cartao>
-          <Cartao titulo="Tamanho">
-            <div className="flex items-center gap-3"><input type="range" aria-label="Tamanho dos ícones" min={TAMANHO_ICONE.min} max={TAMANHO_ICONE.max} step={2} value={t.tamanho} onChange={(e) => aoMudar((b) => ajustarTema(b, { tamanho: Number(e.target.value) }))} className="h-11 min-w-0 flex-1 accent-cyan-300" /><span className="num w-12 text-right text-sm text-suave">{t.tamanho}</span></div>
-          </Cartao>
-          <Cartao><Linha titulo="Nomes dos apps" texto="Mostra o nome embaixo de cada ícone."><Interruptor rotulo="Nomes dos apps" ligado={t.rotulos} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { rotulos: v }))} /></Linha></Cartao>
-        </div>
-      )}
-
-      {aba === "inicio" && (
-        <div className="space-y-4">
-          <Cartao titulo="Grade">
-            <Linha titulo="Colunas"><Passo rotulo="colunas" valor={banco.layout.colunas} min={COLUNAS.min} max={COLUNAS.max} aoMudar={(v) => aoMudar((b) => mudarGrade(b, v, b.layout.linhas))} /></Linha>
-            <Linha titulo="Linhas"><Passo rotulo="linhas" valor={banco.layout.linhas} min={LINHAS.min} max={LINHAS.max} aoMudar={(v) => aoMudar((b) => mudarGrade(b, b.layout.colunas, v))} /></Linha>
-          </Cartao>
-          <Cartao><Linha titulo="Relógio" texto="Hora e data no alto da tela inicial."><Interruptor rotulo="Relógio" ligado={banco.relogio} aoMudar={(v) => aoMudar((b) => ({ ...b, relogio: v }))} /></Linha></Cartao>
-          <Cartao titulo="Fundo">
-            <Seletor<Fundo> rotulo="Estilo do fundo" valor={t.fundo} opcoes={FUNDOS} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { fundo: v }))} />
-            <div className="mt-3"><Paleta rotulo="Cor do fundo" valor={t.fundoCor} cores={FUNDOS_ESCUROS} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { fundoCor: c }))} /></div>
-          </Cartao>
-        </div>
-      )}
-
-      {aba === "gaveta" && (
-        <div className="space-y-4">
-          <Cartao titulo="Estilo da gaveta"><Seletor<EstiloGaveta> rotulo="Estilo da gaveta" valor={t.gaveta} opcoes={[{ id: "lista", nome: "Lista com letras" }, { id: "grade", nome: "Grade" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { gaveta: v }))} /></Cartao>
-          <Cartao titulo={`Apps ocultos (${ocultos.length})`}>
-            {ocultos.length === 0 ? <p className="text-sm text-suave">Nenhum app oculto. Segure um app e escolha “Ocultar da gaveta”.</p>
-              : <ul className="space-y-1">{ocultos.map((a) => <li key={a.pacote} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">{a.nome}</span><Botao onClick={() => aoMudar((b) => mostrar(b, a.pacote))}><Icone nome="mostrar" tam={18} />Mostrar</Botao></li>)}</ul>}
-          </Cartao>
-        </div>
-      )}
-
-      {aba === "backup" && (
-        <div className="space-y-4">
-          {erro && <Aviso tom="erro">{erro}</Aviso>}
           <Cartao titulo="Backup do layout e do tema">
-            <p className="mb-3 text-sm text-suave">Guarda a tela inicial, o dock, as pastas e o tema num arquivo. Você escolhe onde salvar.</p>
+            <p className="mb-3 text-sm text-suave">Guarda a tela inicial, o dock, as pastas, os widgets e o tema num arquivo. Você escolhe onde salvar. O papel de parede não entra no backup.</p>
             <div className="flex flex-wrap gap-3"><Botao variante="primario" onClick={() => void salvar()}><Icone nome="backup" tam={18} />Salvar backup</Botao><Botao onClick={() => void restaurar()}><Icone nome="restaurar" tam={18} />Restaurar backup</Botao></div>
-          </Cartao>
-          <Cartao titulo="Launcher padrão">
-            <p className="mb-3 text-sm text-suave">{padrao === null ? "Não consegui conferir agora." : padrao ? "O V-Space é o launcher padrão deste celular." : "O V-Space ainda não é o launcher padrão."}</p>
-            <div className="flex flex-wrap gap-3">
-              {padrao === false && <Botao variante="primario" onClick={() => void motor.pedirPadrao()}>Tornar padrão</Botao>}
-              <Botao onClick={() => void motor.abrirAjustesInicio()}>Voltar ao launcher anterior</Botao>
-            </div>
-            <p className="mt-3 text-xs text-suave">Seu layout fica guardado: ao voltar para o V-Space, está tudo como você deixou.</p>
           </Cartao>
           <Cartao titulo="Recomeçar">
             {confirmaZero ? (
@@ -216,14 +287,50 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
             ) : <Botao variante="perigo" onClick={() => setConfirmaZero(true)}>Refazer a tela inicial</Botao>}
           </Cartao>
         </div>
-      )}
-
-      {aba === "sobre" && (
+      );
+      case "config/padrao": return (
+        <Cartao titulo="Launcher padrão">
+          <p className="mb-3 text-sm text-suave">{padrao === null ? "Não consegui conferir agora." : padrao ? "O V-Space é o launcher padrão deste celular." : "O V-Space ainda não é o launcher padrão."}</p>
+          <div className="flex flex-wrap gap-3">
+            {padrao === false && <Botao variante="primario" onClick={() => void motor.pedirPadrao()}>Tornar padrão</Botao>}
+            <Botao onClick={() => void motor.abrirAjustesInicio()}>Voltar ao launcher anterior</Botao>
+          </div>
+          <p className="mt-3 text-xs text-suave">Seu layout fica guardado: ao voltar para o V-Space, está tudo como você deixou.</p>
+        </Cartao>
+      );
+      case "config/sobre": return (
         <div className="space-y-4">
-          <Cartao titulo="V-Space"><p className="text-sm text-suave">Launcher da Vetorial Tech para Android. Nesta fase está em testes (beta). Versão {import.meta.env.VITE_BUILD ? `1.${String(import.meta.env.VITE_BUILD)}` : "de desenvolvimento"}.</p></Cartao>
+          <Cartao titulo="V-Space"><p className="text-sm text-suave">O launcher da suíte Vetorial. Sua tela inicial, do seu jeito. Nesta fase está em testes (beta). Versão {import.meta.env.VITE_BUILD ? `1.${String(import.meta.env.VITE_BUILD)}` : "de desenvolvimento"}.</p></Cartao>
           <div className="flex flex-col gap-2"><Botao onClick={() => void aoProcurar()}>Procurar atualização</Botao><Botao onClick={aoTour}>Rever a apresentação</Botao><Botao onClick={aoTermos}>Termos de uso</Botao></div>
         </div>
-      )}
-    </Folha>
+      );
+      default: return null;
+    }
+  })();
+
+  return (
+    <div className="editor" role="dialog" aria-modal="true" aria-label="Estúdio">
+      <header className="editor-cab">
+        <h2 className="min-w-0 truncate text-lg font-extrabold">Estúdio</h2>
+        <button type="button" onClick={aoFechar} aria-label="Fechar" className="grid size-11 flex-none place-items-center rounded-full text-suave hover:bg-white/5"><Icone nome="fechar" /></button>
+      </header>
+      <div className="editor-topo">
+        <div role="tablist" aria-label="Seções do Estúdio" aria-orientation="vertical" className="editor-col">
+          {SECOES.map((s) => <button key={s.id} role="tab" type="button" aria-selected={secao === s.id} onClick={() => ir(s.id)} className="editor-item"><span className="editor-icone"><Icone nome={s.icone} tam={26} /></span><span>{s.nome}</span></button>)}
+        </div>
+        <Previa banco={banco} porPacote={porPacote} papel={papel} />
+        <div role="tablist" aria-label={`Partes de ${def.nome}`} aria-orientation="vertical" className="editor-col">
+          {def.partes.map((p) => <button key={p.id} role="tab" type="button" aria-selected={parte === p.id} onClick={() => { setParte(p.id); setErro(""); }} className="editor-item"><span className="editor-icone"><Icone nome={p.icone} tam={26} /></span><span>{p.nome}</span></button>)}
+        </div>
+      </div>
+      <section className="editor-painel" aria-label={`${def.nome}: ${nomeDaParte}`}>
+        <div className="mx-auto w-full max-w-xl">
+        <p className="text-sm text-suave">{def.nome}</p>
+        <h3 className="mb-3 text-2xl font-extrabold">{nomeDaParte}</h3>
+        {erro && <div className="mb-3"><Aviso tom="erro">{erro}</Aviso></div>}
+        <div className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{painel}</div>
+        </div>
+      </section>
+    </div>
   );
 }

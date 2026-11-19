@@ -253,3 +253,14 @@ test("widgets: adicionar respeita o limite e remover tira só um", () => {
   assert.deepEqual(removerWidget(b, id).widgets.map((x) => x.id), b.widgets.filter((x) => x.id !== id).map((x) => x.id));
   assert.equal(limparBanco(JSON.parse(JSON.stringify(b))).widgets.length, MAX_WIDGETS);
 });
+
+test("limparTema/Banco: cantos, dock, pacote, pasta, gesto e bloqueio com valores seguros", () => {
+  const a = limparTema({ cantos: 999, dock: "xyz", pacote: "mono", pasta: 5 });
+  assert.equal(a.cantos, 32); assert.equal(a.dock, "vidro"); assert.equal(a.pacote, "mono"); assert.equal(a.pasta, "vidro");
+  assert.equal(limparTema({ cantos: -3 }).cantos, 0);
+  const b = limparBanco({ gesto: "pesquisa", bloqueado: true });
+  assert.equal(b.gesto, "pesquisa"); assert.equal(b.bloqueado, true);
+  const c = limparBanco({ gesto: "voar", bloqueado: "sim" });
+  assert.equal(c.gesto, "gaveta"); assert.equal(c.bloqueado, false);
+  assert.equal(importar(exportar({ ...bancoPadrao(), gesto: "nada", bloqueado: true })).gesto, "nada");
+});

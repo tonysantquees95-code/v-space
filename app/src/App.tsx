@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as AppNativo } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import {
-  adicionarNaTela, bancoPadrao, criarPasta, layoutInicial, naTela, ocultar, paraODock, reconciliar, removerDaTela, renomearPasta, tirarDaPasta, tirarDoDock,
+  adicionarNaPasta, adicionarNaTela, ajustarTema, bancoPadrao, criarPasta, layoutInicial, naTela, ocultar, paraODock, reconciliar, removerDaTela, renomearPasta, tirarDaPasta, tirarDoDock,
   type AppInfo, type Banco,
 } from "./dados.ts";
 import { guardarBanco, lerBanco } from "./armazem";
@@ -13,10 +13,10 @@ import { precisaApresentar } from "./apresentacao";
 import { Inicio } from "./telas/Inicio";
 import { Gaveta } from "./telas/Gaveta";
 import { Estudio, type AbaEstudio } from "./telas/Estudio";
-import { lerPapel } from "./papel";
+import { desenharPronto, guardarPapel, lerPapel, PRONTOS } from "./papel";
 import { Atualizacao } from "./telas/Atualizacao";
 import { BUILD, ehNativo, haNovaVersao, marcarConferida, precisaConferir, procurarVersao, ultimaConferencia, type InfoVersao } from "./atualizacao";
-import { EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, type Origem } from "./telas/Menus";
+import { CriarPasta, EscolherParceiro, FolhaPasta, MenuApp, MenuVazio, type Origem } from "./telas/Menus";
 import { Apresentacao, Termos, Tour } from "./telas/Apresentacao";
 import { Novidades } from "./telas/Novidades";
 
@@ -32,6 +32,7 @@ export default function App() {
   const [estudio, setEstudio] = useState<false | AbaEstudio>(false);
   const [menuVazio, setMenuVazio] = useState(false);
   const [nova, setNova] = useState<InfoVersao | null>(null);
+  const [criarPastaAberto, setCriarPastaAberto] = useState(false);
   const [papel, setPapel] = useState<string | null>(() => lerPapel());
   const [pastaAberta, setPastaAberta] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuAberto | null>(null);
@@ -83,7 +84,7 @@ export default function App() {
   // botão Voltar do Android: fecha o que estiver aberto; na tela inicial não faz nada (um launcher nunca "sai")
   const temCamada = !!(menu || agrupar || rever || pastaAberta || estudio || gaveta);
   const fecharTopo = useCallback(() => {
-    if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
+    if (criarPastaAberto) setCriarPastaAberto(false); else if (nova) setNova(null); else if (menuVazio) setMenuVazio(false); else if (menu) setMenu(null); else if (agrupar) setAgrupar(null); else if (rever) setRever(null); else if (pastaAberta) setPastaAberta(null); else if (estudio) setEstudio(false); else if (gaveta) setGaveta(null);
   }, [menu, agrupar, rever, pastaAberta, estudio, gaveta]);
   const topo = useRef(fecharTopo); topo.current = fecharTopo;
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function App() {
   }, []);
   // botão início apertado com o V-Space já aberto: fecha as janelas e volta à tela inicial
   useEffect(() => {
-    const f = () => { setMenuVazio(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
+    const f = () => { setMenuVazio(false); setCriarPastaAberto(false); setMenu(null); setAgrupar(null); setRever(null); setNova(null); setPastaAberta(null); setEstudio(false); setGaveta(null); };
     window.addEventListener("vspaceinicio", f);
     return () => window.removeEventListener("vspaceinicio", f);
   }, []);
@@ -108,6 +109,20 @@ export default function App() {
   const emPasta = new Set(banco.layout.pastas.flatMap((p) => p.apps));
   const candidatos = [...naTela(banco)].filter((p) => p !== agrupar && !emPasta.has(p)).map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a);
 
+  const candidatos0 = [...naTela(banco)].filter((p) => !emPasta.has(p)).map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a);
+  const criarVarias = (pacotes: string[], nome: string) => mudar((b) => {
+    const [x, y, ...resto] = pacotes; if (!x || !y) return b;
+    let r = criarPasta(b, x, y, nome);
+    const pasta = r.layout.pastas.find((p) => p.apps.includes(x));
+    if (pasta) for (const p of resto) r = adicionarNaPasta(r, pasta.id, p);
+    return r;
+  });
+  const usarPronto = (id: string) => {
+    const p = PRONTOS.find((x) => x.id === id); if (!p) return;
+    const url = desenharPronto(p);
+    if (!guardarPapel(url)) { falar("Não há espaço para guardar esse papel de parede."); return; }
+    setPapel(url); mudar((b) => ajustarTema(b, { fundo: "foto" }));
+  };
   const comAviso = (r: { banco: Banco; ok: boolean }, falha: string) => { setBanco(r.banco); if (!r.ok) falar(falha); };
 
   return (
@@ -115,7 +130,10 @@ export default function App() {
       <Inicio banco={banco} porPacote={porPacote} aoAbrirApp={abrir} aoMenuApp={(pacote, origem) => setMenu({ pacote, origem })} aoAbrirPasta={setPastaAberta}
         aoGaveta={(busca) => setGaveta({ busca })} aoEstudio={() => setEstudio("temas")} aoMenuVazio={() => setMenuVazio(true)} papel={papel} />
 
-      {menuVazio && <MenuVazio aoFechar={() => setMenuVazio(false)} aoPapel={() => setEstudio("papel")} aoWidgets={() => setEstudio("widgets")} aoApps={() => setGaveta({ busca: false })} aoIcones={() => setEstudio("icones")} aoGrade={() => setEstudio("inicio")} aoEstudio={() => setEstudio("temas")} />}
+      {menuVazio && <MenuVazio papel={papel} bloqueado={banco.bloqueado} aoFechar={() => setMenuVazio(false)} aoUsarPronto={usarPronto} aoPapel={() => setEstudio("papel")} aoWidgets={() => setEstudio("widgets")} aoApps={() => setGaveta({ busca: false })}
+        aoPasta={() => setCriarPastaAberto(true)} aoGrade={() => setEstudio("inicio")} aoIcones={() => setEstudio("icones")} aoEstudio={() => setEstudio("temas")} aoBloquear={() => { mudar((b) => ({ ...b, bloqueado: !b.bloqueado })); falar(banco.bloqueado ? "Layout desbloqueado." : "Layout bloqueado."); }} />}
+
+      {criarPastaAberto && <CriarPasta candidatos={candidatos0} aoFechar={() => setCriarPastaAberto(false)} aoCriar={criarVarias} />}
 
       {gaveta && <Gaveta apps={visiveis} estilo={banco.tema.gaveta} buscaInicial={gaveta.busca} aoFechar={() => setGaveta(null)} aoAbrir={abrir} aoMenu={(pacote) => setMenu({ pacote, origem: "gaveta" })} />}
 
@@ -125,10 +143,10 @@ export default function App() {
       {nova && <Atualizacao nova={nova} aoFechar={() => setNova(null)} />}
 
       {estudio && <Estudio aoProcurar={procurarAgora} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
-        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
 
       {menu && appDoMenu && (
-        <MenuApp app={appDoMenu} origem={menu.origem} noDock={banco.layout.dock.includes(menu.pacote)} naTela={naTela(banco).has(menu.pacote)} podeAgrupar={naTela(banco).size >= 2}
+        <MenuApp app={appDoMenu} origem={menu.origem} noDock={banco.layout.dock.includes(menu.pacote)} naTela={naTela(banco).has(menu.pacote)} bloqueado={banco.bloqueado} podeAgrupar={naTela(banco).size >= 2}
           aoFechar={() => setMenu(null)} aoDetalhes={() => void motor.detalhes(menu.pacote).catch(() => falar("Não consegui abrir as informações."))}
           aoRemover={() => mudar((b) => removerDaTela(b, menu.pacote))}
           aoParaODock={() => comAviso(paraODock(banco, menu.pacote), "O dock já tem 5 apps. Tire um para colocar outro.")}

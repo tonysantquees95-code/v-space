@@ -87,25 +87,41 @@ export default {
     ["estudio-papel", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Papel de parede"); }],
     ["estudio-papel-pronto", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Papel de parede");
-      await p.getByRole("button", { name: "Papel Oceano" }).click(); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
+      await p.getByRole("button", { name: "Papel Oceano" }).click(); await aba(p, "Ajustes"); await p.getByRole("slider", { name: "Desfoque" }).waitFor();
       await p.getByRole("slider", { name: "Desfoque" }).fill("8"); await p.waitForTimeout(250);
     }],
     ["inicio-widgets", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); if (!(await f.isVisible().catch(() => false))) { await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); } await p.waitForTimeout(400); }],
     ["widgets-agenda", "widgets", async (p) => { const f = p.getByRole("region", { name: "Widgets" }); await p.waitForTimeout(300); if (!(await f.isVisible().catch(() => false))) throw new Error("PULAR"); await f.evaluate((e) => { e.scrollLeft = e.scrollWidth; }); await p.getByText("Reunião de equipe").waitFor(); }],
     ["estudio-widgets", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Widgets"); }],
+    ["menu-criar-pasta", "completo", async (p) => { await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("button", { name: "Criar pasta" }).click(); await p.getByRole("dialog", { name: "Criar pasta" }).waitFor(); }],
+    ["criar-pasta-feita", "completo", async (p) => {
+      await p.locator(".pagina").first().click({ button: "right", position: { x: 4, y: 4 } }); await p.getByRole("button", { name: "Criar pasta" }).click();
+      const d = p.getByRole("dialog", { name: "Criar pasta" }); await d.getByRole("button", { name: "Galeria" }).click(); await d.getByRole("button", { name: "Relógio" }).click();
+      await d.getByRole("button", { name: "Criar pasta" }).click(); await p.getByRole("button", { name: "Pasta Pasta" }).waitFor();
+    }],
     ["estudio-widgets-adicionar", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Widgets");
-      await p.getByRole("button", { name: "Bateria" }).click(); await p.getByRole("button", { name: "Relógio analógico" }).click(); await p.waitForTimeout(200);
+      await p.getByRole("button", { name: "Bateria" }).click(); await p.getByRole("button", { name: "Relógio analógico" }).click(); await aba(p, "Gerenciar");
       if ((await p.getByRole("button", { name: /^Remover/ }).count()) !== 2) throw new Error("os widgets não foram adicionados");
     }],
-    ["estudio-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Ícones"); }],
+    ["estudio-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Ícones"); }],
     ["estudio-inicio", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); }],
-    ["estudio-gaveta", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Gaveta"); }],
-    ["estudio-backup", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Backup"); await p.getByText("O V-Space é o launcher padrão").waitFor(); }],
-    ["estudio-backup-refazer", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Backup"); await p.getByRole("button", { name: "Refazer a tela inicial" }).click(); await p.getByText(/Isso refaz a tela inicial/).waitFor(); }],
-    ["estudio-sobre", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Sobre"); }],
-    ["sobre-apresentacao", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Sobre"); await p.getByRole("button", { name: "Rever a apresentação" }).click(); await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
-    ["sobre-termos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Sobre"); await p.getByRole("button", { name: "Termos de uso" }).click(); await p.getByText("1. O que é o V-Space").waitFor(); }],
+    ["estudio-gaveta", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Aplicativos"); }],
+    ["estudio-backup", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Backup"); await p.getByRole("button", { name: "Salvar backup" }).waitFor(); }],
+    ["estudio-launcher", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Launcher"); await p.getByText("O V-Space é o launcher padrão").waitFor(); }],
+    ["estudio-gestos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await p.getByRole("switch", { name: "Bloquear layout" }).waitFor(); }],
+    ["estudio-cenas", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cenas"); }],
+    ["estudio-cena-aplicada", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cenas"); await p.getByRole("button", { name: "Cena Mar calmo" }).click(); await p.waitForTimeout(300); }],
+    ["estudio-cores", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Cores"); }],
+    ["estudio-superficie", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Superfície"); await p.getByRole("slider", { name: "Cantos" }).fill("30"); await p.waitForTimeout(200); }],
+    ["estudio-dock", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Dock"); await p.getByRole("button", { name: "Sólido" }).click(); await p.waitForTimeout(200); }],
+    ["estudio-pastas", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Pastas"); await p.getByRole("button", { name: "Contorno" }).click(); await p.waitForTimeout(200); }],
+    ["estudio-pacote-icones", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Início"); await aba(p, "Ícones"); await p.getByRole("button", { name: "Monocromático" }).click(); await p.waitForTimeout(200); }],
+    ["estudio-ocultos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Aplicativos"); await aba(p, "Ocultos"); }],
+    ["estudio-backup-refazer", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Backup"); await p.getByRole("button", { name: "Refazer a tela inicial" }).click(); await p.getByText(/Isso refaz a tela inicial/).waitFor(); }],
+    ["estudio-sobre", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); }],
+    ["sobre-apresentacao", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Rever a apresentação" }).click(); await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
+    ["sobre-termos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Termos de uso" }).click(); await p.getByText("1. O que é o V-Space").waitFor(); }],
     ["estudio-grade-mais-colunas", "completo", async (p) => {
       await abrirEstudio(p); await aba(p, "Início");
       await p.getByRole("button", { name: "Mais colunas" }).click(); await p.getByRole("button", { name: "Mais colunas" }).click(); await p.waitForTimeout(200);

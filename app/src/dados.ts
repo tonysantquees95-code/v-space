@@ -6,12 +6,18 @@ export type Forma = "original" | "circulo" | "squircle" | "quadrado";
 export type EstiloGaveta = "lista" | "grade";
 export type Fundo = "aurora" | "noite" | "neon" | "cor" | "foto";
 export type EstiloBotao = "degrade" | "contorno" | "solido";
+export type EstiloDock = "vidro" | "solido" | "transparente";
+export type PacoteIcones = "original" | "mono" | "tingido" | "vivo";
+export type EstiloPasta = "vidro" | "solida" | "contorno";
+export type Gesto = "gaveta" | "pesquisa" | "nada";
 
 export interface Tema {
   id: string; cor: string; cor2: string; fundo: Fundo; fundoCor: string;
   forma: Forma; tamanho: number; rotulos: boolean; gaveta: EstiloGaveta; botoes: EstiloBotao;
   /** papel de parede (fundo "foto"): desfoque em px e escurecimento em % */
   desfoque: number; escuro: number;
+  /** raio dos cartões e janelas (px), estilo do dock, pacote de ícones e estilo das pastas */
+  cantos: number; dock: EstiloDock; pacote: PacoteIcones; pasta: EstiloPasta;
 }
 export interface Pasta { id: string; nome: string; apps: string[] }
 export type Item = { tipo: "app"; pacote: string } | { tipo: "pasta"; id: string };
@@ -22,7 +28,7 @@ export const NOMES_WIDGET: Record<TipoWidget, string> = { "relogio-digital": "Re
 export const MAX_WIDGETS = 4;
 /** Um widget na faixa da tela inicial. O clima guarda a cidade e o ponto no mapa (achados uma vez, na hora de adicionar). */
 export interface Widget { id: string; tipo: TipoWidget; cidade?: string; lat?: number; lon?: number }
-export interface Banco { v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[] }
+export interface Banco { v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean }
 
 export const MAX_DOCK = 5;
 export const MAX_PAGINAS = 8;
@@ -31,19 +37,24 @@ export const LINHAS = { min: 4, max: 7 };
 export const TAMANHO_ICONE = { min: 40, max: 72 };
 export const DESFOQUE = { min: 0, max: 24 };
 export const ESCURO = { min: 0, max: 80 };
+export const CANTOS = { min: 0, max: 32 };
+export const GESTOS: readonly Gesto[] = ["gaveta", "pesquisa", "nada"];
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30 },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30 },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30 },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30 },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30 },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
 const REGEX_COR = /^#[0-9a-fA-F]{6}$/;
 const REGEX_PACOTE = /^[A-Za-z0-9_.]{1,200}$/;
 const FORMAS: Forma[] = ["original", "circulo", "squircle", "quadrado"];
+const DOCKS: EstiloDock[] = ["vidro", "solido", "transparente"];
+const PACOTES: PacoteIcones[] = ["original", "mono", "tingido", "vivo"];
+const PASTAS: EstiloPasta[] = ["vidro", "solida", "contorno"];
 const FUNDOS: Fundo[] = ["aurora", "noite", "neon", "cor", "foto"];
 const BOTOES: EstiloBotao[] = ["degrade", "contorno", "solido"];
 const GAVETAS: EstiloGaveta[] = ["lista", "grade"];
@@ -88,7 +99,7 @@ export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").re
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [] });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false });
 
 export function limparTema(x: unknown): Tema {
   const t = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
@@ -99,6 +110,7 @@ export function limparTema(x: unknown): Tema {
     forma: escolha(t.forma, FORMAS, p.forma), tamanho: limitar(t.tamanho, TAMANHO_ICONE.min, TAMANHO_ICONE.max, p.tamanho),
     rotulos: typeof t.rotulos === "boolean" ? t.rotulos : p.rotulos, gaveta: escolha(t.gaveta, GAVETAS, p.gaveta), botoes: escolha(t.botoes, BOTOES, p.botoes),
     desfoque: limitar(t.desfoque, DESFOQUE.min, DESFOQUE.max, p.desfoque), escuro: limitar(t.escuro, ESCURO.min, ESCURO.max, p.escuro),
+    cantos: limitar(t.cantos, CANTOS.min, CANTOS.max, p.cantos), dock: escolha(t.dock, DOCKS, p.dock), pacote: escolha(t.pacote, PACOTES, p.pacote), pasta: escolha(t.pasta, PASTAS, p.pasta),
   };
 }
 
@@ -149,7 +161,7 @@ export function limparBanco(x: unknown): Banco {
   const ocultos: string[] = [];
   for (const a of Array.isArray(b.ocultos) ? b.ocultos : []) if (ehPacote(a) && !ocultos.includes(a)) ocultos.push(a);
 
-  return { v: 1, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets) };
+  return { v: 1, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */

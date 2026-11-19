@@ -10,7 +10,7 @@ function Svg({ children, tam = 24, style, ...r }: SVGProps<SVGSVGElement> & { ta
   return <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden {...r} style={{ ...estilo, ...style }}>{children}</svg>;
 }
 
-export type NomeIcone = "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta";
+export type NomeIcone = "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta";
 
 const DESENHOS: Record<NomeIcone, ReactElement> = {
   pesquisa: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
@@ -36,6 +36,13 @@ const DESENHOS: Record<NomeIcone, ReactElement> = {
   escudo: <path d="M12 3 5 5.8v5.6c0 4.2 2.9 7.6 7 9.1 4.1-1.5 7-4.9 7-9.1V5.8z" />,
   sobre: <><circle cx="12" cy="12" r="8.5" /><path d="m9.2 9.2 5.6 5.6M14.8 9.2l-5.6 5.6" /></>,
   seta: <path d="m9.5 5.5 6.5 6.5-6.5 6.5" />,
+  cena: <><path d="m12 3 1.9 4.6 4.9.4-3.7 3.2 1.1 4.8L12 13.4 7.8 16l1.1-4.8L5.2 8l4.9-.4z" /><path d="M5 20h14" /></>,
+  paleta: <><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-.8 2-1.7 0-1.3-1-1.5-1-2.6 0-.9.7-1.5 1.7-1.5H17a3.5 3.5 0 0 0 3.5-3.5C20.5 6.7 16.7 3.5 12 3.5z" /><circle cx="8" cy="11" r="1" /><circle cx="11" cy="7.8" r="1" /><circle cx="15" cy="8.5" r="1" /></>,
+  superficie: <><rect x="4" y="4" width="16" height="16" rx="5" /><path d="M4 12h16M12 4v16" /></>,
+  ajustes: <><path d="M5 8h9M18 8h1M5 16h1M10 16h9" /><circle cx="16" cy="8" r="2" /><circle cx="8" cy="16" r="2" /></>,
+  lista: <><path d="M9 6.5h10M9 12h10M9 17.5h10" /><circle cx="5" cy="6.5" r=".8" /><circle cx="5" cy="12" r=".8" /><circle cx="5" cy="17.5" r=".8" /></>,
+  gesto: <><path d="M12 4v10" /><path d="m8 8 4-4 4 4" /><rect x="6" y="15" width="12" height="5" rx="2.5" /></>,
+  engrenagem: <><circle cx="12" cy="12" r="3" /><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18" /></>,
   widgets: <><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2" /><rect x="13" y="3.5" width="7.5" height="7.5" rx="2" /><rect x="3.5" y="13" width="17" height="7.5" rx="2" /></>,
   papel: <><rect x="3.5" y="4.5" width="17" height="15" rx="2.6" /><circle cx="9" cy="10" r="1.7" /><path d="m4.5 17 4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5" /></>,
   cadeado: <><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></>,

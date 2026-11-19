@@ -7,7 +7,7 @@ export const RAIO_DO_BOTAO: Record<Tema["botoes"], string> = { degrade: "0.9rem"
 export function variaveisCss(t: Tema): Record<string, string> {
   return {
     "--color-neon": t.cor, "--color-magenta": t.cor2, "--raio-botao": RAIO_DO_BOTAO[t.botoes],
-    "--icone-raio": RAIO_DO_ICONE[t.forma], "--icone-tam": String(t.tamanho), "--fundo-cor": t.fundoCor,
+    "--icone-raio": RAIO_DO_ICONE[t.forma], "--cantos": `${t.cantos}px`, "--icone-tam": String(t.tamanho), "--fundo-cor": t.fundoCor,
   };
 }
 
@@ -27,4 +27,7 @@ export function aplicarTema(t: Tema, alvo: HTMLElement = document.documentElemen
   alvo.style.setProperty("--fundo-inicial", fundoCss(t));
   alvo.dataset.botoes = t.botoes;
   alvo.dataset.forma = t.forma;
+  alvo.dataset.dock = t.dock;
+  alvo.dataset.pacote = t.pacote;
+  alvo.dataset.pasta = t.pasta;
 }
