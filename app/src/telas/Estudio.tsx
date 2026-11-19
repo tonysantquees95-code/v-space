@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
+  MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
 } from "../dados.ts";
 import { CENAS, aplicarCena } from "../cenas";
@@ -12,22 +13,25 @@ import { apagarPapel, desenharPronto, escolherFoto, guardarPapel, PRONTOS } from
 import { buscarLugares, type Lugar } from "../widgets";
 import { Aviso, Botao, Cartao, Interruptor, Linha, Passo, Seletor } from "../ui";
 import { Inicio } from "./Inicio";
+import { apagarCategoria, contagens, criarCategoria, editarCategoria, reordenarCategoria } from "../categorias.ts";
+import { NovaCategoria } from "./Menus";
 
 /** Atalhos de entrada (menus e botões abrem o editor já na parte certa). */
-export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio";
-type Secao = "temas" | "inicio" | "apps" | "papel" | "widgets" | "config";
+export type AbaEstudio = "temas" | "widgets" | "papel" | "icones" | "inicio" | "categorias";
+type Secao = "temas" | "inicio" | "categorias" | "apps" | "papel" | "widgets" | "config";
 interface Parte { id: string; nome: string; icone: NomeIcone }
 interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] }
 
 const SECOES: DefSecao[] = [
   { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }] },
   { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
+  { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "ajustes", nome: "Ajustes", icone: "ajustes" }] },
   { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
   { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
-const ENTRADA: Record<AbaEstudio, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"] };
+const ENTRADA: Record<AbaEstudio, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
 const CORES = ["#22d3ee", "#38bdf8", "#8ab4ff", "#a78bfa", "#e879f9", "#f472b6", "#fb7185", "#fb923c", "#fbbf24", "#a3e635", "#34d399", "#2dd4bf", "#ffffff"];
 const FUNDOS_ESCUROS = ["#000000", "#05070d", "#0b1020", "#12081a", "#14080a", "#04100b", "#101010", "#1a1033"];
@@ -77,11 +81,12 @@ function Previa({ banco, porPacote, papel }: { banco: Banco; porPacote: Map<stri
 interface Props {
   banco: Banco; apps: AppInfo[]; aoMudar: (f: (b: Banco) => Banco) => void; aoFechar: () => void; aviso: (m: string) => void;
   aoRecomecar: () => void; aoTour: () => void; aoTermos: () => void;
-  aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
+  aoOrganizar: () => void; aoProcurar: () => Promise<void>; abaInicial: AbaEstudio; papel: string | null; aoPapel: (p: string | null) => void;
 }
 
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
-export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar }: Props) {
+export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoOrganizar }: Props) {
+  const [editCat, setEditCat] = useState<Categoria | "nova" | null>(null);
   const [entrada] = useState(() => ENTRADA[abaInicial]);
   const [secao, setSecao] = useState<Secao>(entrada[0]);
   const [parte, setParte] = useState<string>(entrada[1]);
@@ -181,6 +186,41 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           </Cartao>
         </div>
       );
+      case "categorias/modo": return (
+        <div className="space-y-4">
+          <Cartao titulo="Como a tela inicial aparece">
+            <Seletor<ModoInicio> rotulo="Tela inicial" valor={banco.modo} opcoes={[{ id: "categorias", nome: "Categorias" }, { id: "grade", nome: "Grade de apps" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, modo: v }))} />
+            <p className="mt-2 text-sm text-suave">{banco.modo === "categorias" ? "Só widgets e favoritos na tela; os outros apps ficam nas categorias, no trilho da lateral." : "Os apps ficam espalhados em páginas, com dock embaixo."}</p>
+          </Cartao>
+          <Cartao titulo={`Favoritos (${banco.favoritos.length} de ${MAX_FAVORITOS})`}>
+            <p className="mb-2 text-sm text-suave">Para mudar, segure um app e escolha “Colocar nos favoritos”, ou toque em Adiciona na tela inicial.</p>
+            <Botao disabled={!banco.favoritos.length} onClick={() => aoMudar((b) => ({ ...b, favoritos: [] }))}>Limpar favoritos</Botao>
+          </Cartao>
+        </div>
+      );
+      case "categorias/lista": {
+        const cont = contagens(banco, apps);
+        return (
+          <div className="space-y-4">
+            <Botao variante="primario" className="w-full" onClick={aoOrganizar}><span className="inline-flex items-center gap-2"><Icone nome="brilho" tam={20} />Organizar com IA</span></Botao>
+            <Cartao titulo={`Categorias (${banco.categorias.length} de ${MAX_CATEGORIAS})`}>
+              <ul className="space-y-1">
+                {banco.categorias.map((c, i) => (
+                  <li key={c.id} className="flex min-h-12 items-center gap-2">
+                    <Icone nome={c.icone} /><span className="min-w-0 flex-1 truncate">{c.nome} <span className="text-xs text-suave">· {cont[c.id] ?? 0}</span></span>
+                    <button type="button" aria-label={`Subir ${c.nome}`} disabled={i === 0} onClick={() => aoMudar((b) => reordenarCategoria(b, c.id, -1))} className="grid size-10 place-items-center rounded-full border border-borda disabled:opacity-40"><span className="rotate-90"><Icone nome="voltar" tam={18} /></span></button>
+                    <button type="button" aria-label={`Descer ${c.nome}`} disabled={i === banco.categorias.length - 1} onClick={() => aoMudar((b) => reordenarCategoria(b, c.id, 1))} className="grid size-10 place-items-center rounded-full border border-borda disabled:opacity-40"><span className="-rotate-90"><Icone nome="voltar" tam={18} /></span></button>
+                    <button type="button" aria-label={`Editar ${c.nome}`} onClick={() => setEditCat(c)} className="grid size-10 place-items-center rounded-full border border-borda"><Icone nome="estudio" tam={18} /></button>
+                    {c.id !== CATEGORIA_RESERVA && <button type="button" aria-label={`Apagar ${c.nome}`} onClick={() => aoMudar((b) => apagarCategoria(b, c.id))} className="grid size-10 place-items-center rounded-full border border-borda text-erro"><Icone nome="lixeira" tam={18} /></button>}
+                  </li>
+                ))}
+              </ul>
+              <Botao className="mt-3 w-full" disabled={banco.categorias.length >= MAX_CATEGORIAS} onClick={() => setEditCat("nova")}>Nova categoria</Botao>
+              <p className="mt-2 text-sm text-suave">Apagar uma categoria não apaga apps: eles voltam para a categoria certa ou para “Ferramentas e mais”.</p>
+            </Cartao>
+          </div>
+        );
+      }
       case "inicio/grade": return (
         <div className="space-y-4">
           <Cartao titulo="Grade">
@@ -331,6 +371,8 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
         <div className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{painel}</div>
         </div>
       </section>
+      {editCat && <NovaCategoria inicial={editCat === "nova" ? undefined : editCat} aoFechar={() => setEditCat(null)}
+        aoSalvar={(nome, icone) => aoMudar((b) => (editCat === "nova" ? criarCategoria(b, nome, icone).banco : editarCategoria(b, editCat.id, { nome, icone })))} />}
     </div>
   );
 }

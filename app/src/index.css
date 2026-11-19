@@ -130,8 +130,11 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .editor { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: #070a14; color: var(--color-texto); }
 .editor-cab { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 14px 0 20px; }
 .editor-topo { flex: none; height: min(46dvh, 470px); display: flex; align-items: stretch; gap: 6px; padding: 0 6px; min-height: 0; }
-.editor-col { flex: 0 0 22%; max-width: 110px; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow-y: auto; scrollbar-width: none; }
+.editor-col { flex: 0 0 22%; max-width: 110px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; overflow-y: auto; scrollbar-width: none; }
 .editor-col::-webkit-scrollbar { display: none; }
+/* centraliza quando sobra espaço, mas nunca corta o começo da lista quando falta (justify-content:center cortaria) */
+.editor-col > :first-child { margin-top: auto; }
+.editor-col > :last-child { margin-bottom: auto; }
 .editor-item { min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; border-radius: 16px; font-size: .72rem; line-height: 1.1; text-align: center; color: var(--color-suave, #9aa6bd); }
 .editor-item[aria-selected="true"] { color: var(--color-texto); font-weight: 700; }
 .editor-icone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; }
@@ -143,6 +146,7 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 @media (max-height: 560px), (min-aspect-ratio: 5/4) {
   .editor-topo { height: auto; flex-direction: column; padding: 0 10px 6px; gap: 2px; }
   .editor-previa { display: none; }
+  .editor-col > :first-child, .editor-col > :last-child { margin: 0; }
   .editor-col { flex: none; max-width: none; flex-direction: row; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; }
   .editor-item { flex: none; flex-direction: row; gap: 6px; min-height: 44px; padding: 4px 12px 4px 4px; font-size: .8rem; }
   .editor-icone { width: 36px; height: 36px; }
@@ -152,3 +156,22 @@ html[data-pasta="contorno"] .glifo-pasta { background: transparent; border: 2px 
 .menu-papeis::-webkit-scrollbar { display: none; }
 .menu-papel { flex: none; width: 56px; height: 92px; border-radius: 14px; border: 2px solid #ffffff22; background-size: cover; background-position: center; display: grid; place-items: center; color: #fff; }
 .menu-papel.atual { border-color: var(--color-neon); }
+
+/* Categorias: favoritos + widgets na tela inicial, trilho na lateral, uma página por categoria */
+.cat-area { flex: 1; min-height: 0; position: relative; display: flex; }
+.cat-corpo { flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding: 4px 76px 24px 8px; overscroll-behavior: contain; }
+.cat-corpo::-webkit-scrollbar { display: none; }
+.cat-cabeca { padding: 20px 12px 14px; }
+.cat-titulo { font-size: clamp(28px, 9vw, 38px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px #000a; overflow-wrap: anywhere; }
+.cat-sub { margin-top: 4px; font-size: 15px; color: #ffffffcc; text-shadow: 0 1px 6px #000a; }
+.cat-secao { padding: 14px 12px 8px; font-size: 20px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px #000a; }
+.cat-vazio { padding: 8px 12px; color: #ffffffb3; }
+.cat-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--icone-tam, 56) * 1px + 18px), 1fr)); gap: 14px 4px; align-items: start; min-height: 24px; }
+.cat-grade .app-cel { align-self: start; }
+.glifo-adiciona { background: transparent; border: 2px dashed #ffffff80; box-sizing: border-box; color: #ffffffd9; }
+.trilho { position: absolute; right: 8px; bottom: 6px; max-height: calc(100% - 8px); width: 54px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 4px; overflow-y: auto; scrollbar-width: none; border-radius: 28px; background: #00000059; border: 1px solid #ffffff1f; backdrop-filter: blur(14px); }
+.trilho::-webkit-scrollbar { display: none; }
+.trilho-item { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; color: #ffffffe0; border: 1.5px solid transparent; transition: background .12s, border-color .12s; }
+.trilho-item[aria-pressed="true"] { background: color-mix(in srgb, var(--color-neon, #7c5cff) 28%, transparent); border-color: var(--color-neon, #7c5cff); color: #fff; }
+.trilho-item:active { transform: scale(0.94); }
+.trilho-tracejado { border: 1.5px dashed #ffffff66; }

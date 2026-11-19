@@ -4,7 +4,7 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 export interface InfoVersao { numero: number; tag: string; notas: string; tamanho: number; sha256: string; url: string }
 export interface Progresso { estado: "parada" | "baixando" | "pronta" | "erro"; feitos: number; total: number; erro: string }
 
-const SERVIDOR = "https://venus-servidor.tonysantquees95.workers.dev";
+export const SERVIDOR = "https://venus-servidor.tonysantquees95.workers.dev";
 const REPOSITORIO = "tonysantquees95-code/v-space";
 const CHAVE = "vhome.atualizacao.conferida";
 

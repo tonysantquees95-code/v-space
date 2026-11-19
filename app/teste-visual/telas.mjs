@@ -114,7 +114,7 @@ try {
   for (let i = 0; i < 40; i++) { try { if ((await fetch(`http://localhost:${PORTA}/`)).ok) break; } catch { /* ainda subindo */ } await new Promise((r) => setTimeout(r, 250)); }
   const browser = await chromium.launch(cromo ? { executablePath: cromo } : { channel: "chrome" });
   for (const [tam, w, h] of TAMANHOS.filter(([n]) => !process.env.TAMANHO || n === process.env.TAMANHO)) {
-    for (const [nome, modo, passos] of config.cenarios.filter(([n]) => !process.env.TELA || n === process.env.TELA)) {
+    for (const [nome, modo, passos] of config.cenarios.filter(([n]) => !process.env.TELA || process.env.TELA.split(",").some((f) => (f.endsWith("*") ? n.startsWith(f.slice(0, -1)) : n === f)))) {
       total++;
       const { ctx, p, erros } = await abrir(browser, w, h, modo);
       let problemas = [], avisos = [];

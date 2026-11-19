@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
-import type { AppInfo, Pasta } from "../dados.ts";
+import { ICONES_CATEGORIA, type AppInfo, type Categoria, type IconeCategoria, type Pasta } from "../dados.ts";
 import { PRONTOS } from "../papel";
 import { Icone, type NomeIcone } from "../icones";
 import { Aviso, Botao, Folha } from "../ui";
 import { Glifo, IconeApp } from "./IconeApp";
 
-export type Origem = "tela" | "dock" | "gaveta" | "pasta";
+export type Origem = "tela" | "dock" | "gaveta" | "pasta" | "categoria" | "favorito";
 
 function Opcao({ icone, texto, aoClicar, perigo = false }: { icone: NomeIcone; texto: string; aoClicar: () => void; perigo?: boolean }) {
   return (
@@ -16,8 +16,8 @@ function Opcao({ icone, texto, aoClicar, perigo = false }: { icone: NomeIcone; t
 }
 
 /** Opções do app (aperto longo). O que aparece depende de onde o app está. */
-export function MenuApp({ app, origem, noDock, naTela, podeAgrupar, bloqueado = false, aoFechar, aoDetalhes, aoRemover, aoParaODock, aoTirarDoDock, aoAgrupar, aoTirarDaPasta, aoPorNaTela, aoOcultar, aoDesinstalar }: {
-  app: AppInfo; origem: Origem; noDock: boolean; naTela: boolean; podeAgrupar: boolean; bloqueado?: boolean; aoFechar: () => void;
+export function MenuApp({ app, origem, noDock, naTela, podeAgrupar, bloqueado = false, favorito = false, aoFavoritar, aoMover, aoFechar, aoDetalhes, aoRemover, aoParaODock, aoTirarDoDock, aoAgrupar, aoTirarDaPasta, aoPorNaTela, aoOcultar, aoDesinstalar }: {
+  app: AppInfo; origem: Origem; noDock: boolean; naTela: boolean; podeAgrupar: boolean; bloqueado?: boolean; favorito?: boolean; aoFavoritar?: () => void; aoMover?: () => void; aoFechar: () => void;
   aoDetalhes: () => void; aoRemover: () => void; aoParaODock: () => void; aoTirarDoDock: () => void; aoAgrupar: () => void; aoTirarDaPasta: () => void; aoPorNaTela: () => void; aoOcultar: () => void; aoDesinstalar: () => void;
 }) {
   const [confirmar, setConfirmar] = useState(false);
@@ -32,6 +32,8 @@ export function MenuApp({ app, origem, noDock, naTela, podeAgrupar, bloqueado = 
         </div>
       ) : (
         <div className="flex flex-col">
+          {(origem === "categoria" || origem === "favorito" || origem === "gaveta") && aoFavoritar && <Opcao icone="estrela" texto={favorito ? "Tirar dos favoritos" : "Colocar nos favoritos"} aoClicar={acao(aoFavoritar)} />}
+          {(origem === "categoria" || origem === "favorito" || origem === "gaveta") && aoMover && !bloqueado && <Opcao icone="pasta" texto="Mover para categoria…" aoClicar={acao(aoMover)} />}
           {origem === "pasta" && !bloqueado && <Opcao icone="tela" texto="Tirar da pasta" aoClicar={acao(aoTirarDaPasta)} />}
           {origem === "gaveta" && !naTela && !noDock && <Opcao icone="tela" texto="Colocar na tela inicial" aoClicar={acao(aoPorNaTela)} />}
           {origem === "gaveta" && !noDock && <Opcao icone="dock" texto="Colocar no dock" aoClicar={acao(aoParaODock)} />}
@@ -125,6 +127,66 @@ export function CriarPasta({ candidatos, aoFechar, aoCriar }: { candidatos: AppI
         </>
       )}
       <Botao variante="primario" className="w-full" disabled={marcados.length < 2} onClick={() => { aoCriar(marcados, nome); aoFechar(); }}>Criar pasta</Botao>
+    </Folha>
+  );
+}
+
+/** Em qual categoria o app fica. */
+export function EscolherCategoria({ app, categorias, atual, aoFechar, aoEscolher }: { app: AppInfo; categorias: Categoria[]; atual: string; aoFechar: () => void; aoEscolher: (id: string) => void }) {
+  return (
+    <Folha titulo={`Mover ${app.nome} para…`} aoFechar={aoFechar}>
+      <ul className="flex flex-col">
+        {categorias.map((c) => (
+          <li key={c.id}>
+            <button type="button" onClick={() => { aoEscolher(c.id); aoFechar(); }} className={`flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left ${c.id === atual ? "bg-neon/15 text-neon" : "hover:bg-white/5"}`}>
+              <Icone nome={c.icone} /><span className="min-w-0 flex-1 truncate">{c.nome}</span>{c.id === atual && <Icone nome="ok" tam={20} />}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Folha>
+  );
+}
+
+/** Marcar vários apps de uma vez (favoritos, ou apps que vão para uma categoria). */
+export function EscolherApps({ titulo, texto, botao, candidatos, jaMarcados = [], aoFechar, aoConfirmar }: { titulo: string; texto: string; botao: string; candidatos: AppInfo[]; jaMarcados?: string[]; aoFechar: () => void; aoConfirmar: (pacotes: string[]) => void }) {
+  const [marcados, setMarcados] = useState<string[]>(jaMarcados);
+  const [q, setQ] = useState("");
+  const alternar = (p: string) => setMarcados((m) => (m.includes(p) ? m.filter((x) => x !== p) : [...m, p]));
+  const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const lista = q.trim() ? candidatos.filter((c) => norm(c.nome).includes(norm(q.trim()))) : candidatos;
+  return (
+    <Folha titulo={titulo} aoFechar={aoFechar} alta>
+      <p className="mb-2 text-sm text-suave">{texto} ({marcados.length} marcados)</p>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar apps" aria-label="Pesquisar apps" className="mb-2 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+      <ul className="mb-3 flex flex-col">
+        {lista.map((c) => (
+          <li key={c.pacote}>
+            <button type="button" aria-pressed={marcados.includes(c.pacote)} onClick={() => alternar(c.pacote)} className={`flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left ${marcados.includes(c.pacote) ? "bg-neon/15 text-neon" : "hover:bg-white/5"}`}>
+              <span className="menu-glifo"><Glifo app={c} /></span><span className="min-w-0 flex-1 truncate">{c.nome}</span>{marcados.includes(c.pacote) && <Icone nome="ok" tam={20} />}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <Botao variante="primario" className="w-full" onClick={() => { aoConfirmar(marcados); aoFechar(); }}>{botao}</Botao>
+    </Folha>
+  );
+}
+
+/** Nome e ícone de uma categoria nova (ou editada). */
+export function NovaCategoria({ inicial, aoFechar, aoSalvar }: { inicial?: Categoria; aoFechar: () => void; aoSalvar: (nome: string, icone: IconeCategoria) => void }) {
+  const [nome, setNome] = useState(inicial?.nome ?? "");
+  const [icone, setIcone] = useState<IconeCategoria>(inicial?.icone ?? "pasta");
+  return (
+    <Folha titulo={inicial ? "Editar categoria" : "Nova categoria"} aoFechar={aoFechar}>
+      <label className="mb-3 block text-sm text-suave">Nome
+        <input value={nome} maxLength={24} autoFocus onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Trabalho" className="mt-1 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+      </label>
+      <p className="mb-2 text-sm text-suave">Ícone</p>
+      <div className="mb-4 grid grid-cols-5 gap-2">
+        {ICONES_CATEGORIA.map((i) => <button key={i} type="button" aria-pressed={icone === i} aria-label={i} onClick={() => setIcone(i)} className={`grid min-h-12 place-items-center rounded-2xl border ${icone === i ? "border-neon bg-neon/15 text-neon" : "border-borda"}`}><Icone nome={i} /></button>)}
+      </div>
+      <Botao variante="primario" className="w-full" disabled={!nome.trim()} onClick={() => { aoSalvar(nome, icone); aoFechar(); }}>Salvar</Botao>
     </Folha>
   );
 }

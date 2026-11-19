@@ -10,9 +10,20 @@ function Svg({ children, tam = 24, style, ...r }: SVGProps<SVGSVGElement> & { ta
   return <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden {...r} style={{ ...estilo, ...style }}>{children}</svg>;
 }
 
-export type NomeIcone = "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta";
+export type NomeIcone = "social" | "jogos" | "trabalho" | "ferramentas" | "carteira" | "sacola" | "midia" | "coracao" | "livro" | "estrela" | "brilho" | "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta";
 
 const DESENHOS: Record<NomeIcone, ReactElement> = {
+  social: <><circle cx="9" cy="8.5" r="3" /><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" /><circle cx="17" cy="9.5" r="2.4" /><path d="M16.5 14.2c2.4.2 4 1.9 4 4.3" /></>,
+  jogos: <><rect x="3" y="7.5" width="18" height="10" rx="5" /><path d="M8 10.8v3.4M6.3 12.5h3.4" /><circle cx="15.5" cy="11.5" r=".9" /><circle cx="17.7" cy="13.7" r=".9" /></>,
+  trabalho: <><rect x="3.5" y="7.5" width="17" height="12" rx="2.4" /><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5M3.5 13h17" /></>,
+  ferramentas: <path d="M14.5 6.2a4 4 0 0 0-5 5L4.3 16.4a1.9 1.9 0 0 0 2.7 2.7l5.2-5.2a4 4 0 0 0 5-5l-2.4 2.4-2.1-.6-.6-2.1z" />,
+  carteira: <><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H17v3" /><rect x="4" y="8" width="16.5" height="11" rx="2.4" /><circle cx="16.3" cy="13.5" r="1.1" /></>,
+  sacola: <><path d="M5.5 8.5h13l-1 10.2a1.6 1.6 0 0 1-1.6 1.3H8.1a1.6 1.6 0 0 1-1.6-1.3z" /><path d="M9 10.5V7a3 3 0 0 1 6 0v3.5" /></>,
+  midia: <><rect x="3.5" y="5" width="17" height="14" rx="3" /><path d="m10.5 9.3 4 2.7-4 2.7z" /></>,
+  coracao: <path d="M12 19.5s-7-4.3-7-9.6A3.9 3.9 0 0 1 12 7.6a3.9 3.9 0 0 1 7 2.3c0 5.3-7 9.6-7 9.6z" />,
+  livro: <><path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v13.5H6.5A1.5 1.5 0 0 0 5 19z" /><path d="M5 19a1.5 1.5 0 0 0 1.5 1.5H19M9 8h6" /></>,
+  estrela: <path d="m12 3.8 2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.7-4.8 2.7 1-5.4-4-3.7 5.4-.7z" />,
+  brilho: <><path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6-5.7-1.8L10.2 9z" /><path d="M18.5 3.5v3M17 5h3" /></>,
   pesquisa: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
   gaveta: <><rect x="4" y="4" width="6.5" height="6.5" rx="1.8" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" /></>,
   estudio: <><path d="M4 20c1.8 0 3-1 3-2.6 0-1.4 1.1-2.4 2.4-2.4S12 16 12 17.4C12 19 10.8 20 9 20z" /><path d="m11.5 14.5 8-9.2a1.8 1.8 0 0 0-2.6-2.4l-9.2 8" /></>,

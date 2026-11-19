@@ -28,7 +28,30 @@ export const NOMES_WIDGET: Record<TipoWidget, string> = { "relogio-digital": "Re
 export const MAX_WIDGETS = 4;
 /** Um widget na faixa da tela inicial. O clima guarda a cidade e o ponto no mapa (achados uma vez, na hora de adicionar). */
 export interface Widget { id: string; tipo: TipoWidget; cidade?: string; lat?: number; lon?: number }
-export interface Banco { v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean }
+export type ModoInicio = "categorias" | "grade";
+export const ICONES_CATEGORIA = ["social", "jogos", "trabalho", "ferramentas", "carteira", "sacola", "midia", "coracao", "livro", "pasta"] as const;
+export type IconeCategoria = (typeof ICONES_CATEGORIA)[number];
+export interface Categoria { id: string; nome: string; icone: IconeCategoria }
+/** Categorias que o V-Space traz. "ferramentas" é a reserva: o app que ninguém soube classificar cai nela. */
+export const CATEGORIAS_PADRAO: Categoria[] = [
+  { id: "social", nome: "Social e notícias", icone: "social" },
+  { id: "jogos", nome: "Jogos", icone: "jogos" },
+  { id: "produtividade", nome: "Produtividade", icone: "trabalho" },
+  { id: "financas", nome: "Finanças", icone: "carteira" },
+  { id: "compras", nome: "Compras e transporte", icone: "sacola" },
+  { id: "midia", nome: "Mídia e fotos", icone: "midia" },
+  { id: "saude", nome: "Saúde e bem-estar", icone: "coracao" },
+  { id: "estudos", nome: "Estudos", icone: "livro" },
+  { id: "ferramentas", nome: "Ferramentas e mais", icone: "ferramentas" },
+];
+export const CATEGORIA_RESERVA = "ferramentas";
+export const MAX_CATEGORIAS = 14;
+export const MAX_FAVORITOS = 16;
+export const MODOS: readonly ModoInicio[] = ["categorias", "grade"];
+export interface Banco {
+  v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean;
+  modo: ModoInicio; categorias: Categoria[]; atribuidos: Record<string, string>; manuais: string[]; favoritos: string[];
+}
 
 export const MAX_DOCK = 5;
 export const MAX_PAGINAS = 8;
@@ -99,7 +122,21 @@ export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").re
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
+
+export function limparCategorias(x: unknown): Categoria[] {
+  const saida: Categoria[] = [];
+  const ids = new Set<string>();
+  for (const c of Array.isArray(x) ? x : []) {
+    if (!c || typeof c !== "object" || saida.length >= MAX_CATEGORIAS) continue;
+    const q = c as Record<string, unknown>;
+    if (typeof q.id !== "string" || !/^[a-z0-9_-]{1,30}$/.test(q.id) || ids.has(q.id)) continue;
+    ids.add(q.id);
+    saida.push({ id: q.id, nome: nomeLimpo(q.nome, "Categoria"), icone: escolha(q.icone, ICONES_CATEGORIA, "pasta") });
+  }
+  if (!saida.some((c) => c.id === CATEGORIA_RESERVA)) saida.push({ ...CATEGORIAS_PADRAO.find((c) => c.id === CATEGORIA_RESERVA)! });
+  return saida;
+}
 
 export function limparTema(x: unknown): Tema {
   const t = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
@@ -161,7 +198,16 @@ export function limparBanco(x: unknown): Banco {
   const ocultos: string[] = [];
   for (const a of Array.isArray(b.ocultos) ? b.ocultos : []) if (ehPacote(a) && !ocultos.includes(a)) ocultos.push(a);
 
-  return { v: 1, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true };
+  const categorias = Array.isArray(b.categorias) ? limparCategorias(b.categorias) : CATEGORIAS_PADRAO.map((c) => ({ ...c }));
+  const idsCat = new Set(categorias.map((c) => c.id));
+  const atribuidos: Record<string, string> = {};
+  if (b.atribuidos && typeof b.atribuidos === "object") for (const [p, c] of Object.entries(b.atribuidos as Record<string, unknown>)) if (ehPacote(p) && typeof c === "string" && idsCat.has(c)) atribuidos[p] = c;
+  const manuais: string[] = [];
+  for (const a of Array.isArray(b.manuais) ? b.manuais : []) if (ehPacote(a) && atribuidos[a] && !manuais.includes(a)) manuais.push(a);
+  const favoritos: string[] = [];
+  for (const a of Array.isArray(b.favoritos) ? b.favoritos : []) if (ehPacote(a) && !favoritos.includes(a) && favoritos.length < MAX_FAVORITOS) favoritos.push(a);
+
+  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */
@@ -224,7 +270,8 @@ export function layoutInicial(apps: AppInfo[], base: Banco = bancoPadrao()): Ban
   const outros = resto.filter((a) => !ehDaSuite(a.pacote));
   if (dock.length < 4) for (const a of outros) { if (dock.length >= 4) break; dock.push(a.pacote); }
   const fila = [...suite, ...outros.filter((a) => !dock.includes(a.pacote))].slice(0, base.layout.colunas * base.layout.linhas);
-  return { ...base, layout: { ...base.layout, dock, paginas: [fila.map((a) => ({ tipo: "app" as const, pacote: a.pacote }))], pastas: [] } };
+  const favoritos = [...dock, ...suite.map((a) => a.pacote).filter((p) => !dock.includes(p))].slice(0, 12);
+  return { ...base, favoritos, layout: { ...base.layout, dock, paginas: [fila.map((a) => ({ tipo: "app" as const, pacote: a.pacote }))], pastas: [] } };
 }
 
 /** Tira do layout o que foi desinstalado e esconde o que não existe mais. Não põe app novo na tela: ele fica na gaveta. */
@@ -233,7 +280,8 @@ export function reconciliar(b: Banco, instalados: Set<string>): Banco {
   const pastas = b.layout.pastas.map((p) => ({ ...p, apps: p.apps.filter(vivo) })).filter((p) => p.apps.length);
   const ids = new Set(pastas.map((p) => p.id));
   const paginas = b.layout.paginas.map((pg) => pg.filter((it) => (it.tipo === "app" ? vivo(it.pacote) : ids.has(it.id))));
-  return limparBanco({ ...b, layout: { ...b.layout, paginas, pastas, dock: b.layout.dock.filter(vivo) }, ocultos: b.ocultos.filter(vivo) });
+  return limparBanco({ ...b, layout: { ...b.layout, paginas, pastas, dock: b.layout.dock.filter(vivo) }, ocultos: b.ocultos.filter(vivo), favoritos: b.favoritos.filter(vivo),
+    atribuidos: Object.fromEntries(Object.entries(b.atribuidos).filter(([p]) => vivo(p))), manuais: b.manuais.filter(vivo) });
 }
 
 const capacidade = (b: Banco) => b.layout.colunas * b.layout.linhas;
