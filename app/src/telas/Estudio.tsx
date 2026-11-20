@@ -287,8 +287,8 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       case "categorias/modo": return (
         <div className="space-y-4">
           <Cartao titulo="Como a tela inicial aparece">
-            <Seletor<ModoInicio> rotulo="Tela inicial" valor={banco.modo} opcoes={[{ id: "categorias", nome: "Categorias" }, { id: "grade", nome: "Grade de apps" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, modo: v }))} />
-            <p className="mt-2 text-sm text-suave">{banco.modo === "categorias" ? "Só widgets e favoritos na tela; os outros apps ficam nas categorias, no trilho da lateral." : "Os apps ficam espalhados em páginas, com dock embaixo."}</p>
+            <Seletor<ModoInicio> rotulo="Tela inicial" valor={banco.modo} opcoes={[{ id: "categorias", nome: "Categorias" }, { id: "grade", nome: "Grade de apps" }, { id: "blocos", nome: "Blocos" }, { id: "minimalista", nome: "Minimalista" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, modo: v }))} />
+            <p className="mt-2 text-sm text-suave">{({ categorias: "Só widgets e favoritos na tela; os outros apps ficam nas categorias, no trilho da lateral.", grade: "Os apps ficam espalhados em páginas, com dock embaixo.", blocos: "Cada categoria vira um bloco colorido. Toque no bloco para ver os apps dela.", minimalista: "Hora e data grandes, seus widgets e os favoritos só como texto." } as const)[banco.modo]}</p>
           </Cartao>
           <Cartao titulo={`Favoritos (${banco.favoritos.length} de ${MAX_FAVORITOS})`}>
             <p className="mb-2 text-sm text-suave">Para mudar, segure um app e escolha “Colocar nos favoritos”, ou toque em Adiciona na tela inicial.</p>

@@ -6,7 +6,7 @@ import { usosDosApps } from "../busca.ts";
 import { ehDinamica } from "../dados.ts";
 import { Icone } from "../icones";
 import { usePressaoLonga } from "../ui";
-import { IconeApp, PastaCel } from "./IconeApp";
+import { Glifo, IconeApp, PastaCel } from "./IconeApp";
 import { AreaWidgets } from "./Widgets";
 import { FaixaAtalhos, MiniPlayer } from "./Sistema";
 
@@ -79,6 +79,58 @@ function CorpoCategorias(props: Props) {
   );
 }
 
+/** Minimalista: hora e data grandes, widgets e os favoritos como texto. */
+function CorpoMinimalista(props: Props) {
+  const { banco, porPacote, aoAbrirApp, aoMenuFavorito, aoGaveta, aoMenuVazio } = props;
+  const agora = useRelogio();
+  const vazio = usePressaoLonga(aoMenuVazio);
+  const favoritos = banco.favoritos.map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a && !banco.ocultos.includes(a.pacote));
+  return (
+    <div className="mini-corpo" onPointerDown={(e) => { if (e.target === e.currentTarget) vazio.onPointerDown(e); }} onPointerMove={vazio.onPointerMove} onPointerUp={vazio.onPointerUp} onPointerLeave={vazio.onPointerLeave} onPointerCancel={vazio.onPointerCancel}>
+      <div className="mini-hora num">{agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+      <div className="mini-data">{agora.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</div>
+      <AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} />
+      <MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} opc={banco.musicaOpc} />
+      <ul className="mini-lista">
+        {favoritos.map((a) => <li key={a.pacote}><LinhaTexto app={a} aoAbrir={() => aoAbrirApp(a.pacote)} aoLonga={() => (aoMenuFavorito ?? (() => undefined))(a.pacote)} /></li>)}
+        <li><button type="button" className="mini-item mini-todos" onClick={() => aoGaveta(false)}>Todos os apps</button></li>
+        <li><button type="button" className="mini-item mini-todos" onClick={() => aoGaveta(true)}>Pesquisar</button></li>
+      </ul>
+    </div>
+  );
+}
+function LinhaTexto({ app, aoAbrir, aoLonga }: { app: AppInfo; aoAbrir: () => void; aoLonga: () => void }) {
+  const l = usePressaoLonga(aoLonga);
+  return <button type="button" className="mini-item" onClick={() => { if (!l.foiLongo()) aoAbrir(); }} onPointerDown={l.onPointerDown} onPointerMove={l.onPointerMove} onPointerUp={l.onPointerUp} onPointerLeave={l.onPointerLeave} onPointerCancel={l.onPointerCancel} onContextMenu={(e) => { e.preventDefault(); aoLonga(); }}>{app.nome}</button>;
+}
+
+/** Blocos: cada categoria vira um bloco colorido; tocar abre a categoria. */
+function CorpoBlocos(props: Props) {
+  const { banco, porPacote } = props;
+  const [aberta, setAberta] = useState<string | null>(null);
+  const todos = [...porPacote.values()];
+  const usos = usosDosApps();
+  const cont = contagens(banco, todos, usos);
+  if (aberta) return <div className="blocos-aberta"><button type="button" className="blocos-voltar" aria-label="Voltar aos blocos" onClick={() => setAberta(null)}><Icone nome="seta" tam={18} className="rotate-180" />Blocos</button><CorpoCategorias {...props} abaInicial={aberta} /></div>;
+  const favs = banco.favoritos.map((p) => porPacote.get(p)).filter((a): a is AppInfo => !!a && !banco.ocultos.includes(a.pacote));
+  const cats = banco.categorias.filter((c) => (cont[c.id] ?? 0) > 0);
+  const bloco = (id: string, nome: string, apps: AppInfo[], cor?: string) => (
+    <button key={id} type="button" className="bloco" style={{ "--cor-bloco": cor ?? "var(--color-neon)" } as React.CSSProperties} aria-label={`${nome}, ${apps.length} apps`} onClick={() => setAberta(id)}>
+      <span className="bloco-icones" aria-hidden>{apps.slice(0, 4).map((a) => <Glifo key={a.pacote} app={a} />)}</span>
+      <span className="bloco-nome">{nome}</span><span className="bloco-qtd">{apps.length} {apps.length === 1 ? "app" : "apps"}</span>
+    </button>
+  );
+  return (
+    <div className="blocos-corpo">
+      <AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} />
+      <div className="blocos-grade">
+        {bloco("inicio", "Favoritos", favs)}
+        {cats.map((c) => bloco(c.id, c.nome, appsDaCategoria(banco, todos, c.id, usos), c.cor))}
+      </div>
+    </div>
+  );
+}
+
 /** Temperatura (quente/fria) e vinheta do papel de parede: uma camada de cor e outra de bordas escuras. */
 export function tomDoPapel(t: { temperatura: number; vinheta: number; luz?: "nenhuma" | "sol" | "dia" | "noite" }, agora = new Date()): React.CSSProperties {
   const luz = luzDoPapel(t.luz ?? "nenhuma", agora.getHours() + agora.getMinutes() / 60);
@@ -115,9 +167,9 @@ export function Inicio(props: Props) {
         {banco.relogio ? <div className="relogio"><div className="relogio-hora num">{hora(agora)}</div><div className="relogio-data">{data(agora)}</div></div> : <div />}
         <button type="button" onClick={aoEstudio} aria-label="Abrir o Estúdio" className="botao-vidro"><Icone nome="estudio" /></button>
       </header>
-      {banco.modo !== "categorias" && <FaixaAtalhos banco={banco} widgets={banco.widgets} />}
+      {banco.modo === "grade" && <FaixaAtalhos banco={banco} widgets={banco.widgets} />}
 
-      {banco.modo === "categorias" ? <CorpoCategorias {...props} /> : (
+      {banco.modo === "categorias" ? <CorpoCategorias {...props} /> : banco.modo === "blocos" ? <CorpoBlocos {...props} /> : banco.modo === "minimalista" ? <CorpoMinimalista {...props} /> : (
         <>
       <div className="widgets-grade"><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} opc={banco.musicaOpc} /></div>
 

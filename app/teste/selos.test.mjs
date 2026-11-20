@@ -104,3 +104,10 @@ test2("saturação e player", () => {
   assert2.deepEqual(limparMusicaOpc({ largura: "3/5", alinhar: "direita", anterior: false, capa: false }), { largura: "3/5", alinhar: "direita", anterior: false, capa: false });
   assert2.equal(limparMusicaOpc({ largura: "9" }).largura, "1/1");
 });
+
+import { MODOS } from "../src/dados.ts";
+test2("modos da tela inicial", () => {
+  assert2.deepEqual([...MODOS], ["categorias", "grade", "blocos", "minimalista"]);
+  assert2.equal(limparBanco({ ...bancoPadrao(), modo: "blocos" }).modo, "blocos");
+  assert2.equal(limparBanco({ ...bancoPadrao(), modo: "xx" }).modo, "categorias");
+});

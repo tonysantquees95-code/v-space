@@ -132,7 +132,7 @@ export function ajustarWidget(ws: Widget[], id: string, r: Retangulo): Widget[] 
 }
 export const estiloDoWidget = (ws: Widget[], id: string, estilo: EstiloWidget): Widget[] => ws.map((w) => (w.id === id && ESTILOS_WIDGET.includes(estilo) ? { ...w, estilo } : w));
 export const alturaDosWidgets = (ws: Widget[]): number => ws.reduce((m, w) => Math.max(m, w.y + w.h), 0);
-export type ModoInicio = "categorias" | "grade";
+export type ModoInicio = "categorias" | "grade" | "blocos" | "minimalista";
 export const ICONES_CATEGORIA = ["estrela", "casa", "coracao", "social", "chat", "telefone", "email", "agenda", "relogio", "notas", "ideias", "criancas", "pata", "lua", "presente", "sino", "nota", "fone", "podcast", "video", "tv", "camera", "galeria", "jogos", "jornal", "livro", "midia", "esporte", "haltere", "saude", "comida", "cafe", "trabalho", "capelo", "codigo", "acoes", "carteira", "banco", "sacola", "mercado", "pasta", "pino", "aviao", "carro", "onibus", "bike", "globo", "folha", "sol", "mala", "ferramentas", "brilho", "ajustes", "nuvem", "escudo", "raio", "bandeira"] as const;
 export type IconeCategoria = (typeof ICONES_CATEGORIA)[number];
 /** Os ícones de categoria por assunto, com nome, para a pessoa achar o que combina. */
@@ -166,7 +166,7 @@ export const CATEGORIAS_PADRAO: Categoria[] = [
 export const CATEGORIA_RESERVA = "ferramentas";
 export const MAX_CATEGORIAS = 14;
 export const MAX_FAVORITOS = 16;
-export const MODOS: readonly ModoInicio[] = ["categorias", "grade"];
+export const MODOS: readonly ModoInicio[] = ["categorias", "grade", "blocos", "minimalista"];
 export interface Banco {
   v: 1; tema: Tema; layout: Layout; ocultos: string[]; relogio: boolean; widgets: Widget[]; gesto: Gesto; bloqueado: boolean; musica: boolean; faixa: boolean;
   /** Espaço seguro (banco, governo): só estes apps aparecem lá, sem widgets, selos nem música */

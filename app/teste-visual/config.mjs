@@ -53,6 +53,8 @@ export default {
     redondo: { ...base, "vhome.banco": redondo },
     semConta: { "vhome.tour": "1", "vhome.termos": TERMOS, "vhome.novidades.vistas": "9999" },
     categorias: { ...base, "vhome.banco": cats() },
+    blocos: { ...base, "vhome.banco": cats({ modo: "blocos" }) },
+    minimalista: { ...base, "vhome.banco": cats({ modo: "minimalista" }) },
     categoriasBloqueado: { ...base, "vhome.banco": cats({ bloqueado: true }) },
     widgetsNovos: { ...base, "vhome.banco": cats({ widgets: [
       { id: "w1", tipo: "calendario", x: 0, y: 0, w: 4, h: 4, estilo: "vidro" }, { id: "w2", tipo: "notas", x: 0, y: 4, w: 2, h: 2, estilo: "fosco", texto: "Comprar pão\nLigar para o dentista" },
@@ -190,6 +192,9 @@ export default {
     ["sobre-apresentacao", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Rever a apresentação" }).click(); await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
     ["sobre-termos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Termos de uso" }).click(); await p.getByText("1. O que é o V-Space").waitFor(); }],
     ["categorias-inicio", "categorias", livre],
+    ["modo-blocos", "blocos", async (p) => { await p.getByRole("button", { name: /^Favoritos, \d+ apps/ }).waitFor(); }],
+    ["modo-blocos-aberto", "blocos", async (p) => { await p.getByRole("button", { name: /^Favoritos, \d+ apps/ }).click(); await p.getByRole("button", { name: "Voltar aos blocos" }).waitFor(); await p.getByRole("button", { name: "Voltar aos blocos" }).click(); await p.getByRole("button", { name: /^Favoritos, \d+ apps/ }).waitFor(); }],
+    ["modo-minimalista", "minimalista", async (p) => { await p.getByRole("button", { name: "Todos os apps" }).waitFor(); }],
     ["categorias-inicio-vazio", "categoriasVazio", livre],
     ["categorias-pagina", "categorias", async (p) => { await entrar(p, "Social e notícias"); await p.getByText(/\d+ apps?$/).first().waitFor(); }],
     ["categorias-pagina-longa", "categorias", async (p) => { await entrar(p, "Ferramentas e mais"); await p.getByText(/\d+ apps?$/).first().waitFor(); }],
