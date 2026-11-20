@@ -6,6 +6,7 @@ import { ExternoCorpo } from "./Externos";
 import { usePressaoLonga } from "../ui";
 import { motor } from "../motor";
 import { angulosDoRelogio, buscarClima, descreverTempo, diasAte, fraseDoDia, gradeDoMes, horaDoEvento, minutosSegundos, type Bateria, type Clima, type Evento } from "../widgets";
+import { letrasDaSemana } from "../widgets";
 
 function useAgora(ms = 15_000): Date {
   const [d, setD] = useState(() => new Date());
@@ -130,7 +131,7 @@ export const CORPO = (w: Widget) => {
 };
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const DIAS_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
+
 export function CalendarioWidget() {
   const d = useAgora(60_000);
   const linhas = gradeDoMes(d.getFullYear(), d.getMonth());
@@ -138,7 +139,7 @@ export function CalendarioWidget() {
     <div className="widget-corpo cal">
       <div className="cal-topo"><span className="widget-titulo">{MESES[d.getMonth()]}</span><span className="widget-leve num">{d.getFullYear()}</span></div>
       <div className="cal-grade" role="grid" aria-label={`Calendário de ${MESES[d.getMonth()]} de ${d.getFullYear()}`}>
-        {DIAS_SEMANA.map((s, i) => <span key={`s${i}`} className="cal-sem" role="columnheader">{s}</span>)}
+        {letrasDaSemana().map((s, i) => <span key={`s${i}`} className="cal-sem" role="columnheader">{s}</span>)}
         {linhas.flat().map((n, i) => <span key={i} role="gridcell" className="cal-dia num" data-hoje={n === d.getDate()} data-fds={i % 7 === 0 || i % 7 === 6}>{n ?? ""}</span>)}
       </div>
     </div>
@@ -231,6 +232,8 @@ const AGENDA_EXEMPLO: Evento[] = [
   { titulo: "Pagar fatura", inicio: new Date().setHours(0, 0, 0, 0), fim: 0, diaTodo: true },
 ];
 const dataDeExemplo = (dias: number): string => { const d = new Date(Date.now() + dias * 86_400_000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const TITULOS_VISTA: Record<string, string> = { tamanho: "Redimensionar", personalizar: "Personalizar", ajustes: "Ajustes", mais: "Mais", estilo: "Estilo dos widgets" };
+
 export function PreviaWidget({ tipo, estilo = "vidro" }: { tipo: TipoWidget; estilo?: EstiloWidget }) {
   const corpo = tipo === "clima" ? <ClimaVisual c={CLIMA_EXEMPLO} cidade="Sua cidade" /> : tipo === "agenda" ? <AgendaVisual lista={AGENDA_EXEMPLO} /> : tipo === "bateria" ? <BateriaVisual nivel={76} /> : tipo === "relogio-analogico" ? <RelogioAnalogico /> : tipo === "notas" ? <NotasVisual texto="Comprar pão, ligar para o dentista, pagar a fatura." /> : tipo === "contagem" ? <ContagemVisual titulo="Viagem" data={dataDeExemplo(12)} /> : tipo === "calendario" ? <CalendarioWidget /> : tipo === "frase" ? <FraseWidget /> : tipo === "pomodoro" ? <PomodoroWidget /> : tipo === "mundo" ? <MundoWidget /> : tipo === "relogio-digital" ? <RelogioDigital /> : <CorpoExtra tipo={tipo} d={EXEMPLO} />;
   return <article className="widget widget-previa" data-estilo={estilo} inert>{corpo}</article>;
@@ -271,6 +274,8 @@ function Celula({ w, selecionado, bloqueado, arrasto, aoSelecionar, aoPressionar
 /** Área de widgets livres da tela inicial: grade de 4 colunas. Segure um widget para mover, redimensionar ou mudar o estilo. */
 export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]; bloqueado: boolean; aoMudar: (ws: Widget[]) => void }) {
   const [sel, setSel] = useState<string | null>(null);
+  const [vista, setVista] = useState<"raiz" | "tamanho" | "personalizar" | "ajustes" | "mais" | "estilo">("raiz");
+  useEffect(() => { setVista("raiz"); }, [sel]);
   const [arr, setArr] = useState<Arrasto | null>(null);
   const area = useRef<HTMLDivElement>(null);
   const atual = widgets.find((w) => w.id === sel) ?? null;
@@ -331,25 +336,65 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
       {atual && <div className="widget-reserva" aria-hidden />}
       {atual && (
         <div className="widget-acoes" role="dialog" aria-label={`Editar ${NOMES_WIDGET[atual.tipo]}`}>
-          <div className="widget-acoes-topo"><strong className="truncate">{atual.tipo === "externo" && atual.titulo ? atual.titulo : NOMES_WIDGET[atual.tipo]}</strong><span className="text-sm text-suave">{atual.w}×{atual.h}</span></div>
-          <div className="widget-estilos" role="group" aria-label="Estilo do widget">
-            {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" aria-pressed={atual.estilo === s} onClick={() => aoMudar(estiloDoWidget(widgets, atual.id, s))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
+          <div className="widget-acoes-topo">
+            {vista !== "raiz" && <button type="button" className="acao-voltar" aria-label="Voltar" onClick={() => setVista("raiz")}><Icone nome="seta" tam={18} className="rotate-180" /></button>}
+            <span className="min-w-0 flex-1"><strong className="block truncate">{vista === "raiz" ? (atual.titulo || NOMES_WIDGET[atual.tipo]) : TITULOS_VISTA[vista]}</strong>{vista === "raiz" && <span className="text-sm text-suave">{atual.tipo === "externo" ? "App do aparelho" : "V-Space"} · {atual.w}×{atual.h}</span>}</span>
           </div>
-          {atual.tipo === "notas" && <label className="widget-campo">Texto da nota<textarea value={atual.texto ?? ""} maxLength={300} rows={3} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { texto: e.target.value }))} /></label>}
-          {atual.tipo === "contagem" && (
-            <div className="widget-campos">
-              <label className="widget-campo">Nome<input type="text" value={atual.titulo ?? ""} maxLength={30} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { titulo: e.target.value }))} /></label>
-              <label className="widget-campo">Data<input type="date" value={atual.data ?? ""} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { data: e.target.value }))} /></label>
+          {vista === "raiz" && (
+            <>
+              <div className="acoes-redondas">
+                <button type="button" onClick={() => setVista("tamanho")}><span><Icone nome="grade" tam={20} /></span>Redimensionar</button>
+                <button type="button" onClick={() => setVista("personalizar")}><span><Icone nome="paleta" tam={20} /></span>Personalizar</button>
+                <button type="button" onClick={() => setVista("ajustes")}><span><Icone nome="engrenagem" tam={20} /></span>Ajustes</button>
+                <button type="button" className="perigo" onClick={() => { aoMudar(widgets.filter((w) => w.id !== atual.id)); setSel(null); }}><span><Icone nome="lixeira" tam={20} /></span>Remover</button>
+              </div>
+              <button type="button" className="acao-linha" onClick={() => setVista("mais")}><span>Mais</span><span className="text-suave">Mover, nome, tamanho…</span><Icone nome="seta" tam={16} /></button>
+              <button type="button" className="acao-linha" onClick={() => setVista("estilo")}><span>Estilo dos widgets</span><span className="text-suave">Todos de uma vez</span><Icone nome="seta" tam={16} /></button>
+              <div className="widget-fim"><button type="button" className="botao-vidro-texto" onClick={() => setSel(null)}><Icone nome="ok" tam={18} />Pronto</button></div>
+            </>
+          )}
+          {vista === "tamanho" && (
+            <div className="widget-passos">
+              <span className="passo" role="group" aria-label="Largura"><button type="button" aria-label="Mais estreito" disabled={atual.w <= 1} onClick={() => passo("w", -1)}><Icone nome="menos" tam={18} /></button><span>Largura {atual.w}</span><button type="button" aria-label="Mais largo" onClick={() => passo("w", 1)}><Icone nome="mais" tam={18} /></button></span>
+              <span className="passo" role="group" aria-label="Altura"><button type="button" aria-label="Mais baixo" disabled={atual.h <= 1} onClick={() => passo("h", -1)}><Icone nome="menos" tam={18} /></button><span>Altura {atual.h}</span><button type="button" aria-label="Mais alto" onClick={() => passo("h", 1)}><Icone nome="mais" tam={18} /></button></span>
             </div>
           )}
-          <div className="widget-passos">
-            <span className="passo" role="group" aria-label="Largura"><button type="button" aria-label="Mais estreito" disabled={atual.w <= 1} onClick={() => passo("w", -1)}><Icone nome="menos" tam={18} /></button><span>Largura</span><button type="button" aria-label="Mais largo" onClick={() => passo("w", 1)}><Icone nome="mais" tam={18} /></button></span>
-            <span className="passo" role="group" aria-label="Altura"><button type="button" aria-label="Mais baixo" disabled={atual.h <= 1} onClick={() => passo("h", -1)}><Icone nome="menos" tam={18} /></button><span>Altura</span><button type="button" aria-label="Mais alto" onClick={() => passo("h", 1)}><Icone nome="mais" tam={18} /></button></span>
-          </div>
-          <div className="widget-fim">
-            <button type="button" className="botao-perigo" onClick={() => { aoMudar(widgets.filter((w) => w.id !== atual.id)); setSel(null); }}><Icone nome="lixeira" tam={18} />Remover</button>
-            <button type="button" className="botao-vidro-texto" onClick={() => setSel(null)}><Icone nome="ok" tam={18} />Pronto</button>
-          </div>
+          {vista === "personalizar" && (
+            <>
+              <p className="text-sm text-suave">Aparência deste widget</p>
+              <div className="widget-estilos" role="group" aria-label="Estilo do widget">
+                {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" aria-pressed={atual.estilo === s} onClick={() => aoMudar(estiloDoWidget(widgets, atual.id, s))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
+              </div>
+            </>
+          )}
+          {vista === "ajustes" && (
+            <>
+              {atual.tipo === "notas" && <label className="widget-campo">Texto da nota<textarea value={atual.texto ?? ""} maxLength={300} rows={3} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { texto: e.target.value }))} /></label>}
+              {atual.tipo === "contagem" && (
+                <div className="widget-campos">
+                  <label className="widget-campo">Nome<input type="text" value={atual.titulo ?? ""} maxLength={30} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { titulo: e.target.value }))} /></label>
+                  <label className="widget-campo">Data<input type="date" value={atual.data ?? ""} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { data: e.target.value }))} /></label>
+                </div>
+              )}
+              {atual.tipo === "externo" && <label className="widget-campo">Nome<input type="text" value={atual.titulo ?? ""} maxLength={60} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { titulo: e.target.value }))} /></label>}
+              {atual.tipo !== "notas" && atual.tipo !== "contagem" && atual.tipo !== "externo" && <p className="text-sm text-suave">Este widget não tem ajustes próprios. A unidade de temperatura e o primeiro dia da semana ficam em Estúdio › Widgets › Geral.</p>}
+            </>
+          )}
+          {vista === "mais" && (
+            <div className="flex flex-col">
+              <button type="button" className="acao-linha" onClick={() => { const fim = Math.max(0, ...widgets.filter((w) => w.id !== atual.id).map((w) => w.y + w.h)); const r = ajustarWidget(widgets, atual.id, { x: atual.x, y: fim, w: atual.w, h: atual.h }); if (r) aoMudar(r); setVista("raiz"); }}><span>Mover para baixo</span><Icone nome="seta" tam={16} className="rotate-90" /></button>
+              <button type="button" className="acao-linha" onClick={() => { const r = ajustarWidget(widgets, atual.id, { x: atual.x, y: 0, w: atual.w, h: atual.h }); if (r) aoMudar(r); setVista("raiz"); }}><span>Mover para cima</span><Icone nome="seta" tam={16} className="-rotate-90" /></button>
+              {(atual.tipo === "externo" || atual.tipo === "contagem") && <button type="button" className="acao-linha" onClick={() => setVista("ajustes")}><span>Renomear</span><Icone nome="seta" tam={16} /></button>}
+            </div>
+          )}
+          {vista === "estilo" && (
+            <>
+              <p className="text-sm text-suave">Muda a aparência de todos os widgets da tela inicial.</p>
+              <div className="widget-estilos" role="group" aria-label="Estilo de todos os widgets">
+                {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" onClick={() => aoMudar(widgets.map((w) => ({ ...w, estilo: s })))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
+              </div>
+            </>
+          )}
         </div>
       )}
     </>

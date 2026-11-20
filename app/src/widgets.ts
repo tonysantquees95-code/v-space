@@ -1,4 +1,12 @@
 // Dados dos widgets: clima (Open-Meteo, sem chave), bateria e agenda (vêm do aparelho). A parte pura é testada no Node.
+/** Preferências dos widgets (Estúdio › Widgets › Geral): unidade de temperatura e primeiro dia da semana (0 = domingo, 1 = segunda, 6 = sábado). */
+export type UnidadeTemp = "c" | "f";
+let unidadeTemp: UnidadeTemp = "c";
+let inicioSemana = 0;
+export function definirPrefsWidgets(u: UnidadeTemp, semana: number): void { unidadeTemp = u === "f" ? "f" : "c"; inicioSemana = [0, 1, 6].includes(semana) ? semana : 0; }
+export const primeiroDiaSemana = (): number => inicioSemana;
+export const paraUnidade = (c: number): number => (unidadeTemp === "f" ? Math.round((c * 9) / 5 + 32) : c);
+export const letrasDaSemana = (): string[] => { const L = ["D", "S", "T", "Q", "Q", "S", "S"]; return [...L.slice(inicioSemana), ...L.slice(0, inicioSemana)]; };
 export interface Clima { temp: number; codigo: number; max: number; min: number; vento: number; dia: boolean }
 export interface Evento { titulo: string; inicio: number; fim: number; diaTodo: boolean }
 export interface Bateria { nivel: number; carregando: boolean }
@@ -58,7 +66,7 @@ export async function buscarLugares(texto: string): Promise<Lugar[]> {
 const CHAVE_CLIMA = "vhome.clima";
 interface Guardado { chave: string; quando: number; clima: Clima }
 /** Clima com cópia guardada por 30 minutos (poupa bateria e dados). Sem internet, usa a última cópia. */
-export async function buscarClima(lat: number, lon: number, agora = Date.now()): Promise<Clima> {
+async function buscarClimaC(lat: number, lon: number, agora = Date.now()): Promise<Clima> {
   const chave = `${lat},${lon}`;
   let g: Guardado | null = null;
   try { const t = localStorage.getItem(CHAVE_CLIMA); if (t) { const p = JSON.parse(t) as Guardado; if (p && p.chave === chave && lerClima({ current: { temperature_2m: p.clima.temp, weather_code: p.clima.codigo, wind_speed_10m: p.clima.vento, is_day: p.clima.dia ? 1 : 0 }, daily: { temperature_2m_max: [p.clima.max], temperature_2m_min: [p.clima.min] } })) g = p; } } catch { g = null; }
@@ -97,7 +105,7 @@ export function diasAte(data: string, hoje = new Date()): number {
 }
 /** Semanas do mês (domingo a segunda...): cada linha tem 7 posições, com null fora do mês. */
 export function gradeDoMes(ano: number, mes: number): (number | null)[][] {
-  const primeiro = new Date(ano, mes, 1).getDay();
+  const primeiro = (new Date(ano, mes, 1).getDay() - inicioSemana + 7) % 7;
   const total = new Date(ano, mes + 1, 0).getDate();
   const celulas: (number | null)[] = [...Array(primeiro).fill(null), ...Array.from({ length: total }, (_, i) => i + 1)];
   while (celulas.length % 7) celulas.push(null);
@@ -149,7 +157,7 @@ export function lerPrevisao(j: unknown, agoraLocal: string): Previsao | null {
   return horas.length && dias.length ? { horas, dias } : null;
 }
 const CHAVE_PREV = "vhome.previsao";
-export async function buscarPrevisao(lat: number, lon: number, agora = new Date()): Promise<Previsao> {
+async function buscarPrevisaoC(lat: number, lon: number, agora = new Date()): Promise<Previsao> {
   const chave = `${lat},${lon}`;
   const local = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}T${String(agora.getHours()).padStart(2, "0")}`;
   let g: { chave: string; quando: number; dados: unknown } | null = null;
@@ -173,6 +181,17 @@ export const saudacao = (d = new Date()): string => (d.getHours() < 5 ? "Boa mad
 export const progressoDoDia = (d = new Date()): number => Math.min(100, Math.floor(((d.getHours() * 60 + d.getMinutes()) / 1440) * 100));
 /** Domingo a sábado da semana de `d`, como números do dia do mês. */
 export function diasDaSemana(d = new Date()): { dia: number; hoje: boolean }[] {
-  const ini = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay());
+  const ini = new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() - inicioSemana + 7) % 7));
   return Array.from({ length: 7 }, (_, i) => { const x = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + i); return { dia: x.getDate(), hoje: x.getDate() === d.getDate() && x.getMonth() === d.getMonth() }; });
+}
+
+/** Clima já na unidade escolhida. */
+export async function buscarClima(lat: number, lon: number, agora = Date.now()): Promise<Clima> {
+  const c = await buscarClimaC(lat, lon, agora);
+  return unidadeTemp === "c" ? c : { ...c, temp: paraUnidade(c.temp), max: paraUnidade(c.max), min: paraUnidade(c.min) };
+}
+/** Previsão já na unidade escolhida. */
+export async function buscarPrevisao(lat: number, lon: number, agora = new Date()): Promise<Previsao> {
+  const p = await buscarPrevisaoC(lat, lon, agora);
+  return unidadeTemp === "c" ? p : { horas: p.horas.map((h) => ({ ...h, temp: paraUnidade(h.temp) })), dias: p.dias.map((d) => ({ ...d, max: paraUnidade(d.max), min: paraUnidade(d.min) })) };
 }

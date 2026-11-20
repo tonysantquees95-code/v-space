@@ -3,6 +3,7 @@ import { Icone } from "../icones";
 import { motor, type Musica, type Sistema } from "../motor";
 import type { TipoWidget, Widget } from "../dados.ts";
 import { buscarClima, buscarPrevisao, descreverTempo, diasDaSemana, gradeDoMes, horaDoEvento, progressoDoDia, saudacao, type Bateria, type Clima, type Evento, type Previsao } from "../widgets";
+import { letrasDaSemana } from "../widgets";
 import { AgendaPermissao } from "./Widgets";
 
 /** Dados que os widgets de relógio, clima, música e agenda usam. Na galeria vêm de exemplo; na tela vêm do aparelho. */
@@ -147,10 +148,10 @@ export function CorpoExtra({ tipo, d }: { tipo: TipoWidget; d: Dados }) {
     case "pesquisa": { const B = (d.previa ? "span" : "button") as "button"; return <B type="button" className="pesq" onClick={d.buscar}><Icone nome="pesquisa" tam={20} /><span>Pesquisar apps, contatos e mais</span><Icone nome="brilho" tam={16} /></B>; }
     case "mes-dia": { const g = gradeDoMes(agora.getFullYear(), agora.getMonth()); return (
       <div className="widget-corpo mesdia"><div className="mesdia-esq"><span className="widget-titulo">{DIAS_CURTOS[agora.getDay()]!.toUpperCase()}</span><span className="num mesdia-dia">{agora.getDate()}</span><span className="widget-leve">{MESES[agora.getMonth()]}</span></div>
-        <div className="cal-grade mesdia-grade" aria-hidden>{["D", "S", "T", "Q", "Q", "S", "S"].map((s, i) => <span key={i} className="cal-sem">{s}</span>)}{g.flat().map((n, i) => <span key={i} className="cal-dia num" data-hoje={n === agora.getDate()}>{n ?? ""}</span>)}</div></div>); }
+        <div className="cal-grade mesdia-grade" aria-hidden>{letrasDaSemana().map((s, i) => <span key={i} className="cal-sem">{s}</span>)}{g.flat().map((n, i) => <span key={i} className="cal-dia num" data-hoje={n === agora.getDate()}>{n ?? ""}</span>)}</div></div>); }
     case "semana": return (
       <div className="widget-corpo semana"><div className="semana-topo"><b>{cap(MESES[agora.getMonth()]!)}</b><Tempo d={d} cls="widget-leve" /></div>
-        <div className="semana-dias">{diasDaSemana(agora).map((x, i) => <span key={i} className="semana-dia"><i>{["D", "S", "T", "Q", "Q", "S", "S"][i]}</i><b className="num" data-hoje={x.hoje}>{x.dia}</b></span>)}</div>
+        <div className="semana-dias">{diasDaSemana(agora).map((x, i) => <span key={i} className="semana-dia"><i>{letrasDaSemana()[i]}</i><b className="num" data-hoje={x.hoje}>{x.dia}</b></span>)}</div>
         {ev && <span className="widget-leve truncate">{ev.titulo} · {horaDoEvento(ev, agora)}</span>}</div>);
     case "proximos": return (
       <div className="widget-corpo prox"><div className="prox-data"><span className="num prox-dia">{agora.getDate()}</span><span className="widget-leve">{dia}<br />{MESES[agora.getMonth()]}</span></div>

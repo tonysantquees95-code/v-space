@@ -77,3 +77,21 @@ test2("gestos e menu", () => {
   assert2.deepEqual(b.menuOculto, ["papel"]); assert2.equal(b.vibrar, false); assert2.equal(b.gestos.doisCima, "gaveta");
   assert2.equal(limparBanco({}).vibrar, true);
 });
+
+import { limparPrefsWidgets } from "../src/dados.ts";
+import { definirPrefsWidgets, gradeDoMes, diasDaSemana, letrasDaSemana, paraUnidade } from "../src/widgets.ts";
+test2("preferências dos widgets", () => {
+  assert2.deepEqual(limparPrefsWidgets(null), { unidade: "c", semana: 0, fundoExterno: "inicio" });
+  assert2.deepEqual(limparPrefsWidgets({ unidade: "f", semana: 1, fundoExterno: "vidro" }), { unidade: "f", semana: 1, fundoExterno: "vidro" });
+  assert2.equal(limparPrefsWidgets({ semana: 3, fundoExterno: "x" }).semana, 0);
+  definirPrefsWidgets("f", 1);
+  assert2.equal(paraUnidade(0), 32); assert2.equal(paraUnidade(100), 212);
+  assert2.deepEqual(letrasDaSemana(), ["S", "T", "Q", "Q", "S", "S", "D"]);
+  // 2026-11-01 é domingo: com semana na segunda, a primeira linha começa com 6 vazios
+  assert2.equal(gradeDoMes(2026, 10)[0].filter((x) => x === null).length, 6);
+  // quinta 2026-11-19: a semana começa na segunda (16)
+  assert2.equal(diasDaSemana(new Date(2026, 10, 19))[0].dia, 16);
+  definirPrefsWidgets("c", 0);
+  assert2.equal(gradeDoMes(2026, 10)[0].filter((x) => x === null).length, 0);
+  assert2.equal(diasDaSemana(new Date(2026, 10, 19))[0].dia, 15);
+});

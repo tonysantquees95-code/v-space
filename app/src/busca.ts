@@ -31,6 +31,7 @@ export const AJUSTES: Ajuste[] = [
   { titulo: "Player de música na tela inicial", onde: "Configurações · Atalhos", destino: "config/atalhos", chaves: "musica player tocando deezer spotify youtube notificacoes" },
   { titulo: "Bloquear layout", onde: "Configurações · Gestos", destino: "config/gestos", chaves: "bloquear layout travar trava" },
   { titulo: "Backup e restauração", onde: "Configurações · Backup", destino: "config/backup", chaves: "backup restaurar exportar importar salvar" },
+  { titulo: "Unidade de temperatura e semana", onde: "Widgets · Geral", destino: "widgets/geral", chaves: "celsius fahrenheit temperatura semana domingo segunda widgets fundo" },
   { titulo: "Gestos da tela inicial", onde: "Configurações · Gestos", destino: "config/gestos", chaves: "gestos deslizar baixo toque duplo dois dedos" },
   { titulo: "Personalizar o menu de segurar", onde: "Configurações · Menu", destino: "config/menu", chaves: "menu segurar tela inicial opcoes" },
   { titulo: "Privacidade", onde: "Configurações · Privacidade", destino: "config/privacidade", chaves: "privacidade permissoes dados" },

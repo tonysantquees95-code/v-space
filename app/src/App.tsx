@@ -9,6 +9,7 @@ import {
 } from "./dados.ts";
 import { ehDinamica, type AcaoGesto } from "./dados.ts";
 import { ligarVibracao } from "./ui";
+import { definirPrefsWidgets } from "./widgets";
 import { categoriaDe, criarCategoria, desfavoritar, favoritar, moverParaCategoria } from "./categorias.ts";
 import { Organizar } from "./telas/Organizar";
 import { Conta } from "./telas/Conta";
@@ -180,6 +181,7 @@ export default function App() {
     else if (a === "bloquear") { mudar((b) => ({ ...b, bloqueado: !b.bloqueado })); falar(bancoRef.current.bloqueado ? "Layout desbloqueado." : "Layout bloqueado."); }
   };
   useEffect(() => { (window as unknown as { __vspacePronto?: boolean }).__vspacePronto = true; }, []);
+  useEffect(() => { definirPrefsWidgets(banco.prefsWidgets.unidade, banco.prefsWidgets.semana); document.documentElement.dataset.fundoExterno = banco.prefsWidgets.fundoExterno; }, [banco.prefsWidgets]);
   useEffect(() => { ligarVibracao(banco.vibrar); }, [banco.vibrar]);
   abrirSeguroRef.current = abrirSeguro;
   const temCamada = !!(seguro || busca || pedirConta || menu || agrupar || rever || pastaAberta || estudio || gaveta || favoritosAberto || addCat || mover || novaCat || organizar);
@@ -280,7 +282,7 @@ export default function App() {
 
 
       {estudio && <Estudio email={sessao?.email ?? ""} aoEntrarConta={() => setPedirConta(true)} aoSairDaConta={() => { if (sessao) void sairDaConta(sessao.token); guardarSessao(null); setSessao(null); setAdiado(false); setEstudio(false); }} aoOrganizar={() => setOrganizar(true)} aoProcurar={procurarAgora} aoAbrirSeguro={() => void abrirSeguro()} abaInicial={estudio} papel={papel} aoPapel={setPapel} banco={banco} apps={apps} aoMudar={mudar} aoFechar={() => setEstudio(false)} aviso={falar}
-        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, seguro: b.seguro, gestos: b.gestos, vibrar: b.vibrar, menuOculto: b.menuOculto, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
+        aoRecomecar={() => mudar((b) => layoutInicial(apps, { ...bancoPadrao(), tema: b.tema, relogio: b.relogio, widgets: b.widgets, gesto: b.gesto, bloqueado: b.bloqueado, musica: b.musica, faixa: b.faixa, seguro: b.seguro, gestos: b.gestos, prefsWidgets: b.prefsWidgets, vibrar: b.vibrar, menuOculto: b.menuOculto, modo: b.modo, categorias: b.categorias, atribuidos: b.atribuidos, manuais: b.manuais }))} aoTour={() => setRever("tour")} aoTermos={() => setRever("termos")} />}
       {seguro && <EspacoSeguro apps={apps.filter((a) => banco.seguro.includes(a.pacote))} acessoNotificacoes={notifLigado}
         aoAbrir={(p) => { void motor.abrir(p).catch(() => falar("Não consegui abrir o app.")); }} aoSair={() => setSeguro(false)} aoEscolher={() => { setSeguro(false); setEstudio("config/seguro" as AbaEstudio); }} />}
       {nova && <div className="atualizacao-frente"><Atualizacao nova={nova} aoFechar={() => setNova(null)} /></div>}

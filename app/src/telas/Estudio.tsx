@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type FundoExterno, type UnidadeTemp, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -54,8 +54,8 @@ const SECOES: DefSecao[] = [
   { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "luz", nome: "Luz do dia", icone: "tema" }, { id: "favoritos", nome: "Favoritos", icone: "ok" }, { id: "fontes", nome: "Fontes", icone: "papel" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "ajustes", nome: "Editor", icone: "ajustes" }] },
-  { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }] },
-  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "menu", nome: "Menu", icone: "grade" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "privacidade", nome: "Privacidade", icone: "escudo" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "escudo" }, { id: "padrao", nome: "Launcher", icone: "escudo" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
+  { id: "widgets", nome: "Widgets", icone: "widgets", partes: [{ id: "adicionar", nome: "Adicionar", icone: "mais" }, { id: "gerenciar", nome: "Gerenciar", icone: "lista" }, { id: "geral", nome: "Geral", icone: "ajustes" }] },
+  { id: "config", nome: "Configurações", icone: "engrenagem", partes: [{ id: "conta", nome: "Conta", icone: "social" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "gestos", nome: "Gestos", icone: "gesto" }, { id: "menu", nome: "Menu", icone: "grade" }, { id: "atalhos", nome: "Atalhos", icone: "nota" }, { id: "privacidade", nome: "Privacidade", icone: "olho" }, { id: "backup", nome: "Backup", icone: "backup" }, { id: "seguro", nome: "Espaço seguro", icone: "cofre" }, { id: "padrao", nome: "Launcher", icone: "casa" }, { id: "sobre", nome: "Sobre", icone: "info" }] },
 ];
 const ENTRADA: Record<string, [Secao, string]> = { temas: ["temas", "escolha"], widgets: ["widgets", "adicionar"], papel: ["papel", "escolha"], icones: ["inicio", "icones"], inicio: ["inicio", "grade"], categorias: ["categorias", "lista"] };
 
@@ -490,6 +490,16 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
               <div className="mt-2"><Botao variante="primario" disabled={cheio || criandoExterno !== ""} aria-label={`Adicionar ${x.app}: ${x.nome}`} onClick={() => void incluirExterno(x)}><Icone nome="mais" tam={16} />{criandoExterno === x.provider ? "Adicionando…" : "Adicionar"}</Botao></div>
             </Cartao>
           ))}
+        </div>
+      );
+      case "widgets/geral": return (
+        <div className="space-y-4">
+          <Cartao titulo="Unidade de temperatura"><Seletor<UnidadeTemp> rotulo="Unidade de temperatura" valor={banco.prefsWidgets.unidade} opcoes={[{ id: "c", nome: "Celsius (°C)" }, { id: "f", nome: "Fahrenheit (°F)" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, prefsWidgets: { ...b.prefsWidgets, unidade: v } }))} /></Cartao>
+          <Cartao titulo="Primeiro dia da semana"><Seletor<string> rotulo="Primeiro dia da semana" valor={String(banco.prefsWidgets.semana)} opcoes={[{ id: "0", nome: "Domingo" }, { id: "1", nome: "Segunda-feira" }, { id: "6", nome: "Sábado" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, prefsWidgets: { ...b.prefsWidgets, semana: Number(v) === 1 ? 1 : Number(v) === 6 ? 6 : 0 } }))} /></Cartao>
+          <Cartao titulo="Fundo atrás dos widgets de outros apps">
+            <Seletor<FundoExterno> rotulo="Fundo dos widgets de outros apps" valor={banco.prefsWidgets.fundoExterno} opcoes={[{ id: "inicio", nome: "Padrão" }, { id: "nenhum", nome: "Nenhum" }, { id: "vidro", nome: "Vidro" }, { id: "cor", nome: "Cor" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, prefsWidgets: { ...b.prefsWidgets, fundoExterno: v } }))} />
+            <p className="mt-3 text-sm text-suave">Vale para os widgets de verdade dos apps instalados. A temperatura vale para todos os widgets de clima; ao mudar, abra a tela inicial de novo para atualizar.</p>
+          </Cartao>
         </div>
       );
       case "widgets/gerenciar": return (

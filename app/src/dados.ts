@@ -9,6 +9,15 @@ export type EstiloBotao = "degrade" | "contorno" | "solido";
 export type EstiloDock = "vidro" | "solido" | "transparente";
 export type PacoteIcones = "original" | "mono" | "tingido" | "vivo";
 export type EstiloPasta = "vidro" | "solida" | "contorno";
+export type UnidadeTemp = "c" | "f";
+export type FundoExterno = "inicio" | "nenhum" | "vidro" | "cor";
+export const FUNDOS_EXTERNOS: FundoExterno[] = ["inicio", "nenhum", "vidro", "cor"];
+export interface PrefsWidgets { unidade: UnidadeTemp; semana: 0 | 1 | 6; fundoExterno: FundoExterno }
+export const PREFS_WIDGETS_PADRAO: PrefsWidgets = { unidade: "c", semana: 0, fundoExterno: "inicio" };
+export function limparPrefsWidgets(x: unknown): PrefsWidgets {
+  const o = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+  return { unidade: o.unidade === "f" ? "f" : "c", semana: o.semana === 1 ? 1 : o.semana === 6 ? 6 : 0, fundoExterno: FUNDOS_EXTERNOS.includes(o.fundoExterno as FundoExterno) ? (o.fundoExterno as FundoExterno) : "inicio" };
+}
 export type AcaoGesto = "nada" | "gaveta" | "pesquisa" | "estudio" | "seguro" | "bloquear";
 export const ACOES_GESTO: AcaoGesto[] = ["nada", "gaveta", "pesquisa", "estudio", "seguro", "bloquear"];
 export interface Gestos { baixo: AcaoGesto; duplo: AcaoGesto; doisCima: AcaoGesto; doisBaixo: AcaoGesto }
@@ -154,6 +163,8 @@ export interface Banco {
   seguro: string[];
   /** outros gestos da tela inicial, vibração ao segurar e entradas do menu de segurar que a pessoa escondeu */
   gestos: Gestos; vibrar: boolean; menuOculto: string[];
+  /** Widgets › Geral: unidade de temperatura, primeiro dia da semana, fundo atrás dos widgets de outros apps */
+  prefsWidgets: PrefsWidgets;
   modo: ModoInicio; categorias: Categoria[]; atribuidos: Record<string, string>; manuais: string[]; favoritos: string[];
 }
 
@@ -259,7 +270,7 @@ export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").re
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, musica: true, faixa: true, seguro: [], gestos: { ...GESTOS_PADRAO }, vibrar: true, menuOculto: [], modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, musica: true, faixa: true, seguro: [], gestos: { ...GESTOS_PADRAO }, vibrar: true, menuOculto: [], prefsWidgets: { ...PREFS_WIDGETS_PADRAO }, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
 
 export function limparCategorias(x: unknown): Categoria[] {
   const saida: Categoria[] = [];
@@ -354,7 +365,7 @@ export function limparBanco(x: unknown): Banco {
   const favoritos: string[] = [];
   for (const a of Array.isArray(b.favoritos) ? b.favoritos : []) if (ehPacote(a) && !favoritos.includes(a) && favoritos.length < MAX_FAVORITOS) favoritos.push(a);
 
-  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true, musica: b.musica !== false, faixa: b.faixa !== false, seguro: Array.from(new Set((Array.isArray(b.seguro) ? b.seguro : []).filter((a): a is string => ehPacote(a)))).slice(0, 60), gestos: limparGestos(b.gestos), vibrar: b.vibrar !== false, menuOculto: Array.from(new Set((Array.isArray(b.menuOculto) ? b.menuOculto : []).filter((m): m is string => (ITENS_MENU as readonly string[]).includes(m as string)))) };
+  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true, musica: b.musica !== false, faixa: b.faixa !== false, seguro: Array.from(new Set((Array.isArray(b.seguro) ? b.seguro : []).filter((a): a is string => ehPacote(a)))).slice(0, 60), gestos: limparGestos(b.gestos), prefsWidgets: limparPrefsWidgets(b.prefsWidgets), vibrar: b.vibrar !== false, menuOculto: Array.from(new Set((Array.isArray(b.menuOculto) ? b.menuOculto : []).filter((m): m is string => (ITENS_MENU as readonly string[]).includes(m as string)))) };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */
