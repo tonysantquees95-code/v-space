@@ -36,6 +36,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 29, data: "2026-11-20", tipo: "melhoria", titulo: "Seletor de widgets com pesquisa", texto: "Em Estúdio › Widgets, pesquise widgets pelo nome, filtre por app e veja o tamanho de cada um num selo, como no One4Home." },
   { id: 30, data: "2026-11-20", tipo: "novo", titulo: "Cores dos ícones e player de música", texto: "Em Estúdio › Temas › Cores, a Saturação das cores deixa os ícones plenos, suaves, esmaecidos ou em preto e branco. Em Início › Música, escolha a largura e o lado do player e se mostra a capa e o botão de faixa anterior." },
   { id: 31, data: "2026-11-20", tipo: "novo", titulo: "Blocos e Minimalista", texto: "Em Estúdio › Categorias você escolhe como a tela inicial aparece: Blocos (cada categoria é um bloco colorido) ou Minimalista (hora e data grandes e os favoritos só como texto)." },
+  { id: 32, data: "2026-11-20", tipo: "novo", titulo: "Suas próprias cenas", texto: "Em Estúdio › Temas › Cenas, guarde só as partes da aparência que quiser (cores, ícones, superfície, ajustes do papel) com um nome e aplique depois sem mexer no resto." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

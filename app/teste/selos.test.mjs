@@ -111,3 +111,19 @@ test2("modos da tela inicial", () => {
   assert2.equal(limparBanco({ ...bancoPadrao(), modo: "blocos" }).modo, "blocos");
   assert2.equal(limparBanco({ ...bancoPadrao(), modo: "xx" }).modo, "categorias");
 });
+
+import { juntarCena, recortarTema, limparCenasMinhas, aplicarCenaMinha, tirarCena, MAX_CENAS_MINHAS } from "../src/cenasMinhas.ts";
+test2("cenas da pessoa", () => {
+  const t = limparTema({ ...TEMAS[0], cor: "#112233", forma: "circulo", intensidade: 80 });
+  const r = recortarTema(t, ["icones"]);
+  assert2.equal(r.forma, "circulo"); assert2.equal(r.cor, undefined);
+  const l = juntarCena([], " Minha ", ["cores", "icones"], t, "c1");
+  assert2.equal(l[0].nome, "Minha"); assert2.equal(l[0].valores.cor, "#112233"); assert2.equal(l[0].valores.intensidade, undefined);
+  assert2.equal(juntarCena([], "", ["cores"], t), null); assert2.equal(juntarCena([], "x", [], t), null);
+  assert2.equal(juntarCena(Array.from({ length: MAX_CENAS_MINHAS }, (_, i) => ({ id: `a${i}`, nome: "n", partes: ["cores"], valores: {} })), "x", ["cores"], t), null);
+  assert2.equal(tirarCena(l, "c1").length, 0);
+  const b = aplicarCenaMinha({ ...bancoPadrao(), tema: limparTema({ ...TEMAS[0], cor: "#abcdef", forma: "quadrado" }) }, l[0]);
+  assert2.equal(b.tema.cor, "#112233"); assert2.equal(b.tema.forma, "circulo"); assert2.equal(b.tema.id, "personalizado");
+  const suja = limparCenasMinhas([{ id: "ok", nome: "a", partes: ["cores", "xx"], valores: { cor: "#fff", hack: 1 } }, { id: "!!", nome: "b", partes: ["cores"], valores: {} }, { id: "z", nome: "c", partes: [], valores: {} }]);
+  assert2.equal(suja.length, 1); assert2.deepEqual(suja[0].partes, ["cores"]); assert2.equal("hack" in suja[0].valores, false);
+});

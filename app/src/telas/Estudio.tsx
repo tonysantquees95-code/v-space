@@ -7,6 +7,7 @@ import {
 } from "../dados.ts";
 import { CENAS, aplicarCena } from "../cenas";
 import { codigoDoTema, gravarSalvos, juntarSalvo, lerSalvos, temaDoCodigo, tirarSalvo, MAX_SALVOS, type TemaSalvo } from "../temasSalvos";
+import { PARTES_CENA, aplicarCenaMinha, gravarCenasMinhas, juntarCena, lerCenasMinhas, tirarCena, MAX_CENAS_MINHAS, type CenaMinha, type ParteCena } from "../cenasMinhas";
 import { definirIconeApp, escolherIcone, useIconeApp } from "../iconesApp";
 import { Glifo } from "./IconeApp";
 import { fundoCss } from "../tema";
@@ -112,6 +113,15 @@ interface Props {
 
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
 export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoAbrirSeguro, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
+  const [minhas, setMinhas] = useState<CenaMinha[]>(() => lerCenasMinhas());
+  const [nomeCena, setNomeCena] = useState("");
+  const [partesCena, setPartesCena] = useState<ParteCena[]>(["cores", "icones", "superficie"]);
+  const guardarCena = () => {
+    const l = juntarCena(minhas, nomeCena, partesCena, banco.tema);
+    if (!l) { aviso(!nomeCena.trim() ? "Dê um nome à cena." : !partesCena.length ? "Escolha pelo menos uma parte." : `Já são ${MAX_CENAS_MINHAS} cenas. Apague uma.`); return; }
+    if (!gravarCenasMinhas(l)) { aviso("Não há espaço para guardar a cena."); return; }
+    setMinhas(l); setNomeCena(""); aviso("Cena guardada.");
+  };
   const [salvos, setSalvos] = useState<TemaSalvo[]>(() => lerSalvos());
   const [nomeSalvo, setNomeSalvo] = useState("");
   const [codigoImp, setCodigoImp] = useState("");
@@ -230,7 +240,20 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       );
       case "temas/cenas": return (
         <div className="space-y-3">
-          <p className="text-sm text-suave">Um toque muda o tema, o papel de parede e o estilo dos ícones de uma vez. Dá para ajustar depois.</p>
+          <Cartao titulo="Nova cena">
+            <p className="mb-3 text-sm text-suave">Guarde só as partes da aparência atual que você escolher. Ao aplicar, o resto não muda.</p>
+            {PARTES_CENA.map((p) => <Linha key={p.id} titulo={p.nome} texto={p.texto}><Interruptor rotulo={p.nome} ligado={partesCena.includes(p.id)} aoMudar={(v) => setPartesCena((a) => (v ? [...a, p.id] : a.filter((x) => x !== p.id)))} /></Linha>)}
+            <label className="mt-3 block text-sm text-suave">Nome da cena
+              <input value={nomeCena} maxLength={24} onChange={(e) => setNomeCena(e.target.value)} className="mt-1 min-h-11 w-full rounded-[var(--raio-botao,0.75rem)] border border-borda bg-black/30 px-3 text-texto outline-none focus:border-neon" />
+            </label>
+            <Botao variante="primario" className="mt-3" onClick={guardarCena}>Guardar cena</Botao>
+          </Cartao>
+          {minhas.length > 0 && (
+            <Cartao titulo={`Minhas cenas (${minhas.length}/${MAX_CENAS_MINHAS})`}>
+              <ul className="space-y-1">{minhas.map((m) => <li key={m.id} className="flex min-h-12 items-center justify-between gap-3"><span className="min-w-0"><b className="block truncate">{m.nome}</b><span className="block truncate text-xs text-suave">{m.partes.map((x) => PARTES_CENA.find((q) => q.id === x)?.nome).join(", ")}</span></span><span className="flex shrink-0 gap-2"><Botao onClick={() => { aoMudar((b) => aplicarCenaMinha(b, m)); aviso(`Cena ${m.nome} aplicada.`); }} aria-label={`Aplicar cena ${m.nome}`}>Aplicar</Botao><Botao variante="perigo" onClick={() => { const l = tirarCena(minhas, m.id); gravarCenasMinhas(l); setMinhas(l); }} aria-label={`Apagar cena ${m.nome}`}>Apagar</Botao></span></li>)}</ul>
+            </Cartao>
+          )}
+          <p className="text-sm text-suave">Cenas prontas: um toque muda o tema, o papel de parede e o estilo dos ícones de uma vez. Dá para ajustar depois.</p>
           <div className="grid grid-cols-2 gap-3">
             {CENAS.map((c) => { const p = PRONTOS.find((x) => x.id === c.papel); return (
               <button key={c.id} type="button" aria-label={`Cena ${c.nome}`} onClick={() => comCena(c.id)} className="overflow-hidden rounded-2xl border-2 border-borda text-left">
