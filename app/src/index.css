@@ -531,3 +531,12 @@ html[data-fundo-externo="vidro"] .widget[data-tipo="externo"] { background: #fff
 .busca-widgets input { flex: 1; min-width: 0; background: transparent; color: inherit; outline: none; font-size: 1rem; }
 .galeria-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .galeria-tam { flex: none; padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; background: color-mix(in srgb, var(--color-neon) 22%, transparent); }
+
+/* Saturação das cores dos ícones */
+html[data-cores="suave"] .glifo img { filter: saturate(.7); }
+html[data-cores="esmaecido"] .glifo img { filter: saturate(.35); }
+html[data-cores="pb"] .glifo img { filter: grayscale(1); }
+/* Mini-player: largura e lado */
+.player[data-largura="3/5"] { width: 60%; }
+.player[data-largura="1/2"] { width: 50%; }
+.player[data-alinhar="direita"] { margin-left: auto; }

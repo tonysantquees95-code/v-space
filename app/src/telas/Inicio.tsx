@@ -55,7 +55,7 @@ function CorpoCategorias(props: Props) {
         {ativa ? (
           <header className="cat-cabeca"><h2 className="cat-titulo" style={ativa.cor ? { color: ativa.cor } : undefined}>{ativa.nome}</h2><p className="cat-sub">{lista.length} {lista.length === 1 ? "app" : "apps"}{ativa.conteudo === "mais-usados" && !lista.length ? " · abra apps pelo V-Space e eles aparecem aqui" : ""}</p></header>
         ) : (
-          <><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? nada} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} /><h2 className="cat-secao">Favoritos</h2></>
+          <><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? nada} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} opc={banco.musicaOpc} /><h2 className="cat-secao">Favoritos</h2></>
         )}
         <div className="cat-grade" {...eventosVazio}>
           {lista.map((a) => <IconeApp key={a.pacote} app={a} rotulo={t.rotulos} className="app-cel" aoAbrir={() => aoAbrirApp(a.pacote)} aoLonga={() => (ativa ? (aoMenuCategoria ?? nada) : (aoMenuFavorito ?? nada))(a.pacote)} />)}
@@ -119,7 +119,7 @@ export function Inicio(props: Props) {
 
       {banco.modo === "categorias" ? <CorpoCategorias {...props} /> : (
         <>
-      <div className="widgets-grade"><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} /></div>
+      <div className="widgets-grade"><AreaWidgets widgets={banco.widgets} bloqueado={banco.bloqueado} aoMudar={props.aoMudarWidgets ?? (() => undefined)} /><MiniPlayer ligado={banco.musica} aoAbrirApp={aoAbrirApp} opc={banco.musicaOpc} /></div>
 
       <div className="pager" ref={pager} onScroll={(e) => { const el = e.currentTarget; setPg(Math.round(el.scrollLeft / Math.max(1, el.clientWidth))); }}>
         {paginas.map((itens, i) => (

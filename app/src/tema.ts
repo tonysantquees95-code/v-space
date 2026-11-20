@@ -31,6 +31,7 @@ export function aplicarTema(t: Tema, alvo: HTMLElement = document.documentElemen
   alvo.dataset.pacote = t.pacote;
   alvo.dataset.pasta = t.pasta;
   alvo.dataset.superficie = t.superficie;
+  alvo.dataset.cores = t.cores;
   alvo.dataset.pastaAbre = t.pastaAbre;
   alvo.style.setProperty("--sup-i", String(t.intensidade / 100));
 }

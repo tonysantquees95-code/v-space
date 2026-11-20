@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Banco, Widget } from "../dados.ts";
+import type { Banco, MusicaOpc, Widget } from "../dados.ts";
 import { Icone } from "../icones";
 import { motor, type Musica, type Sistema } from "../motor";
 import { buscarClima, type Bateria, type Clima } from "../widgets";
@@ -18,20 +18,20 @@ function useSondagem(f: () => void, ms: number, ligado = true) {
 }
 
 /** Mini-player: o que está tocando (Deezer, YouTube Music, Spotify…), com voltar, pausar e avançar. Aparece entre os widgets e os favoritos. */
-export function MiniPlayer({ ligado, aoAbrirApp }: { ligado: boolean; aoAbrirApp: (pacote: string) => void }) {
+export function MiniPlayer({ ligado, aoAbrirApp, opc = { largura: "1/1", alinhar: "esquerda", anterior: true, capa: true } }: { ligado: boolean; aoAbrirApp: (pacote: string) => void; opc?: MusicaOpc }) {
   const [m, setM] = useState<Musica>({ tem: false });
   const ler = useCallback(() => { void motor.musicaPermitida().then((p) => (p ? motor.musica() : { tem: false })).then(setM); }, []);
   useSondagem(ler, 2500, ligado);
   if (!ligado || !m.tem) return null;
   const cmd = (a: "pausar" | "tocar" | "proxima" | "anterior") => { void motor.musicaComando(a).then(() => window.setTimeout(ler, 250)).catch(() => undefined); };
   return (
-    <section className="player" aria-label="Tocando agora">
-      <button type="button" className="player-capa" aria-label={`Abrir ${m.app ?? "o app de música"}`} onClick={() => m.pacote && aoAbrirApp(m.pacote)}>
+    <section className="player" aria-label="Tocando agora" data-largura={opc.largura} data-alinhar={opc.alinhar}>
+      {opc.capa && <button type="button" className="player-capa" aria-label={`Abrir ${m.app ?? "o app de música"}`} onClick={() => m.pacote && aoAbrirApp(m.pacote)}>
         {m.capa ? <img src={m.capa} alt="" draggable={false} /> : <Icone nome="nota" tam={26} />}
-      </button>
+      </button>}
       <div className="player-texto"><div className="player-titulo">{m.titulo || "Sem título"}</div><div className="player-sub">{[m.artista, m.app].filter(Boolean).join(" · ")}</div></div>
       <div className="player-botoes">
-        <button type="button" aria-label="Faixa anterior" onClick={() => cmd("anterior")}><Icone nome="anterior" tam={22} /></button>
+        {opc.anterior && <button type="button" aria-label="Faixa anterior" onClick={() => cmd("anterior")}><Icone nome="anterior" tam={22} /></button>}
         <button type="button" aria-label={m.tocando ? "Pausar" : "Tocar"} className="player-principal" onClick={() => cmd(m.tocando ? "pausar" : "tocar")}><Icone nome={m.tocando ? "pausar" : "tocar"} tam={22} /></button>
         <button type="button" aria-label="Próxima faixa" onClick={() => cmd("proxima")}><Icone nome="proxima" tam={22} /></button>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type FundoExterno, type UnidadeTemp, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
+  adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type CoresIcones, type FundoExterno, type UnidadeTemp, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
   MAX_CATEGORIAS, MAX_FAVORITOS, CATEGORIA_RESERVA, type Categoria, type ModoInicio,
   type AppInfo, type Banco, type EstiloBotao, type EstiloDock, type EstiloGaveta, type EstiloPasta, type Forma, type Fundo, type Gesto, type PacoteIcones, type TipoWidget,
@@ -50,7 +50,7 @@ interface DefSecao { id: Secao; nome: string; icone: NomeIcone; partes: Parte[] 
 const NOMES_MENU: Record<(typeof ITENS_MENU)[number], string> = { papel: "Editar papel de parede", widgets: "Adicionar widget", apps: "Adicionar aplicativos", atalhos: "Adicionar atalhos", pasta: "Criar pasta", grade: "Editar tela inicial", icones: "Personalizar ícones", temas: "Temas", estudio: "Configurações do V-Space", bloquear: "Bloquear layout" };
 const SECOES: DefSecao[] = [
   { id: "temas", nome: "Temas", icone: "tema", partes: [{ id: "escolha", nome: "Escolha", icone: "ok" }, { id: "cenas", nome: "Cenas", icone: "cena" }, { id: "cores", nome: "Cores", icone: "paleta" }, { id: "salvos", nome: "Salvos", icone: "estrela" }, { id: "compartilhar", nome: "Compartilhar", icone: "compartilhar" }] },
-  { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }] },
+  { id: "inicio", nome: "Início", icone: "tela", partes: [{ id: "grade", nome: "Disposição", icone: "grade" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "superficie", nome: "Superfície", icone: "superficie" }, { id: "dock", nome: "Dock", icone: "dock" }, { id: "pastas", nome: "Pastas", icone: "pasta" }, { id: "musica", nome: "Música", icone: "nota" }] },
   { id: "categorias", nome: "Categorias", icone: "pasta", partes: [{ id: "modo", nome: "Tela inicial", icone: "tela" }, { id: "lista", nome: "Suas categorias", icone: "lista" }] },
   { id: "apps", nome: "Aplicativos", icone: "gaveta", partes: [{ id: "gaveta", nome: "Disposição", icone: "gaveta" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "icones", nome: "Ícones", icone: "forma" }, { id: "ocultos", nome: "Ocultos", icone: "ocultar" }] },
   { id: "papel", nome: "Papel de parede", icone: "papel", partes: [{ id: "escolha", nome: "Escolha", icone: "papel" }, { id: "luz", nome: "Luz do dia", icone: "tema" }, { id: "favoritos", nome: "Favoritos", icone: "ok" }, { id: "fontes", nome: "Fontes", icone: "papel" }, { id: "geral", nome: "Geral", icone: "ajustes" }, { id: "ajustes", nome: "Editor", icone: "ajustes" }] },
@@ -272,6 +272,10 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       );
       case "temas/cores": return (
         <div className="space-y-4">
+          <Cartao titulo="Saturação das cores">
+            <Seletor<CoresIcones> rotulo="Saturação das cores" valor={t.cores} opcoes={[{ id: "plenas", nome: "Cores plenas" }, { id: "suave", nome: "Suave" }, { id: "esmaecido", nome: "Esmaecido" }, { id: "pb", nome: "Preto e branco" }]} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { cores: v }))} />
+            <p className="mt-3 text-sm text-suave">Muda a cor dos ícones dos apps. O papel de parede e os widgets continuam como estão.</p>
+          </Cartao>
           <Cartao titulo="Cor principal"><Paleta rotulo="Cor principal" valor={t.cor} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor: c }))} /></Cartao>
           <Cartao titulo="Cor de apoio"><Paleta rotulo="Cor de apoio" valor={t.cor2} cores={CORES} aoEscolher={(c) => aoMudar((b) => ajustarTema(b, { cor2: c }))} /></Cartao>
           <Cartao titulo="Fundo (sem foto)">
@@ -330,6 +334,15 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
           <Cartao titulo="Pacote de ícones"><Seletor<PacoteIcones> rotulo="Pacote de ícones" valor={t.pacote} opcoes={PACOTES} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { pacote: v }))} /></Cartao>
           <Cartao titulo="Tamanho"><div className="flex items-center gap-3"><input type="range" aria-label="Tamanho dos ícones" className="w-full" min={TAMANHO_ICONE.min} max={TAMANHO_ICONE.max} step={2} value={t.tamanho} onChange={(e) => aoMudar((b) => ajustarTema(b, { tamanho: Number(e.target.value) }))} /><span className="num w-10 text-right text-sm">{t.tamanho}</span></div></Cartao>
           <Cartao><Linha titulo="Nomes dos apps" texto="Mostra o nome embaixo de cada ícone."><Interruptor rotulo="Nomes dos apps" ligado={t.rotulos} aoMudar={(v) => aoMudar((b) => ajustarTema(b, { rotulos: v }))} /></Linha></Cartao>
+        </div>
+      );
+      case "inicio/musica": return (
+        <div className="space-y-4">
+          <Cartao><Linha titulo="Controles de música" texto="Mostra o player acima dos favoritos enquanto algo toca."><Interruptor rotulo="Controles de música" ligado={banco.musica} aoMudar={(v) => aoMudar((b) => ({ ...b, musica: v }))} /></Linha></Cartao>
+          <Cartao titulo="Largura do player"><Seletor<string> rotulo="Largura do player" valor={banco.musicaOpc.largura} opcoes={[{ id: "1/2", nome: "1/2" }, { id: "3/5", nome: "3/5" }, { id: "1/1", nome: "1/1" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, musicaOpc: { ...b.musicaOpc, largura: v === "1/2" || v === "3/5" ? v : "1/1" } }))} /></Cartao>
+          <Cartao titulo="Alinhamento do player"><Seletor<string> rotulo="Alinhamento do player" valor={banco.musicaOpc.alinhar} opcoes={[{ id: "esquerda", nome: "Esquerda" }, { id: "direita", nome: "Direita" }]} aoMudar={(v) => aoMudar((b) => ({ ...b, musicaOpc: { ...b.musicaOpc, alinhar: v === "direita" ? "direita" : "esquerda" } }))} /></Cartao>
+          <Cartao><Linha titulo="Mostrar botão da faixa anterior"><Interruptor rotulo="Mostrar botão da faixa anterior" ligado={banco.musicaOpc.anterior} aoMudar={(v) => aoMudar((b) => ({ ...b, musicaOpc: { ...b.musicaOpc, anterior: v } }))} /></Linha></Cartao>
+          <Cartao><Linha titulo="Mostrar capa do álbum"><Interruptor rotulo="Mostrar capa do álbum" ligado={banco.musicaOpc.capa} aoMudar={(v) => aoMudar((b) => ({ ...b, musicaOpc: { ...b.musicaOpc, capa: v } }))} /></Linha></Cartao>
         </div>
       );
       case "inicio/superficie": return (

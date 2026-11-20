@@ -9,6 +9,14 @@ export type EstiloBotao = "degrade" | "contorno" | "solido";
 export type EstiloDock = "vidro" | "solido" | "transparente";
 export type PacoteIcones = "original" | "mono" | "tingido" | "vivo";
 export type EstiloPasta = "vidro" | "solida" | "contorno";
+export type CoresIcones = "plenas" | "suave" | "esmaecido" | "pb";
+export const CORES_ICONES: CoresIcones[] = ["plenas", "suave", "esmaecido", "pb"];
+export interface MusicaOpc { largura: "1/2" | "3/5" | "1/1"; alinhar: "esquerda" | "direita"; anterior: boolean; capa: boolean }
+export const MUSICA_OPC_PADRAO: MusicaOpc = { largura: "1/1", alinhar: "esquerda", anterior: true, capa: true };
+export function limparMusicaOpc(x: unknown): MusicaOpc {
+  const o = (x && typeof x === "object" ? x : {}) as Record<string, unknown>;
+  return { largura: o.largura === "1/2" || o.largura === "3/5" ? o.largura : "1/1", alinhar: o.alinhar === "direita" ? "direita" : "esquerda", anterior: o.anterior !== false, capa: o.capa !== false };
+}
 export type UnidadeTemp = "c" | "f";
 export type FundoExterno = "inicio" | "nenhum" | "vidro" | "cor";
 export const FUNDOS_EXTERNOS: FundoExterno[] = ["inicio", "nenhum", "vidro", "cor"];
@@ -61,6 +69,8 @@ export interface Tema {
   ordem: OrdemGaveta; selos: boolean; pontoNovo: boolean;
   /** material do dock e dos widgets em vidro: vidro, acrílico (fosco escuro) ou cor do tema; intensidade 0–100 */
   superficie: Superficie; intensidade: number;
+  /** saturação das cores dos ícones: plenas, suave, esmaecido ou preto e branco */
+  cores: CoresIcones;
   /** pasta abre como folha (de baixo) ou janela (no meio); animação ao travar/destravar o layout */
   pastaAbre: PastaAbre; animBloqueio: AnimBloqueio;
   /** raio dos cartões e janelas (px), estilo do dock, pacote de ícones e estilo das pastas */
@@ -165,6 +175,8 @@ export interface Banco {
   gestos: Gestos; vibrar: boolean; menuOculto: string[];
   /** Widgets › Geral: unidade de temperatura, primeiro dia da semana, fundo atrás dos widgets de outros apps */
   prefsWidgets: PrefsWidgets;
+  /** controles do mini-player de música */
+  musicaOpc: MusicaOpc;
   modo: ModoInicio; categorias: Categoria[]; atribuidos: Record<string, string>; manuais: string[]; favoritos: string[];
 }
 
@@ -182,11 +194,11 @@ export const CANTOS = { min: 0, max: 32 };
 export const GESTOS: readonly Gesto[] = ["gaveta", "pesquisa", "nada"];
 
 export const TEMAS: Tema[] = [
-  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
-  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "vetorial", cor: "#22d3ee", cor2: "#e879f9", fundo: "aurora", fundoCor: "#0b1020", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "lista", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, cores: "plenas", pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "noite", cor: "#8ab4ff", cor2: "#b39dff", fundo: "noite", fundoCor: "#05070d", forma: "circulo", tamanho: 54, rotulos: true, gaveta: "lista", botoes: "solido", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, cores: "plenas", pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "brasa", cor: "#fb923c", cor2: "#f43f5e", fundo: "neon", fundoCor: "#14080a", forma: "squircle", tamanho: 56, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, cores: "plenas", pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "floresta", cor: "#34d399", cor2: "#a3e635", fundo: "noite", fundoCor: "#04100b", forma: "quadrado", tamanho: 52, rotulos: false, gaveta: "lista", botoes: "contorno", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, cores: "plenas", pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
+  { id: "rosa", cor: "#f472b6", cor2: "#c084fc", fundo: "aurora", fundoCor: "#12081a", forma: "circulo", tamanho: 58, rotulos: true, gaveta: "grade", botoes: "degrade", desfoque: 0, escuro: 30, saturacao: 100, temperatura: 0, vinheta: 0, luz: "nenhuma", papelDiario: false, aplicarEm: "pergunta", ordem: "az", selos: true, pontoNovo: false, superficie: "vidro", intensidade: 50, cores: "plenas", pastaAbre: "folha", animBloqueio: "cadeado", cantos: 20, dock: "vidro", pacote: "original", pasta: "vidro" },
 ];
 export const NOMES_DOS_TEMAS: Record<string, string> = { vetorial: "Vetorial", noite: "Noite", brasa: "Brasa", floresta: "Floresta", rosa: "Rosa" };
 
@@ -270,7 +282,7 @@ export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").re
 
 export const temaPadrao = (): Tema => ({ ...TEMAS[0]! });
 export const layoutVazio = (): Layout => ({ colunas: 4, linhas: 5, paginas: [[]], dock: [], pastas: [] });
-export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, musica: true, faixa: true, seguro: [], gestos: { ...GESTOS_PADRAO }, vibrar: true, menuOculto: [], prefsWidgets: { ...PREFS_WIDGETS_PADRAO }, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
+export const bancoPadrao = (): Banco => ({ v: 1, tema: temaPadrao(), layout: layoutVazio(), ocultos: [], relogio: true, widgets: [], gesto: "gaveta", bloqueado: false, musica: true, faixa: true, seguro: [], gestos: { ...GESTOS_PADRAO }, vibrar: true, menuOculto: [], prefsWidgets: { ...PREFS_WIDGETS_PADRAO }, musicaOpc: { ...MUSICA_OPC_PADRAO }, modo: "categorias", categorias: CATEGORIAS_PADRAO.map((c) => ({ ...c })), atribuidos: {}, manuais: [], favoritos: [] });
 
 export function limparCategorias(x: unknown): Categoria[] {
   const saida: Categoria[] = [];
@@ -301,6 +313,7 @@ export function limparTema(x: unknown): Tema {
     saturacao: limitar(t.saturacao, SATURACAO.min, SATURACAO.max, 100), temperatura: limitar(t.temperatura, TEMPERATURA.min, TEMPERATURA.max, 0), vinheta: limitar(t.vinheta, VINHETA.min, VINHETA.max, 0),
     luz: LUZES.includes(t.luz as Luz) ? (t.luz as Luz) : "nenhuma", papelDiario: t.papelDiario === true, aplicarEm: APLICAR_EM.includes(t.aplicarEm as AplicarEm) ? (t.aplicarEm as AplicarEm) : "pergunta",
     ordem: ORDENS.includes(t.ordem as OrdemGaveta) ? (t.ordem as OrdemGaveta) : "az", selos: t.selos !== false, pontoNovo: t.pontoNovo === true,
+    cores: CORES_ICONES.includes(t.cores as CoresIcones) ? (t.cores as CoresIcones) : "plenas",
     superficie: SUPERFICIES.includes(t.superficie as Superficie) ? (t.superficie as Superficie) : "vidro",
     intensidade: typeof t.intensidade === "number" && Number.isFinite(t.intensidade) ? Math.min(100, Math.max(0, Math.round(t.intensidade))) : 50,
     pastaAbre: PASTA_ABRE.includes(t.pastaAbre as PastaAbre) ? (t.pastaAbre as PastaAbre) : "folha",
@@ -365,7 +378,7 @@ export function limparBanco(x: unknown): Banco {
   const favoritos: string[] = [];
   for (const a of Array.isArray(b.favoritos) ? b.favoritos : []) if (ehPacote(a) && !favoritos.includes(a) && favoritos.length < MAX_FAVORITOS) favoritos.push(a);
 
-  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true, musica: b.musica !== false, faixa: b.faixa !== false, seguro: Array.from(new Set((Array.isArray(b.seguro) ? b.seguro : []).filter((a): a is string => ehPacote(a)))).slice(0, 60), gestos: limparGestos(b.gestos), prefsWidgets: limparPrefsWidgets(b.prefsWidgets), vibrar: b.vibrar !== false, menuOculto: Array.from(new Set((Array.isArray(b.menuOculto) ? b.menuOculto : []).filter((m): m is string => (ITENS_MENU as readonly string[]).includes(m as string)))) };
+  return { v: 1, modo: escolha(b.modo, MODOS, "categorias"), categorias, atribuidos, manuais, favoritos, tema: limparTema(b.tema), layout: { colunas, linhas, paginas: repaginado, dock, pastas }, ocultos, relogio: typeof b.relogio === "boolean" ? b.relogio : true, widgets: limparWidgets(b.widgets), gesto: escolha(b.gesto, GESTOS, "gaveta"), bloqueado: b.bloqueado === true, musica: b.musica !== false, faixa: b.faixa !== false, seguro: Array.from(new Set((Array.isArray(b.seguro) ? b.seguro : []).filter((a): a is string => ehPacote(a)))).slice(0, 60), gestos: limparGestos(b.gestos), prefsWidgets: limparPrefsWidgets(b.prefsWidgets), musicaOpc: limparMusicaOpc(b.musicaOpc), vibrar: b.vibrar !== false, menuOculto: Array.from(new Set((Array.isArray(b.menuOculto) ? b.menuOculto : []).filter((m): m is string => (ITENS_MENU as readonly string[]).includes(m as string)))) };
 }
 
 /** Reparte os itens em páginas de `capacidade`, sem buracos. Sempre devolve pelo menos uma página. */

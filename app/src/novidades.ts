@@ -34,6 +34,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 27, data: "2026-11-19", tipo: "correcao", titulo: "Tela preta depois de atualizar", texto: "Depois de atualizar por dentro e abrir o app de novo, a tela podia ficar toda preta. Agora o app percebe isso e recarrega a tela sozinho em poucos segundos, sem precisar fechar tudo." },
   { id: 28, data: "2026-11-20", tipo: "melhoria", titulo: "Editar widget como no One4Home", texto: "Ao segurar um widget, o painel agora tem Redimensionar, Personalizar, Ajustes e Remover, mais Mais e Estilo dos widgets. Nova aba Widgets › Geral: unidade °C/°F, primeiro dia da semana e fundo dos widgets de outros apps. Privacidade, Espaço seguro e Launcher agora têm ícones diferentes." },
   { id: 29, data: "2026-11-20", tipo: "melhoria", titulo: "Seletor de widgets com pesquisa", texto: "Em Estúdio › Widgets, pesquise widgets pelo nome, filtre por app e veja o tamanho de cada um num selo, como no One4Home." },
+  { id: 30, data: "2026-11-20", tipo: "novo", titulo: "Cores dos ícones e player de música", texto: "Em Estúdio › Temas › Cores, a Saturação das cores deixa os ícones plenos, suaves, esmaecidos ou em preto e branco. Em Início › Música, escolha a largura e o lado do player e se mostra a capa e o botão de faixa anterior." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

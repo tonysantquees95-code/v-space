@@ -95,3 +95,12 @@ test2("preferências dos widgets", () => {
   assert2.equal(gradeDoMes(2026, 10)[0].filter((x) => x === null).length, 0);
   assert2.equal(diasDaSemana(new Date(2026, 10, 19))[0].dia, 15);
 });
+
+import { limparMusicaOpc } from "../src/dados.ts";
+test2("saturação e player", () => {
+  assert2.equal(limparTema({ ...TEMAS[0], cores: "pb" }).cores, "pb");
+  assert2.equal(limparTema({ ...TEMAS[0], cores: "xx" }).cores, "plenas");
+  assert2.deepEqual(limparMusicaOpc(null), { largura: "1/1", alinhar: "esquerda", anterior: true, capa: true });
+  assert2.deepEqual(limparMusicaOpc({ largura: "3/5", alinhar: "direita", anterior: false, capa: false }), { largura: "3/5", alinhar: "direita", anterior: false, capa: false });
+  assert2.equal(limparMusicaOpc({ largura: "9" }).largura, "1/1");
+});
