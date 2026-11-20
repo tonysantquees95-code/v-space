@@ -129,6 +129,8 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
   const [confirmaZero, setConfirmaZero] = useState(false);
   const [erro, setErro] = useState("");
   const [cidade, setCidade] = useState("");
+  const [buscaW, setBuscaW] = useState("");
+  const [appW, setAppW] = useState("");
   const [externos, setExternos] = useStateP<ExternoInfo[] | null>(null);
   const [criandoExterno, setCriandoExterno] = useStateP("");
   useEffect(() => { if (secao === "widgets" && parte === "adicionar" && externos === null) void motor.widgetsExternos().then(setExternos); }, [secao, parte, externos]);
@@ -454,12 +456,19 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       ) : <p className="text-sm text-suave">Escolha um papel de parede primeiro (parte “Escolha”) para ajustar o desfoque e o escurecimento.</p>;
       case "widgets/adicionar": return (
         <div className="galeria-grade">
-          <p className="galeria-aviso text-sm text-suave">Veja como cada widget fica e o tamanho dele antes de colocar. Depois, segure o widget na tela inicial para mover, redimensionar ou mudar o estilo ({banco.widgets.length} de {MAX_WIDGETS}).</p>
-          {TIPOS_WIDGET.map((x) => {
+          <div className="galeria-aviso">
+            <label className="busca-widgets"><Icone nome="pesquisa" tam={18} /><input type="search" aria-label="Widgets de pesquisa" placeholder="Widgets de pesquisa" value={buscaW} onChange={(e) => setBuscaW(e.target.value)} /></label>
+            <p className="mt-2 text-sm text-suave">Veja como cada widget fica e o tamanho dele. Depois, segure o widget na tela inicial para mover, redimensionar ou mudar o estilo ({banco.widgets.length} de {MAX_WIDGETS}).</p>
+            <div className="widget-estilos mt-2" role="group" aria-label="Filtrar por app">
+              {["", "V-Space", ...Array.from(new Set((externos ?? []).map((x) => x.app))).sort((p, q) => p.localeCompare(q, "pt-BR"))].map((n) => <button key={n || "todos"} type="button" className="busca-chip" aria-pressed={appW === n} onClick={() => setAppW(n)}>{n || "Todos os aplicativos"}</button>)}
+            </div>
+          </div>
+          {TIPOS_WIDGET.filter((x) => (appW === "" || appW === "V-Space") && NOMES_WIDGET[x].toLowerCase().includes(buscaW.trim().toLowerCase())).map((x) => {
             const tam = TAMANHO_WIDGET[x];
             return (
-              <Cartao key={x} titulo={`${NOMES_WIDGET[x]} · ${tam.w}×${tam.h}`} className={x === "clima" ? "galeria-larga" : "galeria-item"}>
+              <Cartao key={x} className={x === "clima" ? "galeria-larga" : "galeria-item"}>
                 <div className="galeria-caixa" aria-label={`Prévia de ${NOMES_WIDGET[x]}, tamanho ${tam.w} por ${tam.h}`} role="img"><PreviaEscalada w={tam.w} h={tam.h}><PreviaWidget tipo={x} /></PreviaEscalada></div>
+                <div className="galeria-info"><span className="min-w-0"><b className="block truncate">{NOMES_WIDGET[x]}</b><span className="text-xs text-suave">V-Space</span></span><span className="galeria-tam">{tam.w}×{tam.h}</span></div>
                 {x === "agenda" && <p className="mt-2 text-xs text-suave">Pede permissão para ler seus compromissos (só leitura) na primeira vez.</p>}
                 {x === "clima" ? (
                   <>
@@ -481,12 +490,12 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
             {externos === null && <p className="mt-2 text-sm text-suave">Procurando…</p>}
             {externos !== null && externos.length === 0 && <p className="mt-2 text-sm text-suave">{motor.nome === "android" ? "Nenhum widget de app encontrado." : "Disponível no aparelho."}</p>}
           </div>
-          {(externos ?? []).map((x) => (
-            <Cartao key={x.provider} titulo={`${x.app} · ${x.w}×${x.h}`} className="galeria-item">
+          {(externos ?? []).filter((x) => (appW === "" || appW === x.app) && `${x.nome} ${x.app}`.toLowerCase().includes(buscaW.trim().toLowerCase())).map((x) => (
+            <Cartao key={x.provider} className="galeria-item">
               <div className="galeria-caixa" role="img" aria-label={`Prévia de ${x.nome}, tamanho ${x.w} por ${x.h}`}>
                 <PreviaEscalada w={x.w} h={x.h}>{x.previa ? <img src={`data:image/png;base64,${x.previa}`} alt="" draggable={false} className="externo-previa" /> : <div className="externo"><b className="truncate">{x.nome}</b></div>}</PreviaEscalada>
               </div>
-              <p className="mt-1 truncate text-xs text-suave">{x.nome}</p>
+              <div className="galeria-info"><span className="min-w-0"><b className="block truncate">{x.nome}</b><span className="block truncate text-xs text-suave">{x.app}</span></span><span className="galeria-tam">{x.w}×{x.h}</span></div>
               <div className="mt-2"><Botao variante="primario" disabled={cheio || criandoExterno !== ""} aria-label={`Adicionar ${x.app}: ${x.nome}`} onClick={() => void incluirExterno(x)}><Icone nome="mais" tam={16} />{criandoExterno === x.provider ? "Adicionando…" : "Adicionar"}</Botao></div>
             </Cartao>
           ))}

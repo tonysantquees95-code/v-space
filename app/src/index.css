@@ -525,3 +525,9 @@ html[data-fundo-externo="vidro"] .widget[data-tipo="externo"] { background: #fff
 .acao-linha > span.text-suave { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; text-align: right; }
 .acao-linha > svg:last-child { margin-left: auto; flex: none; }
 .acao-linha:active { background: #ffffff10; }
+
+/* Seletor de widgets: pesquisa, chips por app e selo de tamanho */
+.busca-widgets { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: 999px; background: #ffffff14; }
+.busca-widgets input { flex: 1; min-width: 0; background: transparent; color: inherit; outline: none; font-size: 1rem; }
+.galeria-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.galeria-tam { flex: none; padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 700; background: color-mix(in srgb, var(--color-neon) 22%, transparent); }
