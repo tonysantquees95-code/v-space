@@ -40,14 +40,19 @@ export function Linha({ titulo, texto, children }: { titulo: string; texto?: str
   );
 }
 
-/** Opções lado a lado (uma só escolhida). */
+/** Opções lado a lado (uma só escolhida): a escolhida fica preenchida, com borda forte e um visto; as outras ficam separadas e apagadas. */
 export function Seletor<T extends string>({ valor, opcoes, aoMudar, rotulo }: { valor: T; opcoes: { id: T; nome: string }[]; aoMudar: (v: T) => void; rotulo: string }) {
   return (
-    <div role="group" aria-label={rotulo} className="flex flex-wrap gap-2">
-      {opcoes.map((o) => (
-        <button key={o.id} type="button" aria-pressed={valor === o.id} onClick={() => aoMudar(o.id)}
-          className={`min-h-11 rounded-[var(--raio-botao,0.75rem)] border px-4 text-sm font-medium transition ${valor === o.id ? "border-neon bg-neon/15 text-neon" : "border-borda text-texto hover:bg-white/5"}`}>{o.nome}</button>
-      ))}
+    <div role="group" aria-label={rotulo} className="flex flex-wrap gap-3">
+      {opcoes.map((o) => {
+        const sel = valor === o.id;
+        return (
+          <button key={o.id} type="button" aria-pressed={sel} onClick={() => aoMudar(o.id)}
+            className={`flex min-h-11 items-center gap-2 rounded-[var(--raio-botao,0.75rem)] border-2 px-4 text-sm transition ${sel ? "border-neon bg-neon/25 font-bold text-white" : "border-white/20 bg-white/5 text-texto hover:bg-white/10"}`}>
+            {sel && <span className="text-neon"><Icone nome="ok" tam={16} /></span>}{o.nome}
+          </button>
+        );
+      })}
     </div>
   );
 }

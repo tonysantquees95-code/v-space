@@ -12,6 +12,7 @@ let oculto = false;
 let laco = 0;
 let ultimo = "";
 let fimEventos: (() => void) | null = null;
+let releitura = 0;
 
 export function ocultarExternos(valor: boolean) { oculto = valor; }
 
@@ -57,6 +58,8 @@ function ligar() {
   if (laco) return;
   ultimo = "";
   laco = requestAnimationFrame(quadro);
+  // o Android só diz que não conseguiu desenhar depois de um tempo: pergunta de novo a cada 2 s
+  releitura = window.setInterval(() => { ultimo = ""; }, 2000);
   fimEventos = motor.aoEventoExterno({
     longo: (id) => window.dispatchEvent(new CustomEvent("vspace-widget-longo", { detail: id })),
     rolar: (dy) => { const el = [...registro.values()].find((e) => e.isConnected); const r = rolador(el ?? null); if (r) r.scrollTop += dy; },
@@ -65,6 +68,7 @@ function ligar() {
 function desligar() {
   if (!laco || registro.size) return;
   cancelAnimationFrame(laco); laco = 0;
+  clearInterval(releitura);
   fimEventos?.(); fimEventos = null;
   ultimo = "[]";
   void motor.mostrarExternos([]);

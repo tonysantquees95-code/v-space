@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.RemoteViews;
 
 import androidx.activity.result.ActivityResult;
 
@@ -57,7 +58,10 @@ public class WidgetsPlugin extends Plugin {
     @Override
     public void load() {
         gerente = AppWidgetManager.getInstance(getContext());
-        host = new AppWidgetHost(getContext().getApplicationContext(), HOST_ID);
+        host = new AppWidgetHost(getContext().getApplicationContext(), HOST_ID) {
+            @Override
+            protected AppWidgetHostView onCreateView(Context c, int id, AppWidgetProviderInfo info) { return new Vista(c); }
+        };
     }
 
     @Override
@@ -282,7 +286,9 @@ public class WidgetsPlugin extends Plugin {
                     Rect corte = new Rect(Math.round((float) ((cx - x) * d)), Math.round((float) ((cy - y) * d)), Math.round((float) ((cx - x + cw) * d)), Math.round((float) ((cy - y + ch) * d)));
                     v.setClipBounds(corte);
                     v.setVisibility(View.VISIBLE);
-                    estados.put(String.valueOf(id), "ok");
+                    String f = v.falha();
+                    if (f != null) { v.setVisibility(View.INVISIBLE); estados.put(String.valueOf(id), "Android recusou desenhar: " + f); }
+                    else estados.put(String.valueOf(id), "ok");
                 }
                 for (Map.Entry<Integer, Envoltorio> e : vistas.entrySet()) if (!presentes.contains(e.getKey())) e.getValue().setVisibility(View.GONE);
                 JSObject r = new JSObject();
@@ -302,6 +308,47 @@ public class WidgetsPlugin extends Plugin {
         camada.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         raiz.addView(camada);
         // a camada fica sem fundo: só os widgets recebem toque; o resto atravessa para a WebView
+    }
+
+
+    /** Vista do widget que anota por que o Android não conseguiu desenhar (o texto "Não foi possível adicionar widget"). */
+    private static class Vista extends AppWidgetHostView {
+        volatile String falha = null;
+        private RemoteViews ultimo = null;
+        private AppWidgetProviderInfo info = null;
+
+        Vista(Context c) { super(c); }
+
+        @Override public void setAppWidget(int id, AppWidgetProviderInfo i) { info = i; super.setAppWidget(id, i); }
+
+        @Override public void updateAppWidget(RemoteViews rv) {
+            ultimo = rv;
+            falha = null;
+            super.updateAppWidget(rv);
+        }
+
+        @Override protected View getErrorView() {
+            falha = descobrir();
+            return super.getErrorView();
+        }
+
+        /** Repete a montagem à parte só para pegar o erro de verdade (o Android esconde). */
+        private String descobrir() {
+            try {
+                if (ultimo != null) { ultimo.apply(getContext(), new FrameLayout(getContext())); return "O widget mandou um desenho que o Android não conseguiu montar."; }
+                if (info != null && info.initialLayout != 0) {
+                    Context deles = getContext().createPackageContext(info.provider.getPackageName(), Context.CONTEXT_RESTRICTED);
+                    android.view.LayoutInflater.from(deles).inflate(info.initialLayout, new FrameLayout(getContext()), false);
+                    return "O widget ainda não mandou o desenho.";
+                }
+                return "O Android não conseguiu montar este widget.";
+            } catch (Throwable e) {
+                Throwable raiz = e;
+                while (raiz.getCause() != null && raiz.getCause() != raiz) raiz = raiz.getCause();
+                String m = raiz.getClass().getSimpleName() + (raiz.getMessage() == null ? "" : ": " + raiz.getMessage());
+                return m.length() > 160 ? m.substring(0, 160) : m;
+            }
+        }
     }
 
     private String erroVista = "";
@@ -334,6 +381,7 @@ public class WidgetsPlugin extends Plugin {
     private class Envoltorio extends FrameLayout {
         final int id;
         final AppWidgetHostView filho;
+        String falha() { return filho instanceof Vista ? ((Vista) filho).falha : null; }
         private final GestureDetector gesto;
         private final int folga;
         private float y0, ultimoY;
