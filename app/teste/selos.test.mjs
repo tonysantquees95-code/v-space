@@ -127,3 +127,12 @@ test2("cenas da pessoa", () => {
   const suja = limparCenasMinhas([{ id: "ok", nome: "a", partes: ["cores", "xx"], valores: { cor: "#fff", hack: 1 } }, { id: "!!", nome: "b", partes: ["cores"], valores: {} }, { id: "z", nome: "c", partes: [], valores: {} }]);
   assert2.equal(suja.length, 1); assert2.deepEqual(suja[0].partes, ["cores"]); assert2.equal("hack" in suja[0].valores, false);
 });
+
+import { limparWidgets, editarWidget } from "../src/dados.ts";
+test2("aparência por widget", () => {
+  const ws = limparWidgets([{ id: "w1", tipo: "bateria", sombra: true, cantos: 99, espaco: 6, escala: 100 }, { id: "w2", tipo: "bateria", cantos: 12, escala: 120, espaco: -3 }]);
+  assert2.equal(ws[0].sombra, true); assert2.equal(ws[0].cantos, undefined); assert2.equal(ws[0].espaco, 6); assert2.equal(ws[0].escala, undefined);
+  assert2.equal(ws[1].cantos, 12); assert2.equal(ws[1].escala, 120); assert2.equal(ws[1].espaco, undefined);
+  const e = editarWidget(ws, "w1", { cantos: 30, escala: 90 });
+  assert2.equal(e[0].cantos, 30); assert2.equal(e[0].escala, 90);
+});

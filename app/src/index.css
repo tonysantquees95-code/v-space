@@ -556,3 +556,11 @@ html[data-cores="pb"] .glifo img { filter: grayscale(1); }
 .bloco-qtd { font-size: .78rem; opacity: .8; }
 .blocos-aberta { position: relative; height: 100%; }
 .blocos-voltar { position: absolute; z-index: 5; top: 8px; left: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px 0 8px; border-radius: 999px; background: #0f1424d9; border: 1px solid #ffffff26; color: inherit; font-size: .85rem; }
+
+/* Personalizar widget: sombra, espaço interno e escala */
+.widget[data-sombra="1"] { box-shadow: 0 10px 28px #000a; }
+.widget[style*="--w-espaco"] .widget-corpo { padding: var(--w-espaco); }
+.widget[style*="--w-escala"] .widget-corpo { zoom: var(--w-escala); }
+.widget-linha { display: flex; align-items: center; justify-content: space-between; }
+.widget-acoes { max-height: calc(100dvh - var(--barra-base, 0px) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+.widget-acoes > * { flex-shrink: 0; }

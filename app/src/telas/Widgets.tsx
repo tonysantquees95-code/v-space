@@ -258,8 +258,8 @@ function Celula({ w, selecionado, bloqueado, arrasto, aoSelecionar, aoPressionar
   const r: Retangulo = meu && meu.modo !== "mover" && meu.prop ? meu.prop : w;
   const mover = meu && meu.modo === "mover" ? `translate(${meu.dx}px, ${meu.dy}px)` : undefined;
   return (
-    <article className="widget" data-tipo={w.tipo} data-estilo={w.estilo} data-selecionado={selecionado} data-movendo={!!meu}
-      style={{ gridColumn: `${r.x + 1} / span ${r.w}`, gridRow: `${r.y + 1} / span ${r.h}`, transform: mover }} aria-label={NOMES_WIDGET[w.tipo]}
+    <article className="widget" data-tipo={w.tipo} data-estilo={w.estilo} data-selecionado={selecionado} data-movendo={!!meu} data-sombra={w.sombra ? "1" : undefined}
+      style={{ gridColumn: `${r.x + 1} / span ${r.w}`, gridRow: `${r.y + 1} / span ${r.h}`, transform: mover, ...(w.cantos !== undefined ? { "--cantos": `${w.cantos}px` } : {}), ...(w.espaco !== undefined ? { "--w-espaco": `${w.espaco}px` } : {}), ...(w.escala ? { "--w-escala": String(w.escala / 100) } : {}) } as React.CSSProperties} aria-label={NOMES_WIDGET[w.tipo]}
       onPointerDown={longa.onPointerDown} onPointerMove={longa.onPointerMove} onPointerUp={longa.onPointerUp} onPointerLeave={longa.onPointerLeave} onPointerCancel={longa.onPointerCancel} onContextMenu={longa.onContextMenu}>
       {CORPO(w)}
       {selecionado && (
@@ -365,6 +365,11 @@ export function AreaWidgets({ widgets, bloqueado, aoMudar }: { widgets: Widget[]
               <div className="widget-estilos" role="group" aria-label="Estilo do widget">
                 {ESTILOS_WIDGET.map((s) => <button key={s} type="button" className="busca-chip" aria-pressed={atual.estilo === s} onClick={() => aoMudar(estiloDoWidget(widgets, atual.id, s))}>{NOMES_ESTILO_WIDGET[s]}</button>)}
               </div>
+              <label className="widget-campo widget-linha">Sombra<input type="checkbox" role="switch" aria-label="Sombra" checked={!!atual.sombra} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { sombra: e.target.checked }))} /></label>
+              <label className="widget-campo">Cantos {atual.cantos ?? "padrão"}<input type="range" aria-label="Cantos" min={0} max={40} value={atual.cantos ?? 20} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { cantos: Number(e.target.value) }))} /></label>
+              <label className="widget-campo">Espaço interno {atual.espaco ?? "padrão"}<input type="range" aria-label="Espaço interno" min={0} max={24} value={atual.espaco ?? 12} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { espaco: Number(e.target.value) }))} /></label>
+              <label className="widget-campo">Escala {atual.escala ?? 100}%<input type="range" aria-label="Escala" min={80} max={130} step={5} value={atual.escala ?? 100} onChange={(e) => aoMudar(editarWidget(widgets, atual.id, { escala: Number(e.target.value) }))} /></label>
+              <button type="button" className="busca-chip" onClick={() => aoMudar(widgets.map((w) => (w.id === atual.id ? (({ sombra, cantos, espaco, escala, ...resto }) => resto)(w) : w)))}>Restaurar padrão</button>
             </>
           )}
           {vista === "ajustes" && (

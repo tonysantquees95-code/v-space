@@ -105,7 +105,9 @@ export const NOMES_ESTILO_WIDGET: Record<EstiloWidget, string> = { vidro: "Vidro
 /** Tamanho (em células: colunas × linhas) que cada widget tem ao ser colocado. */
 export const TAMANHO_WIDGET = { ...Object.fromEntries(CATALOGO_WIDGET.map((x) => [x[0], { w: x[2], h: x[3] }])), externo: { w: 2, h: 2 } } as Record<TipoWidget, { w: number; h: number }>;
 /** Um widget solto na tela inicial: posição (x, y) e tamanho (w, h) em células de uma grade de 4 colunas. O clima guarda a cidade e o ponto no mapa. */
-export interface Widget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number; titulo?: string; data?: string; texto?: string; provider?: string; appId?: number }
+/** Ajustes visuais de um widget (Personalizar): sombra, cantos 0–40 px, espaço interno 0–24 px, escala 80–130 %. */
+export interface AparenciaWidget { sombra?: boolean; cantos?: number; espaco?: number; escala?: number }
+export interface Widget extends AparenciaWidget { id: string; tipo: TipoWidget; x: number; y: number; w: number; h: number; estilo: EstiloWidget; cidade?: string; lat?: number; lon?: number; titulo?: string; data?: string; texto?: string; provider?: string; appId?: number }
 export interface Retangulo { x: number; y: number; w: number; h: number }
 export const sobrepoe = (a: Retangulo, b: Retangulo): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const cabeEm = (ws: Widget[], r: Retangulo, ignorar?: string): boolean => !ws.some((x) => x.id !== ignorar && sobrepoe(x, r));
@@ -244,6 +246,10 @@ export function limparWidgets(x: unknown): Widget[] {
     if (x !== null && x + lar > COLUNAS_WIDGET) lar = COLUNAS_WIDGET - x;
     if (x === null || y === null || !cabeEm(saida, { x, y, w: lar, h: alt })) { const l = acharLugar(saida, lar, alt); x = l.x; y = l.y; }
     const item: Widget = { id, tipo, x, y, w: lar, h: alt, estilo: escolha(o.estilo, ESTILOS_WIDGET, "vidro") };
+    if (o.sombra === true) item.sombra = true;
+    const ca = inteiro(o.cantos, 0, 40); if (ca !== null) item.cantos = ca;
+    const es = inteiro(o.espaco, 0, 24); if (es !== null) item.espaco = es;
+    const sc = inteiro(o.escala, 80, 130); if (sc !== null && sc !== 100) item.escala = sc;
     if (item.tipo === "clima") {
       const lat = decimal(o.lat, -90, 90), lon = decimal(o.lon, -180, 180);
       const cidade = typeof o.cidade === "string" ? o.cidade.replace(/[<>]/g, "").trim().slice(0, 40) : "";
@@ -275,7 +281,7 @@ export function adicionarWidget(b: Banco, w: { tipo: TipoWidget; cidade?: string
   return { banco: { ...b, widgets: limparWidgets([...b.widgets, { ...padrao, ...w, id: `w${n}` }]) }, ok: true };
 }
 /** Muda o texto de um widget (nota, título e data da contagem); passa pela mesma limpeza de sempre. */
-export const editarWidget = (ws: Widget[], id: string, campos: { titulo?: string; data?: string; texto?: string }): Widget[] => limparWidgets(ws.map((w) => (w.id === id ? { ...w, ...campos } : w)));
+export const editarWidget = (ws: Widget[], id: string, campos: { titulo?: string; data?: string; texto?: string } & AparenciaWidget): Widget[] => limparWidgets(ws.map((w) => (w.id === id ? { ...w, ...campos } : w)));
 export const removerWidget = (b: Banco, id: string): Banco => ({ ...b, widgets: b.widgets.filter((w) => w.id !== id) });
 export const ehPacote = (v: unknown): v is string => typeof v === "string" && REGEX_PACOTE.test(v);
 export const nomeLimpo = (v: unknown, padrao = ""): string => String(v ?? "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 24) || padrao;

@@ -37,6 +37,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 30, data: "2026-11-20", tipo: "novo", titulo: "Cores dos ícones e player de música", texto: "Em Estúdio › Temas › Cores, a Saturação das cores deixa os ícones plenos, suaves, esmaecidos ou em preto e branco. Em Início › Música, escolha a largura e o lado do player e se mostra a capa e o botão de faixa anterior." },
   { id: 31, data: "2026-11-20", tipo: "novo", titulo: "Blocos e Minimalista", texto: "Em Estúdio › Categorias você escolhe como a tela inicial aparece: Blocos (cada categoria é um bloco colorido) ou Minimalista (hora e data grandes e os favoritos só como texto)." },
   { id: 32, data: "2026-11-20", tipo: "novo", titulo: "Suas próprias cenas", texto: "Em Estúdio › Temas › Cenas, guarde só as partes da aparência que quiser (cores, ícones, superfície, ajustes do papel) com um nome e aplique depois sem mexer no resto." },
+  { id: 33, data: "2026-11-20", tipo: "melhoria", titulo: "Personalizar cada widget", texto: "Ao segurar um widget › Personalizar, você liga a sombra e ajusta os cantos, o espaço interno e a escala só daquele widget. Tem botão para restaurar o padrão." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };
