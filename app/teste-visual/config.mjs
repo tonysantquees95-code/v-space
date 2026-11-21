@@ -191,6 +191,7 @@ export default {
     ["estudio-backup-refazer", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Backup"); await p.getByRole("button", { name: "Refazer a tela inicial" }).click(); await p.getByText(/Isso refaz a tela inicial/).waitFor(); }],
     ["estudio-sobre", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); }],
     ["sobre-apresentacao", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Rever a apresentação" }).click(); await p.getByText("Bem-vindo ao V-Space").waitFor(); }],
+    ["sobre-feedback", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Enviar feedback" }).click(); await p.getByText(/^FEEDBACK/).waitFor(); await p.waitForTimeout(300); }],
     ["sobre-termos", "completo", async (p) => { await abrirEstudio(p); await aba(p, "Configurações"); await aba(p, "Sobre"); await p.getByRole("button", { name: "Termos de uso" }).click(); await p.getByText("1. O que é o V-Space").waitFor(); }],
     ["categorias-inicio", "categorias", livre],
     ["modo-blocos", "blocos", async (p) => { await p.getByRole("button", { name: /^Favoritos, \d+ apps/ }).waitFor(); }],

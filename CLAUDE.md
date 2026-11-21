@@ -30,3 +30,6 @@
 ## Publicação e atualização (regra dos departamentos)
 - Todo APK finalizado vai direto para o Painel Dev (ver e baixar), e o app precisa estar listado lá.
 - O app se atualiza por dentro (verificar → barra de download → Instalar), igual aos outros da suíte. O Vindex enxerga todos os apps.
+
+## Feedback e relato de erro
+- Ajustes › Sobre tem "Enviar feedback" e "Reportar um erro": abrem `telas/FeedbackDoApp.tsx` (página do servidor `/feedback?app=vspace&v=<versão>&p=<plataforma>` num iframe, com o visual do app). Os relatos chegam no Painel Dev › Feedback. Windows: o CSP do `tauri.conf.json` precisa de `frame-src` do servidor. Cenário `feedback` no teste visual.

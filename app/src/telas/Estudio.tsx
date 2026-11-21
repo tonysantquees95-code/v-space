@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FeedbackDoApp } from "./FeedbackDoApp";
 import {
   adicionarWidget, ajustarTema, CANTOS, COLUNAS, DESFOQUE, ESCURO, SATURACAO, TEMPERATURA, VINHETA, APLICAR_EM, LUZES, ANIM_BLOQUEIO, ITENS_MENU, type CoresIcones, type FundoExterno, type UnidadeTemp, type AcaoGesto, PASTA_ABRE, SUPERFICIES, type AnimBloqueio, type PastaAbre, type Superficie, ORDENS, type OrdemGaveta, type AplicarEm, type Luz, escolherTema, exportar, importar, LINHAS, MAX_WIDGETS, TAMANHO_WIDGET, mostrar, mudarGrade, NOMES_DOS_TEMAS, NOMES_WIDGET, ordenar,
   reconciliar, removerWidget, TAMANHO_ICONE, TEMAS, TIPOS_WIDGET,
@@ -114,6 +115,7 @@ interface Props {
 /** O Estúdio: a tela inicial em miniatura no alto, as seções nas laterais e as opções embaixo. */
 export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, aoTour, aoTermos, abaInicial, papel, aoPapel, aoProcurar, aoAbrirSeguro, aoOrganizar, email, aoEntrarConta, aoSairDaConta }: Props) {
   const [minhas, setMinhas] = useState<CenaMinha[]>(() => lerCenasMinhas());
+  const [feedback, setFeedback] = useState(false);
   const [nomeCena, setNomeCena] = useState("");
   const [partesCena, setPartesCena] = useState<ParteCena[]>(["cores", "icones", "superficie"]);
   const guardarCena = () => {
@@ -656,8 +658,9 @@ export function Estudio({ banco, apps, aoMudar, aoFechar, aviso, aoRecomecar, ao
       );
       case "config/sobre": return (
         <div className="space-y-4">
-          <Cartao titulo="V-Space"><p className="text-sm text-suave">O launcher da suíte Vetorial. Sua tela inicial, do seu jeito. Nesta fase está em testes (beta). Versão {import.meta.env.VITE_BUILD ? `1.${String(import.meta.env.VITE_BUILD)}` : "de desenvolvimento"}.</p></Cartao>
-          <div className="flex flex-col gap-2"><Botao onClick={() => void aoProcurar()}>Procurar atualização</Botao><Botao onClick={aoTour}>Rever a apresentação</Botao><Botao onClick={aoTermos}>Termos de uso</Botao></div>
+          <Cartao titulo="V-Space"><p className="text-sm text-suave">O launcher da suíte Vetorial. Sua tela inicial, do seu jeito. Nesta fase está em testes (beta): conte o que achou ou o que deu errado, isso nos ajuda a melhorar. Versão {import.meta.env.VITE_BUILD ? `1.${String(import.meta.env.VITE_BUILD)}` : "de desenvolvimento"}.</p></Cartao>
+          <div className="flex flex-col gap-2"><Botao onClick={() => void aoProcurar()}>Procurar atualização</Botao><Botao onClick={aoTour}>Rever a apresentação</Botao><Botao onClick={aoTermos}>Termos de uso</Botao><Botao onClick={() => setFeedback(true)}>Enviar feedback</Botao><Botao onClick={() => setFeedback(true)}>Reportar um erro</Botao></div>
+          {feedback && <FeedbackDoApp aoFechar={() => setFeedback(false)} />}
         </div>
       );
       default: return null;
