@@ -214,6 +214,17 @@ export default function App() {
   }, []);
   useEffect(() => { const t = (e: KeyboardEvent) => { if (e.key === "Escape" && temCamada) fecharTopo(); }; window.addEventListener("keydown", t); return () => window.removeEventListener("keydown", t); }, [temCamada, fecharTopo]);
 
+  // selos de notificação: atualiza a cada 5 s com o app aberto (precisa do acesso às notificações)
+  useEffect(() => {
+    let vivo = true;
+    const ler = () => { if (seguro) { definirSelos({}); return; } if (!document.hidden) void motor.selos().then((r) => { if (vivo) definirSelos(r); }); };
+    ler();
+    const t = window.setInterval(ler, 5000);
+    document.addEventListener("visibilitychange", ler);
+    return () => { vivo = false; window.clearInterval(t); document.removeEventListener("visibilitychange", ler); };
+  }, [seguro]);
+
+  // (todos os hooks ficam ACIMA dos retornos abaixo: senão o React derruba a tela ao fechar a apresentação/novidades)
   if (apresentar) return <Apresentacao aoConcluir={() => setApresentar(false)} />;
   // Vetorial ID é o padrão da suíte: pede a conta uma vez. Sem internet dá para adiar, para o celular nunca ficar sem tela inicial.
   if (!sessao && !adiado) return <Conta aparelho={aparelhoLocal()} aoEntrar={(s) => { guardarSessao(s); setSessao(s); }} aoAdiar={() => { marcarEntrarDepois(); setAdiado(true); }} />;
@@ -241,15 +252,6 @@ export default function App() {
   };
   const comAviso = (r: { banco: Banco; ok: boolean }, falha: string) => { setBanco(r.banco); if (!r.ok) falar(falha); };
 
-  // selos de notificação: atualiza a cada 5 s com o app aberto (precisa do acesso às notificações)
-  useEffect(() => {
-    let vivo = true;
-    const ler = () => { if (seguro) { definirSelos({}); return; } if (!document.hidden) void motor.selos().then((r) => { if (vivo) definirSelos(r); }); };
-    ler();
-    const t = window.setInterval(ler, 5000);
-    document.addEventListener("visibilitychange", ler);
-    return () => { vivo = false; window.clearInterval(t); document.removeEventListener("visibilitychange", ler); };
-  }, [seguro]);
 
   return (
     <>

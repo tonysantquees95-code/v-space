@@ -316,6 +316,9 @@ public class WidgetsPlugin extends Plugin {
         volatile String falha = null;
         private RemoteViews ultimo = null;
         private AppWidgetProviderInfo info = null;
+        /** Pede ao app dono do widget que mande o desenho de novo; quem cria a vista preenche. */
+        Runnable pedirDeNovo = null;
+        private int pedidos = 0;
 
         /**
          * O widget é desenhado com o tema padrão do Android (DeviceDefault), não com o tema do nosso app: vários widgets usam
@@ -334,19 +337,26 @@ public class WidgetsPlugin extends Plugin {
 
         @Override protected View getErrorView() {
             falha = descobrir();
+            // enquanto o app do widget não mandou o desenho, o Android mostra a tela de erro do desenho inicial: pede de novo
+            // (até 6 vezes, a cada 2,5 s) e, quando o desenho chegar, ele substitui esta tela sozinho
+            if (ultimo == null && pedirDeNovo != null && pedidos < 6) {
+                pedidos++;
+                postDelayed(pedirDeNovo, 2500);
+            }
             return super.getErrorView();
         }
 
         /** Repete a montagem à parte só para pegar o erro de verdade (o Android esconde). */
         private String descobrir() {
             try {
-                if (ultimo != null) { ultimo.apply(getContext(), new FrameLayout(getContext())); return "O widget mandou um desenho que o Android não conseguiu montar."; }
-                if (info != null && info.initialLayout != 0) {
-                    Context deles = getContext().createPackageContext(info.provider.getPackageName(), Context.CONTEXT_RESTRICTED);
-                    android.view.LayoutInflater.from(deles).inflate(info.initialLayout, new FrameLayout(getContext()), false);
-                    return "O widget ainda não mandou o desenho.";
+                if (ultimo != null) {
+                    String nome = "";
+                    try { nome = " [" + ultimo.getPackage() + ":" + getContext().createPackageContext(ultimo.getPackage(), 0).getResources().getResourceEntryName(ultimo.getLayoutId()) + "]"; } catch (Throwable ignora) { }
+                    try { ultimo.apply(getContext(), new FrameLayout(getContext())); return "O widget mandou um desenho que o Android não conseguiu montar" + nome + "."; }
+                    catch (Throwable e) { Throwable r = e; while (r.getCause() != null && r.getCause() != r) r = r.getCause(); String m = r.getClass().getSimpleName() + (r.getMessage() == null ? "" : ": " + r.getMessage()); return (m.length() > 120 ? m.substring(0, 120) : m) + nome; }
                 }
-                return "O Android não conseguiu montar este widget.";
+                // sem desenho ainda: o erro do desenho inicial do app não é o problema de verdade, é só a espera
+                return "Esperando o app do widget mandar o desenho (" + (info == null ? "?" : info.provider.getPackageName()) + "). Se não aparecer, abra esse app uma vez e adicione o widget de novo.";
             } catch (Throwable e) {
                 Throwable raiz = e;
                 while (raiz.getCause() != null && raiz.getCause() != raiz) raiz = raiz.getCause();
@@ -374,6 +384,8 @@ public class WidgetsPlugin extends Plugin {
             if (info == null) { erroVista = "O Android não reconhece mais este widget (o app dele foi removido ou atualizado). Remova e adicione de novo."; return null; }
             AppWidgetHostView hv = host.createView(getContext(), id, info);
             hv.setAppWidget(id, info);
+            if (hv instanceof Vista) ((Vista) hv).pedirDeNovo = () -> pedirAtualizacao(id, info);
+            iniciarEscuta();
             pedirAtualizacao(id, info);
             return new Envoltorio(getContext(), id, hv);
         } catch (Throwable e) {

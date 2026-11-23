@@ -73,6 +73,8 @@ export default {
     ["apresentacao-permissoes", "primeira", async (p) => { for (let i = 0; i < 14 && !(await p.getByText("Lista de apps instalados").isVisible()); i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByText("Lista de apps instalados").waitFor(); }],
     ["apresentacao-termos", "primeira", async (p) => { for (let i = 0; i < 14 && !(await p.getByText("Lista de apps instalados").isVisible()); i++) await p.getByRole("button", { name: /Próximo|Continuar/ }).click(); await p.getByRole("button", { name: "Continuar" }).click(); await p.getByRole("heading", { name: "Termos de uso" }).waitFor(); }],
     ["o-que-ha-de-novo", "atualizou", async (p) => { await p.getByText("O que há de novo").first().waitFor(); }],
+    // regressão da tela preta: fechar "O que há de novo" tem que mostrar a tela inicial (hooks fora de ordem derrubavam o app)
+    ["novidades-fecha-e-mostra-inicio", "atualizou", async (p) => { await p.getByText("O que há de novo").first().waitFor(); await p.getByRole("button", { name: "Entendi" }).click(); await p.waitForSelector(".inicio", { timeout: 5000 }); }],
     ["inicio-primeira-vez", "normal", livre],
     ["inicio", "completo", livre],
     ["inicio-pagina-2", "completo", async (p) => { await p.getByRole("tab", { name: "Ir para a página 2" }).click(); await p.waitForTimeout(500); }],
