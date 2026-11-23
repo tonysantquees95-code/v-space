@@ -41,6 +41,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 34, data: "2026-11-20", tipo: "melhoria", titulo: "Opções com a escolhida marcada", texto: "Nas configurações, a opção que está valendo agora fica preenchida e com um visto, e as opções ganharam espaço entre si. Assim dá para ver de relance o que está selecionado." },
   { id: 35, data: "2026-11-20", tipo: "correcao", titulo: "Widgets de apps dizem por que falharam", texto: "Quando o Android não consegue mostrar um widget de outro app, o espaço dele agora mostra o motivo, para podermos consertar." },
   { id: 36, data: "2026-11-21", tipo: "novo", titulo: "Feedback e relato de erros", texto: "Em Estúdio › Sobre você encontra Enviar feedback e Reportar um erro: conte o que achou, avise quando algo não funcionou e responda uma pesquisa rápida de 1 minuto. O V-Space está em fase de testes (beta) e cada relato ajuda a melhorar." },
+  { id: 37, data: "2026-11-22", tipo: "correcao", titulo: "Widgets de outros apps aparecem", texto: "Alguns widgets (como o do Google) ficavam sem aparecer e mostravam um erro. Agora eles são desenhados do jeito que o Android espera e devem aparecer normalmente." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

@@ -317,7 +317,12 @@ public class WidgetsPlugin extends Plugin {
         private RemoteViews ultimo = null;
         private AppWidgetProviderInfo info = null;
 
-        Vista(Context c) { super(c); }
+        /**
+         * O widget é desenhado com o tema padrão do Android (DeviceDefault), não com o tema do nosso app: vários widgets usam
+         * atributos desse tema para medir e pintar (ex.: ?android:attr/...). Com o tema errado o Android diz "You must supply a
+         * layout_height attribute" e o widget não aparece.
+         */
+        Vista(Context c) { super(new android.view.ContextThemeWrapper(c, android.R.style.Theme_DeviceDefault_DayNight)); }
 
         @Override public void setAppWidget(int id, AppWidgetProviderInfo i) { info = i; super.setAppWidget(id, i); }
 
