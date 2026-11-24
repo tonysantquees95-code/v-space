@@ -78,8 +78,13 @@ export function ExternoCorpo({ w }: { w: Widget }) {
   const ref = useRef<HTMLDivElement>(null);
   const id = w.appId ?? -1;
   const [problema, setProblema] = useState("");
+  const [pronto, setPronto] = useState(false);
   useEffect(() => {
-    const f = (e: Event) => { const m = (e as CustomEvent<Record<string, string>>).detail ?? {}; const t = m[String(id)] ?? m["*"] ?? ""; setProblema(t && t !== "ok" ? t : ""); };
+    const f = (e: Event) => {
+      const m = (e as CustomEvent<Record<string, string>>).detail ?? {}; const t = m[String(id)] ?? m["*"] ?? "";
+      setPronto(t === "ok");
+      setProblema(t && t !== "ok" && t !== "aguardando" ? t : "");
+    };
     window.addEventListener("vspace-externo-estado", f);
     return () => window.removeEventListener("vspace-externo-estado", f);
   }, [id]);
@@ -91,8 +96,9 @@ export function ExternoCorpo({ w }: { w: Widget }) {
   }, [id]);
   return (
     <div ref={ref} className="externo" data-externo={id}>
-      <b className="truncate">{w.titulo ?? "Widget de app"}</b>
-      <span className="widget-leve">{problema || (motor.nome === "android" ? "Carregando o widget…" : "Aparece no aparelho (demonstração)")}</span>
+      {/* com o widget já desenhado por cima, o texto de espera sai (senão aparece por trás de widgets transparentes, como a busca do Google) */}
+      {!pronto && <b className="truncate">{w.titulo ?? "Widget de app"}</b>}
+      {!pronto && <span className="widget-leve">{problema || (motor.nome === "android" ? "Carregando o widget…" : "Aparece no aparelho (demonstração)")}</span>}
     </div>
   );
 }

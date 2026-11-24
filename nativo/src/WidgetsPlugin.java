@@ -288,7 +288,7 @@ public class WidgetsPlugin extends Plugin {
                     v.setVisibility(View.VISIBLE);
                     String f = v.falha();
                     if (f != null) { v.setVisibility(View.INVISIBLE); estados.put(String.valueOf(id), "Android recusou desenhar: " + f); }
-                    else estados.put(String.valueOf(id), "ok");
+                    else estados.put(String.valueOf(id), v.desenhado() ? "ok" : "aguardando");
                 }
                 for (Map.Entry<Integer, Envoltorio> e : vistas.entrySet()) if (!presentes.contains(e.getKey())) e.getValue().setVisibility(View.GONE);
                 JSObject r = new JSObject();
@@ -314,7 +314,7 @@ public class WidgetsPlugin extends Plugin {
     /** Vista do widget que anota por que o Android não conseguiu desenhar (o texto "Não foi possível adicionar widget"). */
     private static class Vista extends AppWidgetHostView {
         volatile String falha = null;
-        private RemoteViews ultimo = null;
+        RemoteViews ultimo = null;
         private AppWidgetProviderInfo info = null;
         /** Pede ao app dono do widget que mande o desenho de novo; quem cria a vista preenche. */
         Runnable pedirDeNovo = null;
@@ -401,6 +401,8 @@ public class WidgetsPlugin extends Plugin {
         final int id;
         final AppWidgetHostView filho;
         String falha() { return filho instanceof Vista ? ((Vista) filho).falha : null; }
+        /** Só vale "ok" depois que o app dono do widget mandou o desenho de verdade; antes disso a tela mostra o aviso de espera. */
+        boolean desenhado() { return filho instanceof Vista && ((Vista) filho).ultimo != null; }
         private final GestureDetector gesto;
         private final int folga;
         private float y0, ultimoY;
