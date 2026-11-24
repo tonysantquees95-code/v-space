@@ -43,6 +43,7 @@ export const NOVIDADES: Novidade[] = [
   { id: 36, data: "2026-11-21", tipo: "novo", titulo: "Feedback e relato de erros", texto: "Em Estúdio › Sobre você encontra Enviar feedback e Reportar um erro: conte o que achou, avise quando algo não funcionou e responda uma pesquisa rápida de 1 minuto. O V-Space está em fase de testes (beta) e cada relato ajuda a melhorar." },
   { id: 37, data: "2026-11-22", tipo: "correcao", titulo: "Widgets de outros apps aparecem", texto: "Alguns widgets (como o do Google) ficavam sem aparecer e mostravam um erro. Agora eles são desenhados do jeito que o Android espera e devem aparecer normalmente." },
   { id: 38, data: "2026-11-23", tipo: "correcao", titulo: "Fim da tela preta depois de atualizar", texto: "Depois de atualizar, ao tocar em Entendi nesta tela, o V-Space às vezes ficava com a tela preta. Isso foi corrigido: agora a tela inicial aparece normalmente." },
+  { id: 39, data: "2026-11-24", tipo: "correcao", titulo: "Widgets de outros apps", texto: "Corrigido o erro que impedia widgets como o do Facebook de aparecerem (\"não consegui desenhar\"). Se algum ainda mostrar aviso, remova e adicione de novo." },
 ];
 
 export const ROTULO: Record<TipoNovidade, string> = { novo: "Novo", melhoria: "Melhorou", correcao: "Corrigido" };

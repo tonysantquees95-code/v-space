@@ -323,9 +323,11 @@ public class WidgetsPlugin extends Plugin {
         /**
          * O widget é desenhado com o tema padrão do Android (DeviceDefault), não com o tema do nosso app: vários widgets usam
          * atributos desse tema para medir e pintar (ex.: ?android:attr/...). Com o tema errado o Android diz "You must supply a
-         * layout_height attribute" e o widget não aparece.
+         * layout_height attribute" e o widget não aparece. O contexto base é o do APLICATIVO e não o da tela (AppCompat): o inflador da tela
+         * tem a fábrica do AppCompat, que troca ImageView por AppCompatImageView e o RemoteViews recusa ("can't use method with
+         * RemoteViews: setImageBitmap"); o inflador do aplicativo não tem essa fábrica.
          */
-        Vista(Context c) { super(new android.view.ContextThemeWrapper(c, android.R.style.Theme_DeviceDefault_DayNight)); }
+        Vista(Context c) { super(new android.view.ContextThemeWrapper(c.getApplicationContext(), android.R.style.Theme_DeviceDefault_DayNight)); }
 
         @Override public void setAppWidget(int id, AppWidgetProviderInfo i) { info = i; super.setAppWidget(id, i); }
 
@@ -382,7 +384,7 @@ public class WidgetsPlugin extends Plugin {
         try {
             AppWidgetProviderInfo info = gerente.getAppWidgetInfo(id);
             if (info == null) { erroVista = "O Android não reconhece mais este widget (o app dele foi removido ou atualizado). Remova e adicione de novo."; return null; }
-            AppWidgetHostView hv = host.createView(getContext(), id, info);
+            AppWidgetHostView hv = host.createView(getContext().getApplicationContext(), id, info);
             hv.setAppWidget(id, info);
             if (hv instanceof Vista) ((Vista) hv).pedirDeNovo = () -> pedirAtualizacao(id, info);
             iniciarEscuta();
