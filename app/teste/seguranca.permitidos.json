@@ -1,0 +1,3 @@
+[
+  { "regra": "permissao", "arquivo": "app.yml", "trecho": "QUERY_ALL_PACKAGES", "motivo": "O V-Space é a tela inicial do celular: precisa listar todos os apps instalados para mostrá-los" }
+]
