@@ -97,7 +97,7 @@ export const EXEMPLO: Dados = {
 const Tempo = ({ d, cls = "" }: { d: Dados; cls?: string }) => <span className={`num ${cls}`}>{hh(d.agora)}:{mm(d.agora)}</span>;
 const proximo = (d: Dados) => d.eventos[0];
 const semLugarAviso = <div className="widget-corpo"><div className="widget-leve">Coloque o widget “Clima” para escolher a cidade; este usa a mesma.</div></div>;
-const Simbolo = ({ c, tam = "1.9rem" }: { c: Clima; tam?: string }) => <span aria-hidden style={{ fontSize: tam, lineHeight: 1 }}>{descreverTempo(c.codigo, c.dia).simbolo}</span>;
+const Simbolo = ({ c, tam = "1.9rem" }: { c: Clima; tam?: string }) => <span aria-hidden style={{ lineHeight: 1 }}><Icone nome={descreverTempo(c.codigo, c.dia).simbolo} tam={tam} className="inline-block align-[-0.15em]" /></span>;
 
 function Musicas({ tipo, d }: { tipo: TipoWidget; d: Dados }) {
   const m = d.musica;

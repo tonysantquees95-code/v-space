@@ -56,7 +56,7 @@ export function ClimaVisual({ c, cidade }: { c: Clima; cidade: string }) {
   const t = descreverTempo(c.codigo, c.dia);
   return (
     <div className="widget-corpo">
-      <div className="widget-linha"><span className="widget-simbolo" aria-hidden>{t.simbolo}</span><span className="widget-grande num">{c.temp}°</span></div>
+      <div className="widget-linha"><span className="widget-simbolo" aria-hidden><Icone nome={t.simbolo} tam="1em" /></span><span className="widget-grande num">{c.temp}°</span></div>
       <div className="widget-leve">{cidade} · {t.texto}</div>
       <div className="widget-leve">máx {c.max}° · mín {c.min}° · vento {c.vento} km/h</div>
     </div>

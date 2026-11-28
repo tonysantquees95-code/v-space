@@ -1,3 +1,4 @@
+import { Icone } from "../icones";
 import { useRef, useState } from "react";
 import { aceitarTermos, marcarTourVisto, TERMOS, TOUR } from "../apresentacao";
 import { marcarVisto, ultimoId } from "../novidades";
@@ -35,8 +36,8 @@ export function Tour({ aoTerminar, rotuloFinal = "Continuar", aoFechar }: { aoTe
         {aoFechar ? <button onClick={aoFechar} aria-label="Fechar" className="grid min-h-11 min-w-11 place-items-center text-xl text-suave">✕</button>
           : <button onClick={aoTerminar} className="min-h-11 px-3 text-sm text-suave">Pular</button>}
       </div>
-      <div className="rolagem flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto text-center">
-        <div className="grid h-24 w-24 flex-none place-items-center rounded-3xl border border-borda bg-painel text-5xl shadow-[0_0_40px_-10px_var(--color-neon)]" aria-hidden>{p.icone}</div>
+      <div className="rolagem flex min-h-0 flex-1 flex-col items-center [justify-content:safe_center] gap-4 overflow-y-auto text-center">
+        <div className="shrink-0 grid h-24 w-24 flex-none place-items-center rounded-3xl border border-borda bg-painel text-neon shadow-[0_0_40px_-10px_var(--color-neon)]" aria-hidden><Icone nome={p.icone} tam={48} /></div>
         <h1 className="text-2xl font-extrabold">{p.titulo}</h1>
         <p className="text-suave">{p.texto}</p>
         {p.como && <ul className="w-full space-y-2 rounded-2xl border border-borda bg-painel p-4 text-left text-sm">{p.como.map((c) => <li key={c} className="flex gap-2"><span className="text-neon">›</span><span>{c}</span></li>)}</ul>}
@@ -57,14 +58,14 @@ function Permissoes({ aoVoltar, aoContinuar }: { aoVoltar: () => void; aoContinu
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div><h1 className="text-2xl font-extrabold">Permissões</h1><p className="mt-1 text-sm text-suave">O V-Space só pede o que precisa. Veja o que é usado e por quê:</p></div>
       <div className="rolagem min-h-0 flex-1 space-y-3 overflow-y-auto">
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>📋 Lista de apps instalados</b><p className="mt-1 text-sm text-suave">Para mostrar os seus apps na tela inicial e na gaveta. A lista fica só no aparelho e não é enviada para ninguém.</p></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>📅 Agenda (opcional)</b><p className="mt-1 text-sm text-suave">Só se você adicionar o widget Agenda: para mostrar seus próximos compromissos. O V-Space apenas lê, nunca altera, e nada sai do aparelho. A permissão só é pedida nesse momento.</p></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>🎵 Música (opcional)</b><p className="mt-1 text-sm text-suave">Só se você quiser o player na tela inicial: o Android pede o “Acesso às notificações”. O V-Space usa só para ver o título, o artista e os botões do que está tocando; não lê nem guarda suas notificações. O mesmo acesso mostra o número de notificações em cada ícone (só a contagem).</p></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>👤 Contatos (opcional)</b><p className="mt-1 text-sm text-suave">Só se você quiser achar contatos na pesquisa: o Android pergunta quando você tocar em “Procurar também nos contatos”. A busca é no aparelho; nada é guardado nem enviado.</p></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>🌐 Internet</b><p className="mt-1 text-sm text-suave">Para o widget de Clima (envia só o nome da cidade ao Open-Meteo), para avisar de atualizações do app e para “Organizar com IA” (envia só os nomes dos apps, e só quando você toca nesse botão).</p></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>🏠 Ser a tela inicial</b><p className="mt-1 text-sm text-suave">Quem decide é você: o Android mostra uma caixa para escolher o launcher padrão. Dá para voltar ao anterior quando quiser.</p>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="lista" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Lista de apps instalados</b><p className="mt-1 text-sm text-suave">Para mostrar os seus apps na tela inicial e na gaveta. A lista fica só no aparelho e não é enviada para ninguém.</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="agenda" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Agenda (opcional)</b><p className="mt-1 text-sm text-suave">Só se você adicionar o widget Agenda: para mostrar seus próximos compromissos. O V-Space apenas lê, nunca altera, e nada sai do aparelho. A permissão só é pedida nesse momento.</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="nota" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Música (opcional)</b><p className="mt-1 text-sm text-suave">Só se você quiser o player na tela inicial: o Android pede o “Acesso às notificações”. O V-Space usa só para ver o título, o artista e os botões do que está tocando; não lê nem guarda suas notificações. O mesmo acesso mostra o número de notificações em cada ícone (só a contagem).</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="social" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Contatos (opcional)</b><p className="mt-1 text-sm text-suave">Só se você quiser achar contatos na pesquisa: o Android pergunta quando você tocar em “Procurar também nos contatos”. A busca é no aparelho; nada é guardado nem enviado.</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="globo" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Internet</b><p className="mt-1 text-sm text-suave">Para o widget de Clima (envia só o nome da cidade ao Open-Meteo), para avisar de atualizações do app e para “Organizar com IA” (envia só os nomes dos apps, e só quando você toca nesse botão).</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="casa" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Ser a tela inicial</b><p className="mt-1 text-sm text-suave">Quem decide é você: o Android mostra uma caixa para escolher o launcher padrão. Dá para voltar ao anterior quando quiser.</p>
           <button onClick={escolher} className="mt-3 min-h-11 rounded-[var(--raio-botao,0.75rem)] border border-neon px-4 text-sm font-medium text-neon">{feito ? "Pedido enviado ✓" : "Escolher agora"}</button></div>
-        <div className="rounded-2xl border border-borda bg-painel p-4"><b>🗑️ Desinstalar apps</b><p className="mt-1 text-sm text-suave">Só quando você pede. O próprio Android pergunta de novo antes de remover.</p></div>
+        <div className="rounded-2xl border border-borda bg-painel p-4"><b><Icone nome="lixeira" tam={18} className="mr-2 inline-block align-[-0.2em] text-neon" />Desinstalar apps</b><p className="mt-1 text-sm text-suave">Só quando você pede. O próprio Android pergunta de novo antes de remover.</p></div>
       </div>
       <div className="flex gap-3">
         <button onClick={aoVoltar} className="min-h-12 rounded-[var(--raio-botao,0.75rem)] border border-borda px-5">‹ Voltar</button>

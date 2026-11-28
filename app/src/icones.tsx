@@ -6,13 +6,20 @@ const estilo: CSSProperties = {
   strokeLinecap: "var(--icone-ponta, round)" as CSSProperties["strokeLinecap"],
   strokeLinejoin: "var(--icone-junta, round)" as CSSProperties["strokeLinejoin"],
 };
-function Svg({ children, tam = 24, style, ...r }: SVGProps<SVGSVGElement> & { tam?: number }) {
+function Svg({ children, tam = 24, style, ...r }: SVGProps<SVGSVGElement> & { tam?: number | string }) {
   return <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden {...r} style={{ ...estilo, ...style }}>{children}</svg>;
 }
 
-export type NomeIcone = "bateria" | "reiniciar" | "social" | "jogos" | "trabalho" | "ferramentas" | "carteira" | "sacola" | "midia" | "coracao" | "livro" | "estrela" | "olho" | "cofre" | "compartilhar" | "brilho" | "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta" | "tocar" | "pausar" | "proxima" | "anterior" | "wifi" | "sinal" | "volume" | "nota" | "agenda" | "notas" | "ideias" | "criancas" | "sino" | "podcast" | "video" | "tv" | "galeria" | "esporte" | "acoes" | "banco" | "mercado" | "onibus" | "bike" | "casa" | "carro" | "aviao" | "camera" | "comida" | "saude" | "haltere" | "jornal" | "pino" | "chat" | "nuvem" | "relogio" | "globo" | "codigo" | "presente" | "bandeira" | "raio" | "lua" | "sol" | "folha" | "capelo" | "moeda" | "fone" | "mala" | "pata" | "cafe" | "ferramenta" | "telefone" | "email";
+export type NomeIcone = "bateria" | "celular" | "nublado" | "solNuvem" | "neblina" | "chuva" | "neve" | "tempestade" | "reiniciar" | "social" | "jogos" | "trabalho" | "ferramentas" | "carteira" | "sacola" | "midia" | "coracao" | "livro" | "estrela" | "olho" | "cofre" | "compartilhar" | "brilho" | "cena" | "paleta" | "superficie" | "ajustes" | "lista" | "gesto" | "engrenagem" | "widgets" | "papel" | "cadeado" | "pesquisa" | "gaveta" | "estudio" | "fechar" | "pasta" | "info" | "lixeira" | "ocultar" | "mostrar" | "dock" | "tela" | "voltar" | "ok" | "mais" | "menos" | "grade" | "backup" | "restaurar" | "tema" | "forma" | "escudo" | "sobre" | "seta" | "tocar" | "pausar" | "proxima" | "anterior" | "wifi" | "sinal" | "volume" | "nota" | "agenda" | "notas" | "ideias" | "criancas" | "sino" | "podcast" | "video" | "tv" | "galeria" | "esporte" | "acoes" | "banco" | "mercado" | "onibus" | "bike" | "casa" | "carro" | "aviao" | "camera" | "comida" | "saude" | "haltere" | "jornal" | "pino" | "chat" | "nuvem" | "relogio" | "globo" | "codigo" | "presente" | "bandeira" | "raio" | "lua" | "sol" | "folha" | "capelo" | "moeda" | "fone" | "mala" | "pata" | "cafe" | "ferramenta" | "telefone" | "email";
 
 const DESENHOS: Record<NomeIcone, ReactElement> = {
+  celular: <><rect x="7" y="2.500" width="10" height="19" rx="2.400" /><path d="M11 18.500h2" /></>,
+  nublado: <path d="M7 18a4.500 4.500 0 0 1-.6-8.960A6 6 0 0 1 18 9.500a4 4 0 0 1-.5 8.500z" />,
+  solNuvem: <><path d="M8 3v1.500M3 8h1.500M4.500 4.500l1 1M11.500 4.500l-1 1M5.600 9.700a3 3 0 0 1 5-3" /><path d="M9.500 19.500a3.800 3.800 0 0 1-.4-7.550 5 5 0 0 1 9.700.9 3.350 3.350 0 0 1-.4 6.650z" /></>,
+  neblina: <path d="M5 8h11M8 12h11M4 16h13M9 20h9" />,
+  chuva: <><path d="M7 14a4 4 0 0 1-.5-7.950A5.500 5.500 0 0 1 17.200 7a3.500 3.500 0 0 1-.4 7z" /><path d="m8.500 17-1 3M13 17l-1 3M17.500 17l-1 3" /></>,
+  neve: <path d="M12 3v18M4.200 7.500l15.600 9M19.800 7.500l-15.600 9M9.500 4.500 12 6.500l2.500-2M9.500 19.500 12 17.500l2.500 2" />,
+  tempestade: <><path d="M7 13a4 4 0 0 1-.5-7.950A5.500 5.500 0 0 1 17.200 6a3.500 3.500 0 0 1-.4 7z" /><path d="m12.500 14-3 4.500h3.500L11 22" /></>,
   agenda: <><rect x="4" y="5.500" width="16" height="14" rx="2.500" /><path d="M4 10h16M8.500 4v3M15.500 4v3" /><path d="M8.500 13.500h.01M12 13.500h.01M15.500 13.500h.01M8.500 16.500h.01M12 16.500h.01" strokeWidth="2.400" /></>,
   notas: <><path d="M5 5.500a1.500 1.500 0 0 1 1.500-1.500h11A1.500 1.500 0 0 1 19 5.500V14l-5 5.500H6.500A1.500 1.500 0 0 1 5 18z" /><path d="M14 19.500V15h5" /></>,
   ideias: <><path d="M9 17h6M10 20h4" /><path d="M12 3.500a5.500 5.500 0 0 0-3.200 10c.7.600 1.200 1.500 1.200 2.500h4c0-1 .5-1.900 1.200-2.500a5.500 5.500 0 0 0-3.200-10z" /></>,
@@ -116,7 +123,7 @@ const DESENHOS: Record<NomeIcone, ReactElement> = {
   cadeado: <><rect x="5" y="10.5" width="14" height="9.5" rx="2.4" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></>,
 };
 
-export function Icone({ nome, tam = 24, className }: { nome: NomeIcone; tam?: number; className?: string }) {
+export function Icone({ nome, tam = 24, className }: { nome: NomeIcone; tam?: number | string; className?: string }) {
   return <Svg tam={tam} className={className}>{DESENHOS[nome]}</Svg>;
 }
 

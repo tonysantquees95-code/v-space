@@ -1,4 +1,5 @@
 // Dados dos widgets: clima (Open-Meteo, sem chave), bateria e agenda (vêm do aparelho). A parte pura é testada no Node.
+import type { NomeIcone } from "./icones.tsx";
 /** Preferências dos widgets (Estúdio › Widgets › Geral): unidade de temperatura e primeiro dia da semana (0 = domingo, 1 = segunda, 6 = sábado). */
 export type UnidadeTemp = "c" | "f";
 let unidadeTemp: UnidadeTemp = "c";
@@ -13,16 +14,16 @@ export interface Bateria { nivel: number; carregando: boolean }
 export interface Lugar { nome: string; lat: number; lon: number }
 
 /** Código do tempo (WMO) → palavra curta em português e um símbolo. */
-export function descreverTempo(codigo: number, dia = true): { texto: string; simbolo: string } {
-  if (codigo === 0) return { texto: dia ? "Céu limpo" : "Noite limpa", simbolo: dia ? "☀️" : "🌙" };
-  if (codigo <= 2) return { texto: "Poucas nuvens", simbolo: dia ? "⛅" : "☁️" };
-  if (codigo === 3) return { texto: "Nublado", simbolo: "☁️" };
-  if (codigo === 45 || codigo === 48) return { texto: "Neblina", simbolo: "🌫️" };
-  if (codigo >= 51 && codigo <= 57) return { texto: "Garoa", simbolo: "🌦️" };
-  if ((codigo >= 61 && codigo <= 67) || (codigo >= 80 && codigo <= 82)) return { texto: "Chuva", simbolo: "🌧️" };
-  if ((codigo >= 71 && codigo <= 77) || codigo === 85 || codigo === 86) return { texto: "Neve", simbolo: "❄️" };
-  if (codigo >= 95) return { texto: "Tempestade", simbolo: "⛈️" };
-  return { texto: "Tempo instável", simbolo: "🌥️" };
+export function descreverTempo(codigo: number, dia = true): { texto: string; simbolo: NomeIcone } {
+  if (codigo === 0) return { texto: dia ? "Céu limpo" : "Noite limpa", simbolo: dia ? "sol" : "lua" };
+  if (codigo <= 2) return { texto: "Poucas nuvens", simbolo: dia ? "solNuvem" : "nublado" };
+  if (codigo === 3) return { texto: "Nublado", simbolo: "nublado" };
+  if (codigo === 45 || codigo === 48) return { texto: "Neblina", simbolo: "neblina" };
+  if (codigo >= 51 && codigo <= 57) return { texto: "Garoa", simbolo: "chuva" };
+  if ((codigo >= 61 && codigo <= 67) || (codigo >= 80 && codigo <= 82)) return { texto: "Chuva", simbolo: "chuva" };
+  if ((codigo >= 71 && codigo <= 77) || codigo === 85 || codigo === 86) return { texto: "Neve", simbolo: "neve" };
+  if (codigo >= 95) return { texto: "Tempestade", simbolo: "tempestade" };
+  return { texto: "Tempo instável", simbolo: "nublado" };
 }
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
